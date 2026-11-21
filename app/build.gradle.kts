@@ -4,11 +4,11 @@ plugins {
 }
 
 android {
-    namespace = "com.exampletest.mobilestudiotest"
+    namespace = "com.goydevv.studrblx"
     compileSdk = 35
 
     defaultConfig {
-        applicationId = "com.exampletest.mobilestudiotest"
+        applicationId = "com.goydevv.studrblx"
         minSdk = 24
         targetSdk = 35
         versionCode = 2
