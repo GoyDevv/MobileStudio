@@ -437,7 +437,7 @@ public final class RbxXmlReader {
             Method dump skipped, instruction units count: 2202
             To view this dump add '--comments-level debug' option
         */
-        throw new UnsupportedOperationException("Method not decompiled: com.exampletest.mobilestudiotest.format.RbxXmlReader.convert(com.exampletest.mobilestudiotest.format.RbxXmlReader$XNode):kotlin.Pair");
+        return null;
     }
 
     /* JADX WARN: Can't fix incorrect switch cases order, some code will duplicate */

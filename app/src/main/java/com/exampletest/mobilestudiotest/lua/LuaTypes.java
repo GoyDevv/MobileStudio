@@ -467,7 +467,7 @@ public final class LuaTypes {
             Method dump skipped, instruction units count: 490
             To view this dump add '--comments-level debug' option
         */
-        throw new UnsupportedOperationException("Method not decompiled: com.exampletest.mobilestudiotest.lua.LuaTypes._init_$lambda$17(java.lang.Object, java.lang.String):org.luaj.vm2.LuaValue");
+        return org.luaj.vm2.LuaValue.NIL;
     }
 
     static final Varargs lambda$17$lambda$6(Varargs a) {
@@ -766,7 +766,7 @@ public final class LuaTypes {
             Method dump skipped, instruction units count: 218
             To view this dump add '--comments-level debug' option
         */
-        throw new UnsupportedOperationException("Method not decompiled: com.exampletest.mobilestudiotest.lua.LuaTypes._init_$lambda$26(java.lang.Object, java.lang.String):org.luaj.vm2.LuaValue");
+        return org.luaj.vm2.LuaValue.NIL;
     }
 
     static final Varargs lambda$26$lambda$24(Varargs a) {
@@ -1191,7 +1191,7 @@ public final class LuaTypes {
             Method dump skipped, instruction units count: 898
             To view this dump add '--comments-level debug' option
         */
-        throw new UnsupportedOperationException("Method not decompiled: com.exampletest.mobilestudiotest.lua.LuaTypes._init_$lambda$47(java.lang.Object, java.lang.String):org.luaj.vm2.LuaValue");
+        return org.luaj.vm2.LuaValue.NIL;
     }
 
     static final Varargs lambda$47$lambda$33(Varargs a) {
@@ -1598,7 +1598,7 @@ public final class LuaTypes {
             Method dump skipped, instruction units count: 214
             To view this dump add '--comments-level debug' option
         */
-        throw new UnsupportedOperationException("Method not decompiled: com.exampletest.mobilestudiotest.lua.LuaTypes._init_$lambda$55(java.lang.Object, java.lang.String):org.luaj.vm2.LuaValue");
+        return org.luaj.vm2.LuaValue.NIL;
     }
 
     static final Varargs lambda$55$lambda$52(Varargs a) {
@@ -1874,7 +1874,7 @@ public final class LuaTypes {
         L75:
             return r1
         */
-        throw new UnsupportedOperationException("Method not decompiled: com.exampletest.mobilestudiotest.lua.LuaTypes._init_$lambda$62(java.lang.Object, java.lang.String):org.luaj.vm2.LuaValue");
+        return org.luaj.vm2.LuaValue.NIL;
     }
 
     static final Varargs lambda$62$lambda$61(Varargs a) {

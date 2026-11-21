@@ -604,7 +604,7 @@ public final class RobloxServices {
             Method dump skipped, instruction units count: 8924
             To view this dump add '--comments-level debug' option
         */
-        throw new UnsupportedOperationException("Method not decompiled: com.exampletest.mobilestudiotest.lua.RobloxServices.call(com.exampletest.mobilestudiotest.lua.InstanceApi, com.exampletest.mobilestudiotest.lua.LuaRuntime, com.exampletest.mobilestudiotest.model.Instance, java.lang.String, org.luaj.vm2.Varargs):org.luaj.vm2.Varargs");
+        return org.luaj.vm2.LuaValue.NIL;
     }
 
     static final Unit call$lambda$3(Instance $item) {

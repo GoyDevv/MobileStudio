@@ -159,7 +159,7 @@ public final class PluginApi {
             Method dump skipped, instruction units count: 1760
             To view this dump add '--comments-level debug' option
         */
-        throw new UnsupportedOperationException("Method not decompiled: com.exampletest.mobilestudiotest.lua.PluginApi.call(com.exampletest.mobilestudiotest.lua.LuaRuntime, com.exampletest.mobilestudiotest.model.Instance, java.lang.String, org.luaj.vm2.Varargs):org.luaj.vm2.Varargs");
+        return org.luaj.vm2.LuaValue.NIL;
     }
 
     private final String pluginId(Instance i) {
@@ -252,7 +252,7 @@ public final class PluginApi {
             Method dump skipped, instruction units count: 254
             To view this dump add '--comments-level debug' option
         */
-        throw new UnsupportedOperationException("Method not decompiled: com.exampletest.mobilestudiotest.lua.PluginApi.pluginMouse$lambda$10(com.exampletest.mobilestudiotest.lua.LuaRuntime, org.luaj.vm2.LuaTable, org.luaj.vm2.LuaValue, org.luaj.vm2.LuaValue):org.luaj.vm2.LuaValue");
+        return org.luaj.vm2.LuaValue.NIL;
     }
 
     static final Varargs pluginMouse$lambda$10$lambda$8(Varargs a) {

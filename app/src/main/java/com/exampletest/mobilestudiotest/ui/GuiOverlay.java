@@ -2913,7 +2913,7 @@ public final class GuiOverlay extends View {
             Method dump skipped, instruction units count: 1720
             To view this dump add '--comments-level debug' option
         */
-        throw new UnsupportedOperationException("Method not decompiled: com.exampletest.mobilestudiotest.ui.GuiOverlay.layoutChildren(com.exampletest.mobilestudiotest.model.Instance, android.graphics.RectF, float):java.util.List");
+        return java.util.Collections.emptyList();
     }
 
     private final void drawChildren(Canvas canvas, Instance parent, RectF area, float scale, RectF clip) {

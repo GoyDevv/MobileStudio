@@ -241,7 +241,7 @@ public final class DefaultAnimate {
             Method dump skipped, instruction units count: 670
             To view this dump add '--comments-level debug' option
         */
-        throw new UnsupportedOperationException("Method not decompiled: com.exampletest.mobilestudiotest.engine.DefaultAnimate.step(float, java.lang.String, float, boolean, java.lang.String, float):void");
+        return;
     }
 
     public final CFrame transform(String part1Name) {

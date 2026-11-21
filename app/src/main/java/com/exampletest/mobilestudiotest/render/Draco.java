@@ -791,7 +791,7 @@ public final class Draco {
             Method dump skipped, instruction units count: 649
             To view this dump add '--comments-level debug' option
         */
-        throw new UnsupportedOperationException("Method not decompiled: com.exampletest.mobilestudiotest.render.Draco.decodePortable(com.exampletest.mobilestudiotest.render.Draco$AttDecoder, int, com.exampletest.mobilestudiotest.render.Draco$Reader):void");
+        return;
     }
 
     private final void decodeTransformData(AttDecoder d, Reader r) throws DracoException {

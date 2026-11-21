@@ -280,12 +280,26 @@ public final class PropertiesPanel extends LinearLayout implements Studio.Listen
         Code decompiled incorrectly, please refer to instructions dump.
         To view partially-correct add '--show-bad-code' argument
     */
-    private final java.lang.String categoryOf(com.exampletest.mobilestudiotest.model.Instance r7, java.lang.String r8, int r9) {
-        /*
-            Method dump skipped, instruction units count: 220
-            To view this dump add '--comments-level debug' option
-        */
-        throw new UnsupportedOperationException("Method not decompiled: com.exampletest.mobilestudiotest.ui.PropertiesPanel.categoryOf(com.exampletest.mobilestudiotest.model.Instance, java.lang.String, int):java.lang.String");
+    private final java.lang.String categoryOf(com.exampletest.mobilestudiotest.model.Instance inst, java.lang.String name, int type) {
+        if (name == null) return "Data";
+        switch (name) {
+            case "Position": case "Size": case "CFrame": case "Orientation": case "Rotation": case "AnchorPoint":
+                return "Transform";
+            case "Color": case "Color3": case "BrickColor": case "Material": case "Transparency":
+            case "Reflectance": case "Visible": case "CastShadow": case "BackgroundColor3":
+            case "BackgroundTransparency": case "BorderColor3": case "BorderSizePixel":
+            case "ImageColor3": case "ImageTransparency": case "Image":
+                return "Appearance";
+            case "Text": case "TextColor3": case "TextTransparency": case "TextSize":
+            case "TextScaled": case "TextWrapped": case "Font": case "FontFace":
+            case "TextXAlignment": case "TextYAlignment": case "RichText":
+                return "Text";
+            case "Anchored": case "CanCollide": case "CanTouch": case "CanQuery":
+            case "Locked": case "Massless": case "Enabled": case "Disabled": case "Active":
+                return "Behavior";
+            default:
+                return "Data";
+        }
     }
 
     /* JADX WARN: Multi-variable type inference failed */

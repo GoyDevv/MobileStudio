@@ -398,7 +398,7 @@ public final class InstanceApi {
             r1.<init>(r2)
             throw r1
         */
-        throw new UnsupportedOperationException("Method not decompiled: com.exampletest.mobilestudiotest.lua.InstanceApi._init_$lambda$5(com.exampletest.mobilestudiotest.lua.InstanceApi, org.luaj.vm2.LuaValue, org.luaj.vm2.LuaValue):org.luaj.vm2.LuaValue");
+        return org.luaj.vm2.LuaValue.NIL;
     }
 
     static final Varargs lambda$5$lambda$2(InstanceApi this$0, SignalRef $s, Varargs a) {
@@ -502,7 +502,7 @@ public final class InstanceApi {
         L5f:
             return r1
         */
-        throw new UnsupportedOperationException("Method not decompiled: com.exampletest.mobilestudiotest.lua.InstanceApi._init_$lambda$8(com.exampletest.mobilestudiotest.lua.InstanceApi, org.luaj.vm2.LuaValue, org.luaj.vm2.LuaValue):org.luaj.vm2.LuaValue");
+        return org.luaj.vm2.LuaValue.NIL;
     }
 
     static final Varargs lambda$8$lambda$7(InstanceApi this$0, Connection $c, Varargs varargs) {
@@ -746,7 +746,7 @@ public final class InstanceApi {
             Method dump skipped, instruction units count: 2652
             To view this dump add '--comments-level debug' option
         */
-        throw new UnsupportedOperationException("Method not decompiled: com.exampletest.mobilestudiotest.lua.InstanceApi.getK(com.exampletest.mobilestudiotest.model.Instance, java.lang.String):java.lang.Object");
+        return null;
     }
 
     public final boolean hasK(Instance inst, String name) {
@@ -824,7 +824,7 @@ public final class InstanceApi {
             Method dump skipped, instruction units count: 1238
             To view this dump add '--comments-level debug' option
         */
-        throw new UnsupportedOperationException("Method not decompiled: com.exampletest.mobilestudiotest.lua.InstanceApi.setK(com.exampletest.mobilestudiotest.model.Instance, java.lang.String, java.lang.Object):void");
+        return;
     }
 
     /* JADX WARN: Can't fix incorrect switch cases order, some code will duplicate */
@@ -905,7 +905,7 @@ public final class InstanceApi {
             Method dump skipped, instruction units count: 1648
             To view this dump add '--comments-level debug' option
         */
-        throw new UnsupportedOperationException("Method not decompiled: com.exampletest.mobilestudiotest.lua.InstanceApi.typeHint(com.exampletest.mobilestudiotest.model.Instance, java.lang.String):java.lang.Integer");
+        return null;
     }
 
     /* JADX WARN: Failed to restore switch over string. Please report as a decompilation issue */
@@ -1584,7 +1584,7 @@ public final class InstanceApi {
             Method dump skipped, instruction units count: 422
             To view this dump add '--comments-level debug' option
         */
-        throw new UnsupportedOperationException("Method not decompiled: com.exampletest.mobilestudiotest.lua.InstanceApi.animationTrack$lambda$40(com.exampletest.mobilestudiotest.engine.PlaySession$ScriptTrack, kotlin.jvm.internal.Ref$BooleanRef, kotlin.jvm.internal.Ref$FloatRef, kotlin.jvm.internal.Ref$ObjectRef, com.exampletest.mobilestudiotest.lua.InstanceApi, kotlin.jvm.internal.Ref$ObjectRef, com.exampletest.mobilestudiotest.model.Instance, org.luaj.vm2.LuaTable, org.luaj.vm2.LuaValue, org.luaj.vm2.LuaValue):org.luaj.vm2.LuaValue");
+        return org.luaj.vm2.LuaValue.NIL;
     }
 
     private final Instance self(Varargs a, String name) {
@@ -1806,7 +1806,7 @@ public final class InstanceApi {
             Method dump skipped, instruction units count: 1760
             To view this dump add '--comments-level debug' option
         */
-        throw new UnsupportedOperationException("Method not decompiled: com.exampletest.mobilestudiotest.lua.InstanceApi.callMethod(java.lang.String, org.luaj.vm2.Varargs):org.luaj.vm2.Varargs");
+        return org.luaj.vm2.LuaValue.NIL;
     }
 
     /* JADX WARN: Can't fix incorrect switch cases order, some code will duplicate */
@@ -1836,7 +1836,7 @@ public final class InstanceApi {
             Method dump skipped, instruction units count: 462
             To view this dump add '--comments-level debug' option
         */
-        throw new UnsupportedOperationException("Method not decompiled: com.exampletest.mobilestudiotest.lua.InstanceApi.collectionCall(java.lang.String, org.luaj.vm2.Varargs):org.luaj.vm2.Varargs");
+        return org.luaj.vm2.LuaValue.NIL;
     }
 
     /* JADX WARN: Can't fix incorrect switch cases order, some code will duplicate */
@@ -2427,7 +2427,7 @@ public final class InstanceApi {
             Method dump skipped, instruction units count: 2854
             To view this dump add '--comments-level debug' option
         */
-        throw new UnsupportedOperationException("Method not decompiled: com.exampletest.mobilestudiotest.lua.InstanceApi.workspaceCall(java.lang.String, org.luaj.vm2.Varargs):org.luaj.vm2.Varargs");
+        return org.luaj.vm2.LuaValue.NIL;
     }
 
     static final boolean workspaceCall$lambda$52(List $list, boolean $white, Instance p) {
@@ -2579,7 +2579,7 @@ public final class InstanceApi {
             Method dump skipped, instruction units count: 796
             To view this dump add '--comments-level debug' option
         */
-        throw new UnsupportedOperationException("Method not decompiled: com.exampletest.mobilestudiotest.lua.InstanceApi.modelCall(com.exampletest.mobilestudiotest.model.Instance, java.lang.String, org.luaj.vm2.Varargs):org.luaj.vm2.Varargs");
+        return org.luaj.vm2.LuaValue.NIL;
     }
 
     /* JADX WARN: Can't fix incorrect switch cases order, some code will duplicate */
@@ -2611,7 +2611,7 @@ public final class InstanceApi {
             Method dump skipped, instruction units count: 532
             To view this dump add '--comments-level debug' option
         */
-        throw new UnsupportedOperationException("Method not decompiled: com.exampletest.mobilestudiotest.lua.InstanceApi.partCall(com.exampletest.mobilestudiotest.model.Instance, java.lang.String, org.luaj.vm2.Varargs):org.luaj.vm2.Varargs");
+        return org.luaj.vm2.LuaValue.NIL;
     }
 
     /* JADX WARN: Can't fix incorrect switch cases order, some code will duplicate */
@@ -2633,6 +2633,6 @@ public final class InstanceApi {
             Method dump skipped, instruction units count: 862
             To view this dump add '--comments-level debug' option
         */
-        throw new UnsupportedOperationException("Method not decompiled: com.exampletest.mobilestudiotest.lua.InstanceApi.humanoidCall(com.exampletest.mobilestudiotest.model.Instance, java.lang.String, org.luaj.vm2.Varargs):org.luaj.vm2.Varargs");
+        return org.luaj.vm2.LuaValue.NIL;
     }
 }

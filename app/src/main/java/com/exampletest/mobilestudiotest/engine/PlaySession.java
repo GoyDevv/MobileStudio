@@ -1974,7 +1974,7 @@ public final class PlaySession implements TreeListener {
             Method dump skipped, instruction units count: 630
             To view this dump add '--comments-level debug' option
         */
-        throw new UnsupportedOperationException("Method not decompiled: com.exampletest.mobilestudiotest.engine.PlaySession.animateR6(float, java.lang.String):void");
+        return;
     }
 
     static /* synthetic */ void setR15$default(PlaySession playSession, String str, float f, float f2, float f3, float f4, float f5, int i, Object obj) {
@@ -5924,7 +5924,7 @@ public final class PlaySession implements TreeListener {
             Method dump skipped, instruction units count: 649
             To view this dump add '--comments-level debug' option
         */
-        throw new UnsupportedOperationException("Method not decompiled: com.exampletest.mobilestudiotest.engine.PlaySession.solveDistanceConstraints():void");
+        return;
     }
 
     /* JADX WARN: Code duplicated, block: B:138:0x048b A[Catch: all -> 0x0605, TryCatch #1 {all -> 0x0605, blocks: (B:94:0x033e, B:96:0x034f, B:98:0x035b, B:100:0x0363, B:103:0x0373, B:108:0x03c6, B:112:0x03df, B:116:0x03f6, B:120:0x040e, B:122:0x0419, B:123:0x0421, B:125:0x0427, B:126:0x043f, B:128:0x044d, B:130:0x045c, B:133:0x0462, B:137:0x046e, B:141:0x049f, B:143:0x04a5, B:145:0x04af, B:147:0x04b6, B:149:0x04c1, B:153:0x04d4, B:155:0x0509, B:159:0x0523, B:162:0x0538, B:164:0x054c, B:166:0x0560, B:170:0x0586, B:172:0x0591, B:186:0x05c6, B:187:0x05d1, B:189:0x05d7, B:190:0x05e4, B:175:0x059c, B:176:0x05a0, B:178:0x05a6, B:168:0x0572, B:158:0x051b, B:138:0x048b, B:169:0x057a, B:115:0x03f0, B:111:0x03d9, B:195:0x05fc), top: B:206:0x033e }] */
@@ -6986,7 +6986,7 @@ public final class PlaySession implements TreeListener {
             Method dump skipped, instruction units count: 252
             To view this dump add '--comments-level debug' option
         */
-        throw new UnsupportedOperationException("Method not decompiled: com.exampletest.mobilestudiotest.engine.PlaySession.mouseValue$lambda$151(com.exampletest.mobilestudiotest.engine.PlaySession, org.luaj.vm2.LuaTable, org.luaj.vm2.LuaValue, org.luaj.vm2.LuaValue):org.luaj.vm2.LuaValue");
+        return org.luaj.vm2.LuaValue.NIL;
     }
 
     static final Varargs mouseValue$lambda$151$lambda$149(Varargs a) {

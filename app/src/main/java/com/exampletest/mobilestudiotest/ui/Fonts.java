@@ -262,12 +262,63 @@ public final class Fonts {
         Code decompiled incorrectly, please refer to instructions dump.
         To view partially-correct add '--show-bad-code' argument
     */
-    public final com.exampletest.mobilestudiotest.ui.Fonts.Face forFamily(java.lang.String r13, int r14, boolean r15) {
-        /*
-            Method dump skipped, instruction units count: 1112
-            To view this dump add '--comments-level debug' option
-        */
-        throw new UnsupportedOperationException("Method not decompiled: com.exampletest.mobilestudiotest.ui.Fonts.forFamily(java.lang.String, int, boolean):com.exampletest.mobilestudiotest.ui.Fonts$Face");
+    public final com.exampletest.mobilestudiotest.ui.Fonts.Face forFamily(java.lang.String family, int weight, boolean italic) {
+        String key = family == null ? "" : family.toLowerCase(java.util.Locale.ROOT).replace(" ", "").replace("-", "").replace("_", "");
+        String file = null;
+        if (key.contains("sourcesans")) {
+            if (italic && weight < 600) file = "SourceSans-Italic";
+            else if (weight >= 700) file = "SourceSans-Bold";
+            else if (weight >= 600) file = "SourceSans-Semibold";
+            else if (weight <= 300) file = "SourceSans-Light";
+            else file = "SourceSans-Regular";
+        } else if (key.contains("gotham") || key.contains("montserrat") || key.contains("builder")) {
+            if (weight >= 850) file = "Montserrat-Black";
+            else if (weight >= 700) file = "Montserrat-Bold";
+            else if (weight >= 500) file = "Montserrat-Medium";
+            else file = "Montserrat-Regular";
+        } else if (key.contains("arimo") || key.contains("arial")) {
+            file = weight >= 600 ? "Arimo-Bold" : "Arimo-Regular";
+        } else if (key.contains("nunito") || key.contains("highway")) {
+            file = weight >= 600 ? "Nunito-Bold" : "Nunito";
+        } else if (key.contains("robotomono") || key.contains("code")) {
+            file = "RobotoMono";
+        } else if (key.contains("robotocondensed") || key.contains("roboto")) {
+            file = weight >= 600 ? "RobotoCondensed-Bold" : "RobotoCondensed";
+        } else if (key.contains("titillium")) {
+            file = weight >= 600 ? "TitilliumWeb-Bold" : "TitilliumWeb";
+        } else if (key.contains("ubuntu")) {
+            file = weight >= 600 ? "Ubuntu-Bold" : "Ubuntu";
+        } else if (key.contains("amatic")) { file = "AmaticSC"; }
+        else if (key.contains("bangers")) { file = "Bangers"; }
+        else if (key.contains("comic") || key.contains("cartoon")) { file = "ComicNeue"; }
+        else if (key.contains("creepster")) { file = "Creepster"; }
+        else if (key.contains("denk")) { file = "DenkOne"; }
+        else if (key.contains("fondamento") || key.contains("fantasy")) { file = "Fondamento"; }
+        else if (key.contains("fredoka")) { file = "FredokaOne"; }
+        else if (key.contains("grenze")) { file = "GrenzeGotisch"; }
+        else if (key.contains("inconsolata")) { file = "Inconsolata"; }
+        else if (key.contains("indie")) { file = "IndieFlower"; }
+        else if (key.contains("josefin")) { file = "JosefinSans"; }
+        else if (key.contains("jura")) { file = "Jura"; }
+        else if (key.contains("kalam")) { file = "Kalam"; }
+        else if (key.contains("luckiest")) { file = "LuckiestGuy"; }
+        else if (key.contains("merriweather") || key.contains("antique") || key.contains("bodoni") || key.contains("garamond")) { file = "Merriweather"; }
+        else if (key.contains("michroma") || key.contains("scifi")) { file = "Michroma"; }
+        else if (key.contains("oswald")) { file = "Oswald"; }
+        else if (key.contains("patrick")) { file = "PatrickHand"; }
+        else if (key.contains("permanent")) { file = "PermanentMarker"; }
+        else if (key.contains("arcade") || key.contains("pressstart")) { file = "PressStart2P"; }
+        else if (key.contains("sarpanch")) { file = "Sarpanch"; }
+        else if (key.contains("specialelite")) { file = "SpecialElite"; }
+        if (file != null) {
+            Typeface tf = asset(file);
+            if (tf != null) {
+                boolean hasBold = file.contains("Bold") || file.contains("Black") || file.contains("Semibold");
+                boolean hasItalic = file.contains("Italic");
+                return new Face(tf, weight >= 600 && !hasBold, italic && !hasItalic);
+            }
+        }
+        return new Face(system(weight, italic), false, false);
     }
 
     private static final Face forFamily$one(int $weight, boolean $italic, String file) {

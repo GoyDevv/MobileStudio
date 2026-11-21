@@ -224,12 +224,31 @@ public final class Enums {
         Code decompiled incorrectly, please refer to instructions dump.
         To view partially-correct add '--show-bad-code' argument
     */
-    public final java.lang.String typeForProp(java.lang.String r4, java.lang.String r5) {
-        /*
-            Method dump skipped, instruction units count: 596
-            To view this dump add '--comments-level debug' option
-        */
-        throw new UnsupportedOperationException("Method not decompiled: com.exampletest.mobilestudiotest.model.Enums.typeForProp(java.lang.String, java.lang.String):java.lang.String");
+    public final java.lang.String typeForProp(java.lang.String cls, java.lang.String prop) {
+        if (prop == null) return null;
+        switch (prop) {
+            case "Material": case "BaseMaterial": return "Material";
+            case "Shape": return "PartType";
+            case "TopSurface": case "BottomSurface": case "LeftSurface": case "RightSurface": case "FrontSurface": case "BackSurface": return "SurfaceType";
+            case "Font": return "Font";
+            case "TextXAlignment": return "TextXAlignment";
+            case "TextYAlignment": return "TextYAlignment";
+            case "ScaleType": return "ScaleType";
+            case "RigType": return "HumanoidRigType";
+            case "SortOrder": return "SortOrder";
+            case "FillDirection": return "FillDirection";
+            case "HorizontalAlignment": return "HorizontalAlignment";
+            case "VerticalAlignment": return "VerticalAlignment";
+            case "DominantAxis": return "DominantAxis";
+            case "AutomaticSize": case "AutomaticCanvasSize": return "AutomaticSize";
+            case "ScrollingDirection": return "ScrollingDirection";
+            case "ApplyStrokeMode": return "ApplyStrokeMode";
+            case "LineJoinMode": return "LineJoinMode";
+            case "Technology": return "Technology";
+            case "MeshType": return "MeshType";
+            case "Face": return "NormalId";
+            default: return null;
+        }
     }
 
     public final String itemName(String type, int value) {

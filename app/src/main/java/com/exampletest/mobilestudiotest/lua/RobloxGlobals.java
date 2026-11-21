@@ -740,7 +740,7 @@ public final class RobloxGlobals {
             r1.<init>(r2)
             throw r1
         */
-        throw new UnsupportedOperationException("Method not decompiled: com.exampletest.mobilestudiotest.lua.RobloxGlobals.install$lambda$15(org.luaj.vm2.Globals, org.luaj.vm2.Varargs):org.luaj.vm2.Varargs");
+        return org.luaj.vm2.LuaValue.NIL;
     }
 
     private static final UpValue install$envSlot(LuaValue f) {

@@ -360,7 +360,7 @@ public final class SceneRenderer implements GLSurfaceView.Renderer {
             @Override // com.exampletest.mobilestudiotest.render.StaticBatches.Host
             public boolean batchable(Instance p) {
                 Intrinsics.checkNotNullParameter(p, "p");
-                return SceneRenderer.this.isBatchable(p);
+                return false;
             }
 
             @Override // com.exampletest.mobilestudiotest.render.StaticBatches.Host
@@ -687,7 +687,7 @@ public final class SceneRenderer implements GLSurfaceView.Renderer {
             Method dump skipped, instruction units count: 794
             To view this dump add '--comments-level debug' option
         */
-        throw new UnsupportedOperationException("Method not decompiled: com.exampletest.mobilestudiotest.render.SceneRenderer.batchSpec(com.exampletest.mobilestudiotest.model.Instance):java.util.List");
+        return null;
     }
 
     private final int meshBatchProgram() {

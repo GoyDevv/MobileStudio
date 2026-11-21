@@ -723,7 +723,7 @@ public final class Autocomplete {
         L92:
             return r1
         */
-        throw new UnsupportedOperationException("Method not decompiled: com.exampletest.mobilestudiotest.ui.Autocomplete.resolveRoot(java.lang.String, com.exampletest.mobilestudiotest.core.Studio, com.exampletest.mobilestudiotest.model.Instance, java.lang.String, int, int):com.exampletest.mobilestudiotest.ui.Autocomplete$T");
+        return null;
     }
 
     private final T resolveLocal(String name, Studio studio, Instance script, String text, int before, int depth) {
@@ -874,7 +874,7 @@ public final class Autocomplete {
             Method dump skipped, instruction units count: 612
             To view this dump add '--comments-level debug' option
         */
-        throw new UnsupportedOperationException("Method not decompiled: com.exampletest.mobilestudiotest.ui.Autocomplete.member(com.exampletest.mobilestudiotest.ui.Autocomplete$T, com.exampletest.mobilestudiotest.ui.Autocomplete$Step, com.exampletest.mobilestudiotest.core.Studio):com.exampletest.mobilestudiotest.ui.Autocomplete$T");
+        return null;
     }
 
     private final Set<String> localNames(String text, int upTo) {
@@ -1499,7 +1499,7 @@ public final class Autocomplete {
             Method dump skipped, instruction units count: 1180
             To view this dump add '--comments-level debug' option
         */
-        throw new UnsupportedOperationException("Method not decompiled: com.exampletest.mobilestudiotest.ui.Autocomplete.completeString(com.exampletest.mobilestudiotest.core.Studio, com.exampletest.mobilestudiotest.model.Instance, java.lang.String, int, int):com.exampletest.mobilestudiotest.ui.Autocomplete$Result");
+        return null;
     }
 
     static final Instance completeString$lambda$71$lambda$67(Instance it) {
