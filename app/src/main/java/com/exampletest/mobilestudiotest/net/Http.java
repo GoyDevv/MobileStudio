@@ -307,7 +307,7 @@ public final class Http {
         if ((i2 & 16) != 0) {
             i = 67108864;
         }
-        return http.request(str, str4, map2, str5, i);
+        try { return http.request(str, str4, map2, str5, i); } catch (Throwable _ktEx) { throw com.exampletest.mobilestudiotest.util.KtCompat.sneakyThrow(_ktEx); }
     }
 
     public final Pair<Integer, byte[]> request(String url, String method, Map<String, String> headers, String body, int maxBytes) throws IOException {
