@@ -105,7 +105,7 @@ public final class RbxBinaryWriter {
                 identityHashMap2.put(i3, Integer.valueOf(i3.getLoadedRef()));
             }
         }
-        Integer num3 = (Integer) CollectionsKt.maxOrNull((Iterable) used);
+        Integer num3 = used.isEmpty() ? null : (Integer) java.util.Collections.max(used);
         int next2 = (num3 != null ? num3.intValue() : -1) + 1;
         Iterator it3 = all.iterator();
         Intrinsics.checkNotNullExpressionValue(it3, "iterator(...)");

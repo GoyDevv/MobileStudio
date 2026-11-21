@@ -68,7 +68,7 @@ public final class Samples {
             Intrinsics.checkNotNullParameter(build, "build");
             this.icon = icon;
             this.name = name;
-            this.build = build;
+            this.build = (Function0<Instance>) build;
         }
 
         public final Function0<Instance> getBuild() {

@@ -29,7 +29,7 @@ public final class RbxFile {
 
     public final boolean isXml(byte[] b) {
         Intrinsics.checkNotNullParameter(b, "b");
-        String head = StringsKt.trimStart(new String(b, 0, Math.min(b.length, ItemTouchHelper.Callback.DEFAULT_DRAG_ANIMATION_DURATION), Charsets.ISO_8859_1), 65279, ' ', '\n', '\r', '\t', 239, 187, 191);
+        String head = StringsKt.trimStart(new String(b, 0, Math.min(b.length, ItemTouchHelper.Callback.DEFAULT_DRAG_ANIMATION_DURATION), Charsets.ISO_8859_1), (char) 65279, ' ', '\n', '\r', '\t', (char) 239, (char) 187, (char) 191);
         return StringsKt.startsWith(head, "<roblox", false) || StringsKt.startsWith(head, "<?xml", false);
     }
 

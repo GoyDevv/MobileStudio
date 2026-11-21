@@ -865,7 +865,7 @@ public final class RobloxGlobals {
     }
 
     static final Varargs install$lambda$21(Varargs a) {
-        LuaTable mt;
+        LuaValue mt;
         Intrinsics.checkNotNullParameter(a, "a");
         LuaValue x = a.arg1();
         if (x.isuserdata()) {
@@ -891,7 +891,7 @@ public final class RobloxGlobals {
         try {
             UpValue upValueInstall$envSlot = install$envSlot(install$funcAt($rt, 1));
             LuaValue value = upValueInstall$envSlot != null ? upValueInstall$envSlot.getValue() : null;
-            Globals env = value instanceof LuaTable ? (LuaTable) value : null;
+            LuaValue env = value instanceof LuaTable ? (LuaTable) value : null;
             if (env == null) {
                 env = $g;
             }

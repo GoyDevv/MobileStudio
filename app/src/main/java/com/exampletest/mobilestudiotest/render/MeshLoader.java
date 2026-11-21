@@ -7,6 +7,7 @@ import com.exampletest.mobilestudiotest.model.Instance;
 import com.exampletest.mobilestudiotest.model.PartData;
 import com.exampletest.mobilestudiotest.net.AssetFetcher;
 import java.util.Collection;
+import java.util.List;
 import java.util.Iterator;
 import java.util.concurrent.ConcurrentHashMap;
 import java.util.concurrent.CopyOnWriteArrayList;

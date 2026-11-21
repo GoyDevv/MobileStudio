@@ -3499,12 +3499,12 @@ public final class LuaTypes {
 
     static final Varargs install$lambda$137$lambda$134(Varargs varargs) {
         Intrinsics.checkNotNullParameter(varargs, "<unused var>");
-        return INSTANCE.wrap(new BrickColorV(((Number) CollectionsKt.random(BrickColors.INSTANCE.getAll(), kotlin.random.Random.INSTANCE)).intValue()));
+        return INSTANCE.wrap(new BrickColorV(((Number) CollectionsKt.random(BrickColors.INSTANCE.getAll(), kotlin.random.Random.Default)).intValue()));
     }
 
     static final Varargs install$lambda$137$lambda$135(Varargs varargs) {
         Intrinsics.checkNotNullParameter(varargs, "<unused var>");
-        return INSTANCE.wrap(new BrickColorV(((Number) CollectionsKt.random(BrickColors.INSTANCE.getAll(), kotlin.random.Random.INSTANCE)).intValue()));
+        return INSTANCE.wrap(new BrickColorV(((Number) CollectionsKt.random(BrickColors.INSTANCE.getAll(), kotlin.random.Random.Default)).intValue()));
     }
 
     static final Varargs install$lambda$137$lambda$136(int $v, Varargs varargs) {

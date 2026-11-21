@@ -1148,11 +1148,11 @@ public final class RobloxServices {
     /* JADX WARN: Multi-variable type inference failed */
     static final void http$lambda$58(String str, String str2, String str3, final LuaRuntime luaRuntime, String str4, HashMap map, final String str5, final LuaThread luaThread) {
         String message;
-        T string;
+        String string;
         String lowerCase;
         HttpURLConnection httpURLConnection;
         String str6;
-        T t;
+        String t;
         Throwable th;
         String str7 = "toLowerCase(...)";
         final Ref.IntRef intRef = new Ref.IntRef();

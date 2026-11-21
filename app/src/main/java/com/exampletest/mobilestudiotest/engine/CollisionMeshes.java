@@ -826,7 +826,7 @@ public final class CollisionMeshes {
             return pair;
         }
         Object b = best;
-        return TuplesKt.to(b, Float.valueOf(top));
+        return TuplesKt.to((Vector3) b, Float.valueOf(top));
     }
 
     private static final boolean overlaps$sep(ConvexShape $s, Vector3 $a, Vector3 $b, Vector3 $c, Vector3 axis) {

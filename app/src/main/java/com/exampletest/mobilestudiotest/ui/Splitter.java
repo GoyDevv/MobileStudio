@@ -31,7 +31,7 @@ public final class Splitter extends View {
         Intrinsics.checkNotNullParameter(onDrag, "onDrag");
         Intrinsics.checkNotNullParameter(onEnd, "onEnd");
         this.vertical = vertical;
-        this.onDrag = onDrag;
+        this.onDrag = (Function1<Float, Unit>) onDrag;
         this.onEnd = onEnd;
         this.paint = new Paint();
         this.d = getResources().getDisplayMetrics().density;

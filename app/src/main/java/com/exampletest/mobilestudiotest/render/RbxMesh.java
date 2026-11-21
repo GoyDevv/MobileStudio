@@ -383,7 +383,7 @@ public final class RbxMesh {
         while (bb2.remaining() >= 16) {
             byte[] nameBytes = new byte[8];
             bb2.get(nameBytes);
-            String name = StringsKt.trimEnd(new String(nameBytes, Charsets.ISO_8859_1), 0);
+            String name = StringsKt.trimEnd(new String(nameBytes, Charsets.ISO_8859_1), (char) 0);
             int cver = bb2.getInt();
             int size = bb2.getInt();
             int start = bb2.position();

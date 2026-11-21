@@ -1343,7 +1343,7 @@ public final class StartScreen extends LinearLayout {
         }
     }
 
-    private final List<RobloxCloud.Game> loadGames(Kind kind) throws JSONException, HttpException {
+    private final List<RobloxCloud.Game> loadGames(Kind kind) throws Exception {
         RobloxCloud.User user = RobloxCloud.INSTANCE.cachedUser(this.act);
         if (user == null) {
             user = RobloxCloud.INSTANCE.currentUser(this.act);
@@ -1822,10 +1822,12 @@ public final class StartScreen extends LinearLayout {
                 } catch (Exception e2) {
                     $failed.add(Long.valueOf(group.getId()));
                 }
-            } catch (AuthRequiredException e3) {
-                $authError.set(e3);
             } catch (Exception e4) {
-                group = $gp;
+                if (e4 instanceof AuthRequiredException) {
+                    $authError.set(e4);
+                } else {
+                    group = $gp;
+                }
             }
             final int n = $checked.incrementAndGet();
             final List<Pair<RobloxCloud.Group, List<RobloxCloud.Game>>> listGroupGames$lambda$150$snapshot = groupGames$lambda$150$snapshot($groupList, $found, $previous, $failed);

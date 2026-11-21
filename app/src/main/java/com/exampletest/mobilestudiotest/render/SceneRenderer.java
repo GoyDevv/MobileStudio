@@ -5014,7 +5014,7 @@ public final class SceneRenderer implements GLSurfaceView.Renderer {
         Vector3 cp = this.studio.getView().getCamPos();
         Vector3 fwd = this.studio.getCamera().getForward();
         PlaySession play = this.studio.getPlay();
-        for (Instance c : CollectionsKt.sortedWith(listRenderClothing, new Comparator() { // from class: com.exampletest.mobilestudiotest.render.SceneRenderer$drawClothing$$inlined$sortedBy$1
+        for (Object _cObj : CollectionsKt.sortedWith(listRenderClothing, new Comparator() { // from class: com.exampletest.mobilestudiotest.render.SceneRenderer$drawClothing$$inlined$sortedBy$1
             /* JADX WARN: Multi-variable type inference failed */
             @Override // java.util.Comparator
             public final int compare(Object t, Object t2) {
@@ -5036,6 +5036,7 @@ public final class SceneRenderer implements GLSurfaceView.Renderer {
                 return ComparisonsKt.compareValues(numValueOf, Integer.valueOf(i3));
             }
         })) {
+            Instance c = (Instance) _cObj;
             Instance rig2 = c.getParent();
             if (rig2 != null) {
                 Instance torso = Instance.findFirstChild$default(rig2, "Torso", z, i, instance);

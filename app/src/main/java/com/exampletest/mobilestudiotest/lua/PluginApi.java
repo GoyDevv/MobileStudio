@@ -450,7 +450,7 @@ public final class PluginApi {
     }
 
     static final void menu$lambda$26$lambda$25(final Studio $studio, String $title, List $labels, final LuaRuntime $rt, final LuaThread $co, final List $acts) {
-        Function3<String, List<String>, Function1<? super Integer, Unit>, Unit> pluginMenuHandler = $studio.getPluginMenuHandler();
+        Function3<? super String, ? super List<String>, ? super Function1<? super Integer, Unit>, Unit> pluginMenuHandler = $studio.getPluginMenuHandler();
         if (pluginMenuHandler == null) {
             synchronized ($studio.getLock()) {
                 LuaValue NIL = LuaValue.NIL;

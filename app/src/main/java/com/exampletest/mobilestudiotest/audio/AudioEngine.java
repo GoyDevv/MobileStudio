@@ -271,7 +271,7 @@ public final class AudioEngine {
     }
 
     public final Function1<Instance, Unit> getOnLoaded() {
-        return onLoaded;
+        return (Function1<Instance, Unit>) onLoaded;
     }
 
     public final void setOnLoaded(Function1<? super Instance, Unit> function1) {
@@ -279,7 +279,7 @@ public final class AudioEngine {
     }
 
     public final Function1<Instance, Unit> getOnEnded() {
-        return onEnded;
+        return (Function1<Instance, Unit>) onEnded;
     }
 
     public final void setOnEnded(Function1<? super Instance, Unit> function1) {

@@ -132,7 +132,7 @@ public final class Dialogs {
                     str = str2;
                 }
                 arrayList.addAll((List) arrayList2);
-                notifyDataSetChanged();
+                r5.notifyDataSetChanged();
             }
         });
         lv.setOnItemClickListener(new AdapterView.OnItemClickListener() { // from class: com.exampletest.mobilestudiotest.ui.Dialogs$$ExternalSyntheticLambda1
@@ -672,9 +672,9 @@ public final class Dialogs {
                 r3.element = nr;
                 g3.element = ng;
                 b3.element = nb;
-                bars3.get(0).setProgress(r3.element);
-                bars3.get(1).setProgress(g3.element);
-                bars3.get(2).setProgress(b3.element);
+                ((SeekBar) bars3.get(0)).setProgress(r3.element);
+                ((SeekBar) bars3.get(1)).setProgress(g3.element);
+                ((SeekBar) bars3.get(2)).setProgress(b3.element);
                 Dialogs.colorPicker$refresh(preview3, hex, r3, g3, b3, ctx, false);
             }
         };

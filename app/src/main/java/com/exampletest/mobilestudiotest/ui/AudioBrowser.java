@@ -84,8 +84,8 @@ public final class AudioBrowser extends LinearLayout {
         Intrinsics.checkNotNullParameter(ctx, "ctx");
         Intrinsics.checkNotNullParameter(onInsert, "onInsert");
         Intrinsics.checkNotNullParameter(needSignIn, "needSignIn");
-        this.onInsert = onInsert;
-        this.needSignIn = needSignIn;
+        this.onInsert = (Function1<RobloxApi.AudioItem, Unit>) onInsert;
+        this.needSignIn = (Function1<Function0<Unit>, Unit>) needSignIn;
         this.net = Executors.newSingleThreadExecutor();
         this.content = new FrameLayout(ctx);
         LinearLayout linearLayout = new LinearLayout(ctx);
@@ -728,7 +728,7 @@ public final class AudioBrowser extends LinearLayout {
     static final void loadMore$lambda$46(final AudioBrowser audioBrowser, RobloxApi.AudioQuery audioQuery, String str, final int i) {
         RobloxApi.AudioQuery audioQuery2;
         String str2;
-        T tSearchAudioLegacy = null;
+        Object tSearchAudioLegacy = null;
         final Ref.ObjectRef objectRef = new Ref.ObjectRef();
         final Ref.ObjectRef objectRef2 = new Ref.ObjectRef();
         try {

@@ -1203,7 +1203,7 @@ public final class AccountUi {
     /* JADX WARN: Type inference failed for: r5v0, types: [com.exampletest.mobilestudiotest.ui.AccountUi$listDialog$adapter$1] */
     /* JADX WARN: Type inference failed for: r9v6, types: [T, android.app.AlertDialog, java.lang.Object] */
     private final AlertDialog listDialog(final Activity act, String title, final List<Row> rows, String empty, Function1<? super AlertDialog.Builder, Unit> extra) {
-        ListView content;
+        View content;
         AlertDialog alertDialog;
         AlertDialog alertDialog2;
         ListView lv = new ListView(act);
@@ -1336,7 +1336,7 @@ public final class AccountUi {
             main.post(new Runnable() { // from class: com.exampletest.mobilestudiotest.ui.AccountUi$$ExternalSyntheticLambda32
                 @Override // java.lang.Runnable
                 public final void run() {
-                    notifyDataSetChanged();
+                    $adapter.notifyDataSetChanged();
                 }
             });
         }

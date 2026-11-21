@@ -31,7 +31,7 @@ public final class VectorIcon extends Drawable {
     /* JADX WARN: Multi-variable type inference failed */
     public VectorIcon(Function1<? super IconPainter, Unit> painter) {
         Intrinsics.checkNotNullParameter(painter, "painter");
-        this.painter = painter;
+        this.painter = (Function1<IconPainter, Unit>) painter;
         this.alphaV = 255;
         this.bmpPaint = new Paint(2);
     }

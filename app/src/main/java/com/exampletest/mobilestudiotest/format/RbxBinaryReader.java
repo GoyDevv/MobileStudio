@@ -128,7 +128,7 @@ public final class RbxBinaryReader {
             if (byteReader.remaining() < 16) {
                 break;
             }
-            strTrimEnd = StringsKt.trimEnd(new String(byteReader.bytes(4), Charsets.ISO_8859_1), 0);
+            strTrimEnd = StringsKt.trimEnd(new String(byteReader.bytes(4), Charsets.ISO_8859_1), (char) 0);
             int iI32 = byteReader.i32();
             int iI33 = byteReader.i32();
             byteReader.i32();
@@ -389,9 +389,9 @@ public final class RbxBinaryReader {
                 }
                 return arrayList2;
             case 3:
-                return ArraysKt.toList(r.i32Array(n));
+                return (List<Object>) (List<?>) ArraysKt.toList(r.i32Array(n));
             case 4:
-                return ArraysKt.toList(r.f32Array(n));
+                return (List<Object>) (List<?>) ArraysKt.toList(r.f32Array(n));
             case 5:
                 ArrayList arrayList3 = new ArrayList(n);
                 for (int i3 = 0; i3 < n; i3++) {
@@ -580,7 +580,7 @@ public final class RbxBinaryReader {
                 }
                 return arrayList23;
             case 27:
-                return ArraysKt.toList(r.i64Array(n));
+                return (List<Object>) (List<?>) ArraysKt.toList(r.i64Array(n));
             case 28:
                 int[] iArrU32Array3 = r.u32Array(n);
                 Collection arrayList24 = new ArrayList(iArrU32Array3.length);

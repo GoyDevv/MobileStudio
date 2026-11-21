@@ -34,7 +34,7 @@ public final class WebPermissions {
     }
 
     public final Function3<String, String, Function1<? super Boolean, Unit>, Unit> getAsker() {
-        return asker;
+        return (Function3<String, String, Function1<? super Boolean, Unit>, Unit>) asker;
     }
 
     public final void setAsker(Function3<? super String, ? super String, ? super Function1<? super Boolean, Unit>, Unit> function3) {
@@ -130,7 +130,7 @@ public final class WebPermissions {
         final CountDownLatch latch = countDownLatchComputeIfAbsent;
         if (mine.element) {
             try {
-                function3.invoke(host, who, new Function1() { // from class: com.exampletest.mobilestudiotest.net.WebPermissions$$ExternalSyntheticLambda2
+                ((Function3) function3).invoke(host, who, new Function1() { // from class: com.exampletest.mobilestudiotest.net.WebPermissions$$ExternalSyntheticLambda2
                     @Override // kotlin.jvm.functions.Function1
                     public final Object invoke(Object obj) {
                         return WebPermissions.allow$lambda$6(ctx, host, latch, (Boolean) obj);

@@ -213,7 +213,8 @@ public final class SolidModeling {
         }
         List<Instance> negative = (List) arrayList2;
         List<Csg.Polygon> listEmptyList = positive.isEmpty() ? CollectionsKt.emptyList() : compute$polysOf(styles2, usePart, op, ref, (Instance) positive.get(0));
-        for (Instance s : CollectionsKt.drop(positive, 1)) {
+        for (Object _sObj : CollectionsKt.drop(positive, 1)) {
+            Instance s = (Instance) _sObj;
             listEmptyList = Intrinsics.areEqual(op.getClassName(), "IntersectOperation") ? Csg.INSTANCE.intersect(listEmptyList, compute$polysOf(styles2, usePart, op, ref, s)) : Csg.INSTANCE.union(listEmptyList, compute$polysOf(styles2, usePart, op, ref, s));
         }
         for (Instance n : negative) {

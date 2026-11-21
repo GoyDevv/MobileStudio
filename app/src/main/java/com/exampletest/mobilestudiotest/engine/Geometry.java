@@ -76,7 +76,7 @@ public final class Geometry {
                 t = (-b) + sq;
             }
             if (t < 0.0f) {
-                return 0;
+                return null;
             }
             Vector3 hitLocal = lo.plus(ld.times(t));
             return TuplesKt.to(Float.valueOf(t), cf.vectorToWorld(hitLocal.getUnit()));
