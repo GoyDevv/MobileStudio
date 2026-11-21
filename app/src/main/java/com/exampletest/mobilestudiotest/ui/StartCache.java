@@ -48,7 +48,12 @@ public final class StartCache {
     }
 
     private final JSONObject gameJson(RobloxCloud.Game g) {
+        try {
         return new JSONObject().put("u", g.getUniverseId()).put("n", g.getName()).put("r", g.getRootPlaceId()).put("t", g.getUpdated()).put("o", g.getOwner()).put("g", g.getGroupId());
+    }
+        catch (Throwable _ktEx) {
+            throw com.exampletest.mobilestudiotest.util.KtCompat.sneakyThrow(_ktEx);
+        }
     }
 
     private final RobloxCloud.Game gameOf(JSONObject o) {

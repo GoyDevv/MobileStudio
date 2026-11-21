@@ -230,7 +230,7 @@ public final class RobloxCloud {
         return MapsKt.mapOf(TuplesKt.to("Cookie", ".ROBLOSECURITY=" + c));
     }
 
-    public static /* synthetic */ Http.Response authed$default(RobloxCloud robloxCloud, Context context, String str, String str2, byte[] bArr, String str3, int i, Object obj) {
+    public static /* synthetic */ Http.Response authed$default(RobloxCloud robloxCloud, Context context, String str, String str2, byte[] bArr, String str3, int i, Object obj) throws AuthRequiredException {
         if ((i & 4) != 0) {
             str2 = "GET";
         }
@@ -261,6 +261,7 @@ public final class RobloxCloud {
     }
 
     private final JSONObject json(Context ctx, String url) throws HttpException {
+        try {
         Long longOrNull;
         Http.Response r = authed$default(this, ctx, url, null, null, null, 28, null);
         int attempt = 0;
@@ -281,6 +282,10 @@ public final class RobloxCloud {
             throw new HttpException(r.getCode(), Http.INSTANCE.describe(r.getCode(), r.getBody()));
         }
         return new JSONObject(r.getText());
+    }
+        catch (Throwable _ktEx) {
+            throw com.exampletest.mobilestudiotest.util.KtCompat.sneakyThrow(_ktEx);
+        }
     }
 
     private final String str(JSONObject $this$str, String... keys) {
@@ -1035,6 +1040,7 @@ public final class RobloxCloud {
     }
 
     public final Pair<Game, Place> createGame(Context ctx, String name, long groupId, String description) throws IOException {
+        try {
         JSONObject jSONObject;
         long jOptLong = 0L;
         long universeId;
@@ -1154,6 +1160,10 @@ public final class RobloxCloud {
             context = ctx;
         }
         return TuplesKt.to(new Game(universeId, name, placeId2, "", groupId != 0 ? "Group" : RobloxApi.INSTANCE.userName(context), groupId), new Place(placeId2, name, universeId));
+    }
+        catch (Throwable _ktEx) {
+            throw com.exampletest.mobilestudiotest.util.KtCompat.sneakyThrow(_ktEx);
+        }
     }
 
     private static final long createGame$find(JSONObject o, String... keys) {
@@ -1654,6 +1664,7 @@ public final class RobloxCloud {
     }
 
     public final User userByName(String name) throws HttpException {
+        try {
         JSONObject o;
         Intrinsics.checkNotNullParameter(name, "name");
         String body = new JSONObject().put("usernames", new JSONArray().put(StringsKt.trim((CharSequence) name).toString())).put("excludeBannedUsers", true).toString();
@@ -1676,6 +1687,10 @@ public final class RobloxCloud {
         String strOptString2 = o.optString("displayName");
         Intrinsics.checkNotNullExpressionValue(strOptString2, "optString(...)");
         return new User(jOptLong, strOptString, strOptString2);
+    }
+        catch (Throwable _ktEx) {
+            throw com.exampletest.mobilestudiotest.util.KtCompat.sneakyThrow(_ktEx);
+        }
     }
 
     /* JADX WARN: Unreachable blocks removed: 2, instructions: 2 */

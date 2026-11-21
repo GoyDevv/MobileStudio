@@ -102,6 +102,7 @@ public final class Json {
     }
 
     public final LuaValue decode(LuaRuntime rt, String s) {
+        try {
         LuaNumber luaNumberValueOf;
         Object parsed;
         Intrinsics.checkNotNullParameter(rt, "rt");
@@ -140,6 +141,10 @@ public final class Json {
             parsed = new JSONArray(t);
         }
         return fromJson(parsed);
+    }
+        catch (Throwable _ktEx) {
+            throw com.exampletest.mobilestudiotest.util.KtCompat.sneakyThrow(_ktEx);
+        }
     }
 
     private final LuaValue fromJson(Object o) {

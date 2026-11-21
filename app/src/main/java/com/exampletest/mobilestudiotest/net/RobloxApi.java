@@ -450,6 +450,7 @@ public final class RobloxApi {
     }
 
     public final Page search(String keyword, Category category, String cursor, int num) {
+        try {
         Intrinsics.checkNotNullParameter(keyword, "keyword");
         Intrinsics.checkNotNullParameter(category, "category");
         StringBuilder sb = new StringBuilder("https://apis.roblox.com/toolbox-service/v1/marketplace/" + category.getId() + "?num=" + num + "&includeOnlyVerifiedCreators=false");
@@ -477,6 +478,10 @@ public final class RobloxApi {
         String strOptString = j.optString("nextPageCursor");
         Intrinsics.checkNotNull(strOptString);
         return new Page(ids, ((!(strOptString.length() > 0) || Intrinsics.areEqual(strOptString, "null")) ? 0 : 1) != 0 ? strOptString : null, j.optInt("totalResults"));
+    }
+        catch (Throwable _ktEx) {
+            throw com.exampletest.mobilestudiotest.util.KtCompat.sneakyThrow(_ktEx);
+        }
     }
 
     /* JADX WARN: Code duplicated, block: B:51:0x010e  */
@@ -1016,6 +1021,7 @@ public final class RobloxApi {
 
     /* JADX WARN: Code duplicated, block: B:86:0x0256  */
     public final AudioPage searchAudio(Context ctx, AudioQuery q, String pageToken, int pageSize) {
+        try {
         String c;
         String str;
         boolean z;
@@ -1136,6 +1142,10 @@ public final class RobloxApi {
         }
         return new AudioPage(out, next);
     }
+        catch (Throwable _ktEx) {
+            throw com.exampletest.mobilestudiotest.util.KtCompat.sneakyThrow(_ktEx);
+        }
+    }
 
     public final AudioPage searchAudioLegacy(String keyword, String cursor) {
         Intrinsics.checkNotNullParameter(keyword, "keyword");
@@ -1184,6 +1194,7 @@ public final class RobloxApi {
 
     /* JADX WARN: Code duplicated, block: B:14:0x005d  */
     public final Pair<List<InvItem>, String> inventory(Context ctx, long userId, int assetType, String cursor) throws AuthRequiredException, HttpException {
+        try {
         String str;
         Intrinsics.checkNotNullParameter(ctx, "ctx");
         String c = cookie(ctx);
@@ -1233,6 +1244,10 @@ public final class RobloxApi {
         }
         return TuplesKt.to(out, strOptString3);
     }
+        catch (Throwable _ktEx) {
+            throw com.exampletest.mobilestudiotest.util.KtCompat.sneakyThrow(_ktEx);
+        }
+    }
 
     public final Long parseAssetId(String text) {
         List<String> groupValues;
@@ -1255,7 +1270,7 @@ public final class RobloxApi {
         if ((i & 4) != 0) {
             num = null;
         }
-        return robloxApi.downloadAsset(context, j, num);
+        try { return robloxApi.downloadAsset(context, j, num); } catch (Throwable _ktEx) { throw com.exampletest.mobilestudiotest.util.KtCompat.sneakyThrow(_ktEx); }
     }
 
     /* JADX WARN: Code duplicated, block: B:56:0x016a  */

@@ -1178,6 +1178,7 @@ public final /* data */ class Theme {
         }
 
         public final Theme fromJson(JSONObject o) {
+            try {
             Intrinsics.checkNotNullParameter(o, "o");
             Theme light = o.optBoolean("light") ? getLIGHT() : getDARK();
             String strOptString = o.optString("name", "Custom");
@@ -1191,6 +1192,10 @@ public final /* data */ class Theme {
                 }
             }
             return t;
+        }
+            catch (Throwable _ktEx) {
+                throw com.exampletest.mobilestudiotest.util.KtCompat.sneakyThrow(_ktEx);
+            }
         }
     }
 }

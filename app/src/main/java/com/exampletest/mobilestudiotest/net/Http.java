@@ -412,8 +412,13 @@ public final class Http {
     }
 
     public final JSONObject json(String url, Map<String, String> headers) {
+        try {
         Intrinsics.checkNotNullParameter(url, "url");
         Intrinsics.checkNotNullParameter(headers, "headers");
         return new JSONObject(new String(get$default(this, url, headers, 0, 4, null), Charsets.UTF_8));
+    }
+        catch (Throwable _ktEx) {
+            throw com.exampletest.mobilestudiotest.util.KtCompat.sneakyThrow(_ktEx);
+        }
     }
 }

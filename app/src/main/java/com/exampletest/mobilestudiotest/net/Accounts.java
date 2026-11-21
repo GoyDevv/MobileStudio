@@ -112,11 +112,16 @@ public final class Accounts {
     }
 
     private final void save(Context ctx, List<Account> list) {
+        try {
         JSONArray a = new JSONArray();
         for (Account x : list) {
             a.put(new JSONObject().put("id", x.getUserId()).put("name", x.getName()).put("displayName", x.getDisplayName()).put("cookie", x.getCookie()));
         }
         prefs(ctx).edit().putString("accounts", a.toString()).apply();
+    }
+        catch (Throwable _ktEx) {
+            throw com.exampletest.mobilestudiotest.util.KtCompat.sneakyThrow(_ktEx);
+        }
     }
 
     public final void upsert(Context ctx, Account acc) {
