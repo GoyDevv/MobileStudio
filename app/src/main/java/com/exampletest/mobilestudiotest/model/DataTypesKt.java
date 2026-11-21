@@ -17,6 +17,6 @@ public final class DataTypesKt {
     }
 
     public static final String fmtNum(float f) {
-        return fmtNum(f);
+        return fmtNum((double) f);
     }
 }
