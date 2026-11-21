@@ -1405,13 +1405,18 @@ public final class ToolboxPanel extends LinearLayout {
                         }
                     }
                 });
-            } catch (AuthRequiredException e2) {
-                this$0.studio.getMain().post(new Runnable() { // from class: com.exampletest.mobilestudiotest.ui.ToolboxPanel$$ExternalSyntheticLambda27
-                    @Override // java.lang.Runnable
-                    public final void run() {
-                        ToolboxPanel.insertMesh$lambda$89$lambda$88(this$0, e2, $act, $item);
-                    }
-                });
+            } catch (Exception e2) {
+                if (e2 instanceof AuthRequiredException) {
+                    final AuthRequiredException _authEx = (AuthRequiredException) e2;
+                    this$0.studio.getMain().post(new Runnable() { // from class: com.exampletest.mobilestudiotest.ui.ToolboxPanel$$ExternalSyntheticLambda27
+                        @Override // java.lang.Runnable
+                        public final void run() {
+                            ToolboxPanel.insertMesh$lambda$89$lambda$88(this$0, _authEx, $act, $item);
+                        }
+                    });
+                } else {
+                    throw e2;
+                }
             }
         } catch (Exception e3) {
             OutputLog outputLog = OutputLog.INSTANCE;

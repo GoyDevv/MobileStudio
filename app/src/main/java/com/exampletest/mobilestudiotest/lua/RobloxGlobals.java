@@ -891,7 +891,7 @@ public final class RobloxGlobals {
         try {
             UpValue upValueInstall$envSlot = install$envSlot(install$funcAt($rt, 1));
             LuaValue value = upValueInstall$envSlot != null ? upValueInstall$envSlot.getValue() : null;
-            LuaValue env = value instanceof LuaTable ? (LuaTable) value : null;
+            LuaTable env = value instanceof LuaTable ? (LuaTable) value : null;
             if (env == null) {
                 env = $g;
             }

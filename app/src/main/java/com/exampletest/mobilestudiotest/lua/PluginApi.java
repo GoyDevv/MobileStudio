@@ -460,7 +460,7 @@ public final class PluginApi {
             }
             return;
         }
-        pluginMenuHandler.invoke($title, $labels, new Function1() { // from class: com.exampletest.mobilestudiotest.lua.PluginApi$$ExternalSyntheticLambda13
+        ((Function3) pluginMenuHandler).invoke($title, $labels, new Function1() { // from class: com.exampletest.mobilestudiotest.lua.PluginApi$$ExternalSyntheticLambda13
             @Override // kotlin.jvm.functions.Function1
             public final Object invoke(Object obj) {
                 return PluginApi.menu$lambda$26$lambda$25$lambda$24($studio, $acts, $rt, $co, ((Integer) obj).intValue());
