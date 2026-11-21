@@ -489,7 +489,7 @@ public final class AccountUi {
         INSTANCE.background($act, "Checking @" + $a.getName() + "…", new Function0() { // from class: com.exampletest.mobilestudiotest.ui.AccountUi$$ExternalSyntheticLambda91
             @Override // kotlin.jvm.functions.Function0
             public final Object invoke() {
-                return RobloxCloud.INSTANCE.currentUser($act);
+                try { return RobloxCloud.INSTANCE.currentUser($act); } catch (Throwable _ktEx) { throw com.exampletest.mobilestudiotest.util.KtCompat.sneakyThrow(_ktEx); }
             }
         }, new Function1() { // from class: com.exampletest.mobilestudiotest.ui.AccountUi$$ExternalSyntheticLambda92
             @Override // kotlin.jvm.functions.Function1
@@ -656,7 +656,7 @@ public final class AccountUi {
             INSTANCE.background($act, "Checking your account…", new Function0() { // from class: com.exampletest.mobilestudiotest.ui.AccountUi$$ExternalSyntheticLambda41
                 @Override // kotlin.jvm.functions.Function0
                 public final Object invoke() {
-                    return RobloxCloud.INSTANCE.currentUser($act);
+                    try { return RobloxCloud.INSTANCE.currentUser($act); } catch (Throwable _ktEx) { throw com.exampletest.mobilestudiotest.util.KtCompat.sneakyThrow(_ktEx); }
                 }
             }, new Function1() { // from class: com.exampletest.mobilestudiotest.ui.AccountUi$$ExternalSyntheticLambda42
                 @Override // kotlin.jvm.functions.Function1
@@ -796,7 +796,7 @@ public final class AccountUi {
         INSTANCE.background($act, "Signing in…", new Function0() { // from class: com.exampletest.mobilestudiotest.ui.AccountUi$$ExternalSyntheticLambda56
             @Override // kotlin.jvm.functions.Function0
             public final Object invoke() {
-                return RobloxCloud.INSTANCE.currentUser($act);
+                try { return RobloxCloud.INSTANCE.currentUser($act); } catch (Throwable _ktEx) { throw com.exampletest.mobilestudiotest.util.KtCompat.sneakyThrow(_ktEx); }
             }
         }, new Function1() { // from class: com.exampletest.mobilestudiotest.ui.AccountUi$$ExternalSyntheticLambda57
             @Override // kotlin.jvm.functions.Function1
@@ -1733,7 +1733,7 @@ public final class AccountUi {
         background(act, "Loading version history…", new Function0() { // from class: com.exampletest.mobilestudiotest.ui.AccountUi$$ExternalSyntheticLambda49
             @Override // kotlin.jvm.functions.Function0
             public final Object invoke() {
-                return RobloxCloud.INSTANCE.versions(act, p.getId());
+                try { return RobloxCloud.INSTANCE.versions(act, p.getId()); } catch (Throwable _ktEx) { throw com.exampletest.mobilestudiotest.util.KtCompat.sneakyThrow(_ktEx); }
             }
         }, new Function1() { // from class: com.exampletest.mobilestudiotest.ui.AccountUi$$ExternalSyntheticLambda50
             @Override // kotlin.jvm.functions.Function1
@@ -2138,7 +2138,7 @@ public final class AccountUi {
         INSTANCE.background($act, "Creating “" + n + "” on Roblox…", new Function0() { // from class: com.exampletest.mobilestudiotest.ui.AccountUi$$ExternalSyntheticLambda44
             @Override // kotlin.jvm.functions.Function0
             public final Object invoke() {
-                return RobloxCloud.INSTANCE.createGame($act, n, owner, StringsKt.trim((CharSequence) $desc.getText().toString()).toString());
+                try { return RobloxCloud.INSTANCE.createGame($act, n, owner, StringsKt.trim((CharSequence) $desc.getText().toString()).toString()); } catch (Throwable _ktEx) { throw com.exampletest.mobilestudiotest.util.KtCompat.sneakyThrow(_ktEx); }
             }
         }, new Function1() { // from class: com.exampletest.mobilestudiotest.ui.AccountUi$$ExternalSyntheticLambda45
             @Override // kotlin.jvm.functions.Function1
@@ -2285,7 +2285,7 @@ public final class AccountUi {
 
     static final Pair upload$lambda$176$lambda$169(Studio $studio, Activity $act, CloudPlace $c, boolean $publish) {
         byte[] bytes = $studio.serializePlace();
-        return TuplesKt.to(RobloxCloud.INSTANCE.publish($act, $c.getUniverseId(), $c.getPlaceId(), bytes, $publish), Integer.valueOf(bytes.length));
+        try { return TuplesKt.to(RobloxCloud.INSTANCE.publish($act, $c.getUniverseId(), $c.getPlaceId(), bytes, $publish), Integer.valueOf(bytes.length)); } catch (Throwable _ktEx) { throw com.exampletest.mobilestudiotest.util.KtCompat.sneakyThrow(_ktEx); }
     }
 
     static final Unit upload$lambda$176$lambda$170(Studio $studio, CloudPlace $c, boolean $publish, Activity $act, Function0 $onDone, Pair pair) {

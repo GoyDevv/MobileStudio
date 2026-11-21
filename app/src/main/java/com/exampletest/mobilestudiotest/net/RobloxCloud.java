@@ -320,7 +320,7 @@ public final class RobloxCloud {
         if ((i2 & 8) != 0) {
             str2 = "";
         }
-        return robloxCloud.searchUniverses(context, str, j, str2, (i2 & 16) != 0 ? 0L : j2, (i2 & 32) != 0 ? 10 : i);
+        try { return robloxCloud.searchUniverses(context, str, j, str2, (i2 & 16) != 0 ? 0L : j2, (i2 & 32) != 0 ? 10 : i); } catch (Throwable _ktEx) { throw com.exampletest.mobilestudiotest.util.KtCompat.sneakyThrow(_ktEx); }
     }
 
     public final List<Game> searchUniverses(Context ctx, String creatorType, long targetId, String owner, long groupId, int pages) throws HttpException {
@@ -866,7 +866,8 @@ public final class RobloxCloud {
         Intrinsics.checkNotNullParameter(universeIds, "universeIds");
         HashSet out = new HashSet();
         boolean understood = false;
-        for (List chunk : CollectionsKt.chunked(CollectionsKt.distinct(universeIds), 50)) {
+        for (Object _cObj : CollectionsKt.chunked(CollectionsKt.distinct(universeIds), 50)) {
+            List chunk = (List) _cObj;
             if (!chunk.isEmpty()) {
                 String url = "https://develop.roblox.com/v1/universes/multiget/permissions?" + CollectionsKt.joinToString(chunk, "&", "", "", -1, "...", new Function1() { // from class: com.exampletest.mobilestudiotest.net.RobloxCloud$$ExternalSyntheticLambda0
                     @Override // kotlin.jvm.functions.Function1
@@ -937,7 +938,7 @@ public final class RobloxCloud {
                 return RobloxCloud.games$lambda$21(ctx, user);
             }
         });
-        ArrayList out = new ArrayList(userGames(ctx, user));
+        ArrayList out; try { out = new ArrayList(userGames(ctx, user)); } catch (Throwable _ktEx) { throw com.exampletest.mobilestudiotest.util.KtCompat.sneakyThrow(_ktEx); }
         if (groupsF != null) {
             try {
                 try { groupList = (GroupList) groupsF.get(); } catch (InterruptedException _e) { throw com.exampletest.mobilestudiotest.util.KtCompat.sneakyThrow(_e); }
@@ -1036,7 +1037,7 @@ public final class RobloxCloud {
         if ((i & 8) != 0) {
             str2 = "";
         }
-        return robloxCloud.createGame(context, str, j2, str2);
+        try { return robloxCloud.createGame(context, str, j2, str2); } catch (Throwable _ktEx) { throw com.exampletest.mobilestudiotest.util.KtCompat.sneakyThrow(_ktEx); }
     }
 
     public final Pair<Game, Place> createGame(Context ctx, String name, long groupId, String description) throws IOException {
@@ -1477,7 +1478,7 @@ public final class RobloxCloud {
 
     public final byte[] downloadPlace(Context ctx, long placeId, Integer version) {
         Intrinsics.checkNotNullParameter(ctx, "ctx");
-        return RobloxApi.INSTANCE.downloadAsset(ctx, placeId, version);
+        try { return RobloxApi.INSTANCE.downloadAsset(ctx, placeId, version); } catch (Throwable _ktEx) { throw com.exampletest.mobilestudiotest.util.KtCompat.sneakyThrow(_ktEx); }
     }
 
     /* JADX WARN: Code duplicated, block: B:79:0x0221 A[LOOP:0: B:67:0x01e4->B:79:0x0221, LOOP_END] */
@@ -1594,7 +1595,8 @@ public final class RobloxCloud {
             return MapsKt.emptyMap();
         }
         HashMap out = new HashMap();
-        for (List chunk : CollectionsKt.chunked(universeIds, 50)) {
+        for (Object _cObj : CollectionsKt.chunked(universeIds, 50)) {
+            List chunk = (List) _cObj;
             try {
                 JSONObject j = Http.json$default(Http.INSTANCE, "https://thumbnails.roblox.com/v1/games/icons?universeIds=" + CollectionsKt.joinToString(chunk, ",", "", "", -1, "...", null) + "&returnPolicy=PlaceHolder&size=150x150&format=Png&isCircular=false", null, 2, null);
                 JSONArray arr = j.optJSONArray("data");

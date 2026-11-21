@@ -785,7 +785,8 @@ public final class Autocomplete {
         if (steps.isEmpty() || (t = resolveRoot(steps.get(0).getName(), studio, script, text, before, depth)) == null) {
             return null;
         }
-        for (Step s : CollectionsKt.drop(steps, 1)) {
+        for (Object _sObj : CollectionsKt.drop(steps, 1)) {
+            Step s = (Step) _sObj;
             T tMember = member(t, s, studio);
             if (tMember == null) {
                 return null;

@@ -299,7 +299,7 @@ public final class PluginManager {
                 Iterator it2 = arrayList.iterator();
                 Intrinsics.checkNotNullExpressionValue(it2, "iterator(...)");
                 while (it2.hasNext()) {
-                    editRuntime.runScript((Instance) it2.next(), MapsKt.mapOf(TuplesKt.to("plugin", luaValueWrap)));
+                    try { editRuntime.runScript((Instance) it2.next(), MapsKt.mapOf(TuplesKt.to("plugin", luaValueWrap))); } catch (Throwable _ktEx) { throw com.exampletest.mobilestudiotest.util.KtCompat.sneakyThrow(_ktEx); }
                 }
                 Unit unit = Unit.INSTANCE;
             }

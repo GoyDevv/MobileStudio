@@ -495,7 +495,8 @@ public final class PlayHud extends FrameLayout {
             float y = getHeight();
             c.save();
             c.clipRect(0, 0, getWidth(), getHeight());
-            for (StaticLayout l : CollectionsKt.asReversed(this.layouts)) {
+            for (Object _lObj : CollectionsKt.asReversed(this.layouts)) {
+            StaticLayout l = (StaticLayout) _lObj;
                 y -= l.getHeight() + this.this$0.dp(2.0f);
                 if (l.getHeight() + y < 0.0f) {
                     break;

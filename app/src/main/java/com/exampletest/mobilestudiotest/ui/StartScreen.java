@@ -961,7 +961,8 @@ public final class StartScreen extends LinearLayout {
             return;
         }
         LinearLayout gr = this$0.row(holder);
-        for (RobloxCloud.Game g : CollectionsKt.take(list, 12)) {
+        for (Object _gObj : CollectionsKt.take(list, 12)) {
+            RobloxCloud.Game g = (RobloxCloud.Game) _gObj;
             this$0.addToRow(gr, gameCard$default(this$0, g, false, 2, null));
         }
     }

@@ -803,7 +803,7 @@ public final class RobloxGlobals {
             }
             throw new LuaError("Attempted to call require with invalid argument(s).");
         }
-        return $rt.require(inst);
+        try { return $rt.require(inst); } catch (Throwable _ktEx) { throw com.exampletest.mobilestudiotest.util.KtCompat.sneakyThrow(_ktEx); }
     }
 
     static final Varargs install$lambda$19(LuaRuntime $rt, Globals $g, Varargs a) {

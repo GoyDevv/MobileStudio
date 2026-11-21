@@ -1648,7 +1648,7 @@ public final class LuaRuntime {
         if ((i & 2) != 0) {
             map = MapsKt.emptyMap();
         }
-        luaRuntime.runScript(instance, map);
+        try { luaRuntime.runScript(instance, map); } catch (Throwable _ktEx) { throw com.exampletest.mobilestudiotest.util.KtCompat.sneakyThrow(_ktEx); }
     }
 
     public final void runScript(Instance script, Map<String, ? extends LuaValue> extra) throws Exception {
