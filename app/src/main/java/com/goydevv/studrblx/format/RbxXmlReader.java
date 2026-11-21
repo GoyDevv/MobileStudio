@@ -434,12 +434,13 @@ public final class RbxXmlReader {
     */
     private final kotlin.Pair<java.lang.Integer, java.lang.Object> convert(com.goydevv.studrblx.format.RbxXmlReader.XNode n) {
         if (n == null) return null;
-        String tag = n.getTag();
-        String txt = n.getText() != null ? n.getText().trim() : "";
+        String tag = n.getName();
+        String rawTxt = n.getText() != null ? n.getText().toString() : "";
+        String txt = rawTxt.trim();
         switch (tag) {
             case "string":
             case "ProtectedString":
-                return kotlin.TuplesKt.to(1, n.getText() != null ? n.getText() : "");
+                return kotlin.TuplesKt.to(1, rawTxt);
             case "BinaryString":
                 return kotlin.TuplesKt.to(1, new com.goydevv.studrblx.model.BinaryString(decodeB64(txt)));
             case "SharedString":
@@ -457,66 +458,81 @@ public final class RbxXmlReader {
                 try { return kotlin.TuplesKt.to(5, Double.valueOf(Double.parseDouble(txt))); } catch (Exception e) { return kotlin.TuplesKt.to(5, (double) parseSpecial(txt)); }
             case "UDim": {
                 float sc = 0.0f; int off = 0;
-                for (XNode c : n.getKids()) {
-                    if ("S".equals(c.getTag())) sc = parseSpecial(c.getText().trim());
-                    else if ("O".equals(c.getTag())) try { off = Integer.parseInt(c.getText().trim()); } catch (Exception ignored) {}
+                for (XNode c : n.getChildren()) {
+                    String ct = c.getText() != null ? c.getText().toString().trim() : "";
+                    if ("S".equals(c.getName())) sc = parseSpecial(ct);
+                    else if ("O".equals(c.getName())) try { off = Integer.parseInt(ct); } catch (Exception ignored) {}
                 }
                 return kotlin.TuplesKt.to(6, new com.goydevv.studrblx.model.UDim(sc, off));
             }
             case "UDim2": {
                 float xs = 0.0f, ys = 0.0f; int xo = 0, yo = 0;
-                for (XNode c : n.getKids()) {
-                    if ("XS".equals(c.getTag())) xs = parseSpecial(c.getText().trim());
-                    else if ("YS".equals(c.getTag())) ys = parseSpecial(c.getText().trim());
-                    else if ("XO".equals(c.getTag())) try { xo = Integer.parseInt(c.getText().trim()); } catch (Exception ignored) {}
-                    else if ("YO".equals(c.getTag())) try { yo = Integer.parseInt(c.getText().trim()); } catch (Exception ignored) {}
+                for (XNode c : n.getChildren()) {
+                    String ct = c.getText() != null ? c.getText().toString().trim() : "";
+                    if ("XS".equals(c.getName())) xs = parseSpecial(ct);
+                    else if ("YS".equals(c.getName())) ys = parseSpecial(ct);
+                    else if ("XO".equals(c.getName())) try { xo = Integer.parseInt(ct); } catch (Exception ignored) {}
+                    else if ("YO".equals(c.getName())) try { yo = Integer.parseInt(ct); } catch (Exception ignored) {}
                 }
                 return kotlin.TuplesKt.to(7, new com.goydevv.studrblx.model.UDim2(xs, xo, ys, yo));
             }
             case "Faces": {
                 int mask = 0;
-                for (XNode c : n.getKids()) if ("faces".equals(c.getTag())) try { mask = Integer.parseInt(c.getText().trim()); } catch (Exception ignored) {}
+                for (XNode c : n.getChildren()) {
+                    if ("faces".equals(c.getName())) {
+                        String ct = c.getText() != null ? c.getText().toString().trim() : "";
+                        try { mask = Integer.parseInt(ct); } catch (Exception ignored) {}
+                    }
+                }
                 return kotlin.TuplesKt.to(9, new com.goydevv.studrblx.model.Faces(mask));
             }
             case "Axes": {
                 int mask = 0;
-                for (XNode c : n.getKids()) if ("axes".equals(c.getTag())) try { mask = Integer.parseInt(c.getText().trim()); } catch (Exception ignored) {}
+                for (XNode c : n.getChildren()) {
+                    if ("axes".equals(c.getName())) {
+                        String ct = c.getText() != null ? c.getText().toString().trim() : "";
+                        try { mask = Integer.parseInt(ct); } catch (Exception ignored) {}
+                    }
+                }
                 return kotlin.TuplesKt.to(10, new com.goydevv.studrblx.model.Axes(mask));
             }
             case "Color3": {
                 float r = 0.0f, g = 0.0f, b = 0.0f;
-                for (XNode c : n.getKids()) {
-                    if ("R".equals(c.getTag())) r = parseSpecial(c.getText().trim());
-                    else if ("G".equals(c.getTag())) g = parseSpecial(c.getText().trim());
-                    else if ("B".equals(c.getTag())) b = parseSpecial(c.getText().trim());
+                for (XNode c : n.getChildren()) {
+                    String ct = c.getText() != null ? c.getText().toString().trim() : "";
+                    if ("R".equals(c.getName())) r = parseSpecial(ct);
+                    else if ("G".equals(c.getName())) g = parseSpecial(ct);
+                    else if ("B".equals(c.getName())) b = parseSpecial(ct);
                 }
                 return kotlin.TuplesKt.to(12, new com.goydevv.studrblx.model.Color3(r, g, b));
             }
             case "Color3uint8": {
                 try {
                     long packed = Long.parseLong(txt);
-                    int r = (int)((packed >> 16) & 255);
-                    int g = (int)((packed >> 8) & 255);
-                    int b = (int)(packed & 255);
-                    return kotlin.TuplesKt.to(26, com.goydevv.studrblx.model.Color3.INSTANCE.fromRGB(r, g, b));
+                    float r = ((packed >> 16) & 255) / 255.0f;
+                    float g = ((packed >> 8) & 255) / 255.0f;
+                    float b = (packed & 255) / 255.0f;
+                    return kotlin.TuplesKt.to(26, new com.goydevv.studrblx.model.Color3(r, g, b));
                 } catch (Exception e) {
                     return kotlin.TuplesKt.to(26, new com.goydevv.studrblx.model.Color3(0.5f, 0.5f, 0.5f));
                 }
             }
             case "Vector2": {
                 float x = 0.0f, y = 0.0f;
-                for (XNode c : n.getKids()) {
-                    if ("X".equals(c.getTag())) x = parseSpecial(c.getText().trim());
-                    else if ("Y".equals(c.getTag())) y = parseSpecial(c.getText().trim());
+                for (XNode c : n.getChildren()) {
+                    String ct = c.getText() != null ? c.getText().toString().trim() : "";
+                    if ("X".equals(c.getName())) x = parseSpecial(ct);
+                    else if ("Y".equals(c.getName())) y = parseSpecial(ct);
                 }
                 return kotlin.TuplesKt.to(13, new com.goydevv.studrblx.model.Vector2(x, y));
             }
             case "Vector3": {
                 float x = 0.0f, y = 0.0f, z = 0.0f;
-                for (XNode c : n.getKids()) {
-                    if ("X".equals(c.getTag())) x = parseSpecial(c.getText().trim());
-                    else if ("Y".equals(c.getTag())) y = parseSpecial(c.getText().trim());
-                    else if ("Z".equals(c.getTag())) z = parseSpecial(c.getText().trim());
+                for (XNode c : n.getChildren()) {
+                    String ct = c.getText() != null ? c.getText().toString().trim() : "";
+                    if ("X".equals(c.getName())) x = parseSpecial(ct);
+                    else if ("Y".equals(c.getName())) y = parseSpecial(ct);
+                    else if ("Z".equals(c.getName())) z = parseSpecial(ct);
                 }
                 return kotlin.TuplesKt.to(14, new com.goydevv.studrblx.model.Vector3(x, y, z));
             }
@@ -530,14 +546,14 @@ public final class RbxXmlReader {
             case "int64":
                 try { return kotlin.TuplesKt.to(27, Long.valueOf(Long.parseLong(txt))); } catch (Exception e) { return kotlin.TuplesKt.to(27, 0L); }
             case "NumberRange": {
-                String[] parts = txt.split("\s+");
+                String[] parts = txt.split("\\s+");
                 float mn = parts.length > 0 ? parseSpecial(parts[0]) : 0.0f;
                 float mx = parts.length > 1 ? parseSpecial(parts[1]) : mn;
                 return kotlin.TuplesKt.to(24, new com.goydevv.studrblx.model.NumberRange(mn, mx));
             }
             case "OptionalCoordinateFrame": {
-                for (XNode c : n.getKids()) {
-                    if ("CFrame".equals(c.getTag()) || "CoordinateFrame".equals(c.getTag())) {
+                for (XNode c : n.getChildren()) {
+                    if ("CFrame".equals(c.getName()) || "CoordinateFrame".equals(c.getName())) {
                         return kotlin.TuplesKt.to(30, new com.goydevv.studrblx.model.OptionalCFrame(cframe(c)));
                     }
                 }
@@ -548,8 +564,6 @@ public final class RbxXmlReader {
         }
     }
 
-    /* JADX WARN: Can't fix incorrect switch cases order, some code will duplicate */
-    /* JADX WARN: Code duplicated, block: B:15:0x0035 A[ORIG_RETURN, RETURN] */
     private final float parseSpecial(String t) {
         String upperCase = t.toUpperCase(Locale.ROOT);
         Intrinsics.checkNotNullExpressionValue(upperCase, "toUpperCase(...)");
