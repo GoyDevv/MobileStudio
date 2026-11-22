@@ -176,7 +176,34 @@ public final class RichText {
                         }
                         break;
                     case 3148879:
-                        span = (name.equals("font") && (matchResultFind$default = (new Regex("color\\s*=\\s*[\"']([^\"']+)[\"']")).find(attrs, 0)) != null && (color = INSTANCE.parseColor(matchResultFind$default.getGroupValues().get(1))) != null) ? new ForegroundColorSpan(color.intValue()) : null;
+                        if (name.equals("font")) {
+                            MatchResult cm = (new Regex("color\\s*=\\s*[\"']([^\"']+)[\"']")).find(attrs, 0);
+                            if (cm != null && (color = INSTANCE.parseColor(cm.getGroupValues().get(1))) != null) {
+                                span = new ForegroundColorSpan(color.intValue());
+                            } else {
+                                MatchResult sm = (new Regex("size\\s*=\\s*[\"'](\\d+)[\"']")).find(attrs, 0);
+                                if (sm != null) {
+                                    int px = RangesKt.coerceIn(Integer.parseInt(sm.getGroupValues().get(1)), 6, 120);
+                                    span = new android.text.style.AbsoluteSizeSpan(px, true);
+                                } else {
+                                    span = null;
+                                }
+                            }
+                        } else {
+                            span = null;
+                        }
+                        break;
+                    case 3344077:
+                        if (name.equals("mark")) {
+                            MatchResult mm = (new Regex("color\\s*=\\s*[\"']([^\"']+)[\"']")).find(attrs, 0);
+                            if (mm != null && (color = INSTANCE.parseColor(mm.getGroupValues().get(1))) != null) {
+                                span = new android.text.style.BackgroundColorSpan(color.intValue());
+                            } else {
+                                span = new android.text.style.BackgroundColorSpan(0x66FFFF00);
+                            }
+                        } else {
+                            span = null;
+                        }
                         break;
                     case 223523538:
                         if (name.equals("uppercase")) {

@@ -34,6 +34,7 @@ public final class OutputPanel extends LinearLayout {
     private final RecyclerView list;
     private final Function1<OutputLog.Entry, Unit> listener;
     private boolean pending;
+    private int filterMode = 0;
     private final Studio studio;
 
     /* JADX WARN: 'super' call moved to the top of the method (can break code semantics) */
@@ -62,6 +63,20 @@ public final class OutputPanel extends LinearLayout {
                 return OutputPanel._init_$lambda$1((View) obj);
             }
         }, 4, null));
+        final TextView filterBtn = new TextView(ctx);
+        filterBtn.setText("All");
+        filterBtn.setTextSize(11.0f);
+        filterBtn.setTextColor(Ui.INSTANCE.getACCENT());
+        filterBtn.setPadding(Ui.INSTANCE.dp(ctx, 8.0f), Ui.INSTANCE.dp(ctx, 2.0f), Ui.INSTANCE.dp(ctx, 8.0f), Ui.INSTANCE.dp(ctx, 2.0f));
+        filterBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                OutputPanel.this.filterMode = (OutputPanel.this.filterMode + 1) % 3;
+                filterBtn.setText(OutputPanel.this.filterMode == 0 ? "All" : (OutputPanel.this.filterMode == 1 ? "Warn+" : "Errors"));
+                OutputPanel.this.reload();
+            }
+        });
+        h.addView(filterBtn, Ui.INSTANCE.lp(-2, -2, 0.0f));
         addView(h, Ui.lp$default(Ui.INSTANCE, -1, -2, 0.0f, 4, null));
         RecyclerView recyclerView = this.list;
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(ctx);
@@ -181,7 +196,11 @@ public final class OutputPanel extends LinearLayout {
 
     private final void reload() {
         this.entries.clear();
-        this.entries.addAll(OutputLog.INSTANCE.snapshot());
+        for (OutputLog.Entry e : OutputLog.INSTANCE.snapshot()) {
+            if (this.filterMode == 1 && e.getLevel() != OutputLog.Level.WARN && e.getLevel() != OutputLog.Level.ERROR) continue;
+            if (this.filterMode == 2 && e.getLevel() != OutputLog.Level.ERROR) continue;
+            this.entries.add(e);
+        }
         this.adapter.notifyDataSetChanged();
         if (!this.entries.isEmpty()) {
             this.list.scrollToPosition(this.entries.size() - 1);

@@ -2973,11 +2973,37 @@ public final class GuiOverlay extends View {
                 padPx = (pu.getScale() * (horiz ? aw : ah)) + (pu.getOffset() * this.d * childScale);
             }
             float[][] sizes = new float[kids.size()][];
+            float[] flexGrow = new float[kids.size()];
+            float totalGrow = 0.0f;
             float totalPrimary = 0.0f;
             for (int i = 0; i < kids.size(); i++) {
-                sizes[i] = sizeOf(kids.get(i), area, childScale);
+                Instance kid = kids.get(i);
+                sizes[i] = sizeOf(kid, area, childScale);
+                for (Instance fc : kid.getChildren()) {
+                    if ("UIFlexItem".equals(fc.getClassName())) {
+                        int fm = enumOf(fc, "FlexMode", 0);
+                        float gr = fm == 1 ? 1.0f : (fm == 2 ? 1.0f : num(fc, "GrowRatio", 0.0f));
+                        if (gr > 0.0f) {
+                            flexGrow[i] = gr;
+                            totalGrow += gr;
+                        }
+                        break;
+                    }
+                }
                 totalPrimary += horiz ? sizes[i][0] : sizes[i][1];
                 if (i > 0) totalPrimary += padPx;
+            }
+            float availPrimary = horiz ? aw : ah;
+            if (totalGrow > 0.0f && availPrimary > totalPrimary) {
+                float extra = availPrimary - totalPrimary;
+                for (int i = 0; i < kids.size(); i++) {
+                    if (flexGrow[i] > 0.0f) {
+                        float add = extra * (flexGrow[i] / totalGrow);
+                        if (horiz) sizes[i][0] += add;
+                        else sizes[i][1] += add;
+                    }
+                }
+                totalPrimary = availPrimary;
             }
             float cursor;
             if (horiz) {

@@ -1408,6 +1408,14 @@ public final class LuaRuntime {
                 }
             }
             if (!limit) {
+                try {
+                    byte[] rawBytes = source.getBytes(Charsets.UTF_8);
+                    Prototype rawProto = this.globals.compilePrototype(new ByteArrayInputStream(rawBytes), "=" + chunkName);
+                    if (rawProto != null) {
+                        return rawProto;
+                    }
+                } catch (Throwable ignored) {
+                }
                 throw e;
             }
             Globals globals2 = this.globals;
@@ -1664,11 +1672,11 @@ public final class LuaRuntime {
             LuaValue NONE = LuaValue.NONE;
             Intrinsics.checkNotNullExpressionValue(NONE, "NONE");
             spawn(fn, NONE);
-        } catch (LuaError e) {
+        } catch (Throwable e) {
             OutputLog outputLog = OutputLog.INSTANCE;
             String message = e.getMessage();
-            if (message == null) {
-                message = "Syntax error in " + script.fullName();
+            if (message == null || message.length() == 0) {
+                message = e.getClass().getSimpleName() + " in " + script.fullName();
             }
             outputLog.error(cleanError(message));
         }

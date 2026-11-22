@@ -923,7 +923,7 @@ public final class PlaySession implements TreeListener {
             return;
         }
         this.startedScripts.add(s);
-        try { LuaRuntime.runScript$default(this.rt, s, null, 2, null); } catch (Throwable _ktEx) { throw com.goydevv.studrblx.util.KtCompat.sneakyThrow(_ktEx); }
+        try { LuaRuntime.runScript$default(this.rt, s, null, 2, null); } catch (Throwable _ktEx) { com.goydevv.studrblx.core.OutputLog.INSTANCE.error("Script error (" + s.fullName() + "): " + _ktEx.getMessage()); }
     }
 
     public final void onChildAdded(Instance parent, Instance child) {
@@ -3908,13 +3908,21 @@ public final class PlaySession implements TreeListener {
                     float magnitude = vector3Component3.getMagnitude();
                     if (magnitude >= 1.0E-4f) {
                         Vector3 vector3Div = vector3Component3.div(magnitude);
-                        if (vector3Div.getY() > 0.55f) {
+                        float maxSlopeDeg = 89.0f;
+                        if (this.humanoid != null && (this.humanoid.get("MaxSlopeAngle") instanceof Number)) {
+                            maxSlopeDeg = RangesKt.coerceIn(((Number) this.humanoid.get("MaxSlopeAngle")).floatValue(), 0.0f, 89.0f);
+                        }
+                        float minSlopeNy = RangesKt.coerceIn((float) Math.cos(Math.toRadians((double) maxSlopeDeg)), 0.05f, 0.99f);
+                        if (vector3Div.getY() > Math.max(minSlopeNy, 0.35f)) {
                             i = i2;
                             this.pos = new Vector3(this.pos.getX(), this.pos.getY() + (magnitude / vector3Div.getY()), this.pos.getZ());
                             if (this.vel.getY() < 0.0f) {
                                 this.vel = new Vector3(this.vel.getX(), 0.0f, this.vel.getZ());
                             }
                             this.grounded = true;
+                            if (this.humanoid != null) {
+                                Instance.set$default(this.humanoid, "FloorMaterial", new EnumValue(PartData.INSTANCE.material(next)), false, 4, null);
+                            }
                         } else {
                             i = i2;
                             if (vector3Div.getY() < -0.55f) {
@@ -3926,6 +3934,9 @@ public final class PlaySession implements TreeListener {
                                 float y = fFloatValue - (vector3Component1.getY() - vector3Component2.getY());
                                 if (y <= 0.0f || y > 2.1f || this.vel.getY() > 1.0f || this.climbing) {
                                     this.pos = this.pos.plus(new Vector3(vector3Component3.getX(), 0.0f, vector3Component3.getZ()));
+                                    if (this.grounded && y > 2.1f && y <= 4.8f && !this.climbing && this.humanoid != null && !Intrinsics.areEqual(this.humanoid.get("AutoJumpEnabled"), Boolean.FALSE)) {
+                                        this.jumpRequested = true;
+                                    }
                                 } else {
                                     this.pos = new Vector3(this.pos.getX(), this.pos.getY() + y + 0.01f, this.pos.getZ());
                                 }

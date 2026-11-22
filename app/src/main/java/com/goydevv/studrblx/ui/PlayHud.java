@@ -90,19 +90,19 @@ public final class PlayHud extends FrameLayout {
         addView(this.layer, new FrameLayout.LayoutParams(-1, -1));
         int top = dp(8.0f);
         TopButton topButton = this.menuBtn;
-        FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(dp(40.0f), dp(40.0f));
+        FrameLayout.LayoutParams layoutParams = new FrameLayout.LayoutParams(dp(36.0f), dp(36.0f));
         layoutParams.leftMargin = dp(12.0f);
         layoutParams.topMargin = top;
         Unit unit = Unit.INSTANCE;
         addView(topButton, layoutParams);
         TopButton topButton2 = this.chatBtn;
-        FrameLayout.LayoutParams layoutParams2 = new FrameLayout.LayoutParams(dp(40.0f), dp(40.0f));
-        layoutParams2.leftMargin = dp(60.0f);
+        FrameLayout.LayoutParams layoutParams2 = new FrameLayout.LayoutParams(dp(36.0f), dp(36.0f));
+        layoutParams2.leftMargin = dp(54.0f);
         layoutParams2.topMargin = top;
         Unit unit2 = Unit.INSTANCE;
         addView(topButton2, layoutParams2);
         TopButton topButton3 = this.listBtn;
-        FrameLayout.LayoutParams layoutParams3 = new FrameLayout.LayoutParams(dp(40.0f), dp(40.0f), GravityCompat.END);
+        FrameLayout.LayoutParams layoutParams3 = new FrameLayout.LayoutParams(dp(36.0f), dp(36.0f), GravityCompat.END);
         layoutParams3.rightMargin = dp(12.0f);
         layoutParams3.topMargin = top;
         Unit unit3 = Unit.INSTANCE;
@@ -352,8 +352,13 @@ public final class PlayHud extends FrameLayout {
             float cy = getHeight() / 2.0f;
             float r = getWidth() / 2.0f;
             this.p.setStyle(Paint.Style.FILL);
-            this.p.setColor(isPressed() ? -1291845632 : -1946157056);
-            c.drawCircle(cx, cy, r, this.p);
+            this.p.setColor(isPressed() ? 0xE6282B33 : 0xCC121419);
+            c.drawCircle(cx, cy, r - (this.this$0.d * 0.6f), this.p);
+            this.p.setStyle(Paint.Style.STROKE);
+            this.p.setStrokeWidth(this.this$0.d * 1.0f);
+            this.p.setColor(0x33FFFFFF);
+            c.drawCircle(cx, cy, r - (this.this$0.d * 0.8f), this.p);
+            this.p.setStyle(Paint.Style.FILL);
             this.p.setColor(-1);
             switch (this.kind) {
                 case 0:
