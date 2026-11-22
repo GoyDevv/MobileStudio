@@ -870,10 +870,69 @@ public final class Autocomplete {
         To view partially-correct add '--show-bad-code' argument
     */
     private final com.goydevv.studrblx.ui.Autocomplete.T member(com.goydevv.studrblx.ui.Autocomplete.T r13, com.goydevv.studrblx.ui.Autocomplete.Step r14, com.goydevv.studrblx.core.Studio r15) {
-        /*
-            Method dump skipped, instruction units count: 612
-            To view this dump add '--comments-level debug' option
-        */
+        if (r13 == null || r14 == null) {
+            return null;
+        }
+        String name = r14.getName();
+        String arg = r14.getArg();
+        if (r13 instanceof T.EnumRoot) {
+            return new T.EnumType(name);
+        }
+        if (r13 instanceof T.DataStatic) {
+            String dn = ((T.DataStatic) r13).getName();
+            if (Intrinsics.areEqual(dn, "Instance") && Intrinsics.areEqual(name, "new") && arg != null && arg.length() > 0) {
+                return new T.Cls(arg);
+            }
+            return new T.Data(dn);
+        }
+        if (r13 instanceof T.Inst) {
+            Instance inst = ((T.Inst) r13).getI();
+            if (Intrinsics.areEqual(name, "Parent")) {
+                Instance p = inst.getParent();
+                return p != null ? new T.Inst(p) : new T.Cls("Instance");
+            }
+            if (r14.getCall()) {
+                if ((Intrinsics.areEqual(name, "GetService") || Intrinsics.areEqual(name, "FindService")) && arg != null) {
+                    Instance svc = r15.getModel().findService(arg);
+                    return svc != null ? new T.Inst(svc) : new T.Cls(arg);
+                }
+                if ((Intrinsics.areEqual(name, "FindFirstChild") || Intrinsics.areEqual(name, "WaitForChild") || Intrinsics.areEqual(name, "FindFirstDescendant")) && arg != null) {
+                    Instance ch = Instance.findFirstChild$default(inst, arg, false, 2, null);
+                    return ch != null ? new T.Inst(ch) : new T.Cls("Instance");
+                }
+            } else {
+                Instance ch = Instance.findFirstChild$default(inst, name, false, 2, null);
+                if (ch != null) {
+                    return new T.Inst(ch);
+                }
+            }
+        }
+        if (r14.getCall()) {
+            String ret = methodReturns.get(name);
+            if (ret != null) {
+                if (Intrinsics.areEqual(ret, "@self")) {
+                    return r13;
+                }
+                if (Intrinsics.areEqual(ret, "@arg") && arg != null && arg.length() > 0) {
+                    return new T.Cls(arg);
+                }
+                if (StringsKt.startsWith(ret, "#", false)) {
+                    return new T.Data(ret.substring(1));
+                }
+                return new T.Cls(ret);
+            }
+            if (Intrinsics.areEqual(name, "GetService") && arg != null && arg.length() > 0) {
+                Instance svc = r15.getModel().findService(arg);
+                return svc != null ? new T.Inst(svc) : new T.Cls(arg);
+            }
+        }
+        String pt = propTypes.get(name);
+        if (pt != null) {
+            if (StringsKt.startsWith(pt, "#", false)) {
+                return new T.Data(pt.substring(1));
+            }
+            return new T.Cls(pt);
+        }
         return null;
     }
 
@@ -1495,11 +1554,54 @@ public final class Autocomplete {
         To view partially-correct add '--show-bad-code' argument
     */
     private final com.goydevv.studrblx.ui.Autocomplete.Result completeString(com.goydevv.studrblx.core.Studio r28, com.goydevv.studrblx.model.Instance r29, java.lang.String r30, int r31, int r32) {
-        /*
-            Method dump skipped, instruction units count: 1180
-            To view this dump add '--comments-level debug' option
-        */
-        return null;
+        if (r32 < 0 || r31 < r32 + 1 || r31 > r30.length()) {
+            return null;
+        }
+        int start = r32 + 1;
+        String prefix = r30.substring(start, r31);
+        String prefLow = prefix.toLowerCase(Locale.ROOT);
+        int p = r32 - 1;
+        while (p >= 0 && Character.isWhitespace(r30.charAt(p))) {
+            p--;
+        }
+        if (p < 0 || r30.charAt(p) != '(') {
+            return null;
+        }
+        int endFn = p;
+        int startFn = endFn;
+        while (startFn > 0 && isId(r30.charAt(startFn - 1))) {
+            startFn--;
+        }
+        String fnName = r30.substring(startFn, endFn);
+        ArrayList<Item> items = new ArrayList<>();
+        if (Intrinsics.areEqual(fnName, "GetService") || Intrinsics.areEqual(fnName, "FindService")) {
+            for (Instance ch : r28.getModel().getChildren()) {
+                String cn = ch.getClassName();
+                if (cn.toLowerCase(Locale.ROOT).startsWith(prefLow)) {
+                    items.add(new Item(cn, Kind.SERVICE, "Service", cn));
+                }
+            }
+        } else if (Intrinsics.areEqual(fnName, "new") || Intrinsics.areEqual(fnName, "IsA") || Intrinsics.areEqual(fnName, "FindFirstChildOfClass") || Intrinsics.areEqual(fnName, "FindFirstChildWhichIsA") || Intrinsics.areEqual(fnName, "FindFirstAncestorOfClass") || Intrinsics.areEqual(fnName, "FindFirstAncestorWhichIsA")) {
+            for (String cn : classMembers.keySet()) {
+                if (cn.toLowerCase(Locale.ROOT).startsWith(prefLow)) {
+                    items.add(new Item(cn, Kind.CLASS, "Class", cn));
+                }
+            }
+        } else if (Intrinsics.areEqual(fnName, "FindFirstChild") || Intrinsics.areEqual(fnName, "WaitForChild")) {
+            Instance base = r29 != null ? r29.getParent() : r28.getModel().findService("Workspace");
+            if (base != null) {
+                for (Instance ch : base.getChildren()) {
+                    String n = ch.getName();
+                    if (n.toLowerCase(Locale.ROOT).startsWith(prefLow)) {
+                        items.add(new Item(n, Kind.CHILD, ch.getClassName(), n));
+                    }
+                }
+            }
+        }
+        if (items.isEmpty()) {
+            return null;
+        }
+        return new Result(start, r31, prefix, items);
     }
 
     static final Instance completeString$lambda$71$lambda$67(Instance it) {

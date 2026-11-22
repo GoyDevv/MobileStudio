@@ -2775,18 +2775,14 @@ public final class GuiOverlay extends View {
             if ((children instanceof Collection) && ((Collection) children).isEmpty()) {
                 c4 = c2;
             } else {
+                c4 = c2;
                 Iterator it2 = children.iterator();
-                while (true) {
-                    if (it2.hasNext()) {
-                        Instance instance = (Instance) it2.next();
-                        float[] cs2 = cs;
-                        if (((Intrinsics.areEqual(instance.getClassName(), "UIListLayout") || Intrinsics.areEqual(instance.getClassName(), "UIGridLayout") || Intrinsics.areEqual(instance.getClassName(), "UITableLayout") || Intrinsics.areEqual(instance.getClassName(), "UIPageLayout")) ? c3 : c2) != 0) {
-                            c4 = c3;
-                        } else {
-                            cs = cs2;
-                        }
-                    } else {
-                        c4 = c2;
+                while (it2.hasNext()) {
+                    Instance instance = (Instance) it2.next();
+                    String cn = instance.getClassName();
+                    if (Intrinsics.areEqual(cn, "UIListLayout") || Intrinsics.areEqual(cn, "UIGridLayout") || Intrinsics.areEqual(cn, "UITableLayout") || Intrinsics.areEqual(cn, "UIPageLayout")) {
+                        c4 = c3;
+                        break;
                     }
                 }
             }
@@ -2908,12 +2904,139 @@ public final class GuiOverlay extends View {
         Code decompiled incorrectly, please refer to instructions dump.
         To view partially-correct add '--show-bad-code' argument
     */
-    private final java.util.List<com.goydevv.studrblx.ui.GuiOverlay.Node> layoutChildren(com.goydevv.studrblx.model.Instance r54, android.graphics.RectF r55, float r56) {
-        /*
-            Method dump skipped, instruction units count: 1720
-            To view this dump add '--comments-level debug' option
-        */
-        return java.util.Collections.emptyList();
+    private final java.util.List<com.goydevv.studrblx.ui.GuiOverlay.Node> layoutChildren(com.goydevv.studrblx.model.Instance parent, android.graphics.RectF area, float scale) {
+        ArrayList<Instance> kids = new ArrayList<>();
+        Instance listLayout = null;
+        Instance gridLayout = null;
+        float childScale = scale;
+        for (Instance ch : parent.getChildren()) {
+            String cn = ch.getClassName();
+            if ("UIScale".equals(cn)) {
+                float sc = num(ch, "Scale", 1.0f);
+                if (sc > 0.01f) {
+                    childScale *= sc;
+                }
+            } else if ("UIListLayout".equals(cn)) {
+                listLayout = ch;
+            } else if ("UIGridLayout".equals(cn)) {
+                gridLayout = ch;
+            } else if (ch.isA("GuiObject") && !Intrinsics.areEqual(ch.get("Visible"), Boolean.FALSE)) {
+                kids.add(ch);
+            }
+        }
+        if (kids.isEmpty()) {
+            return java.util.Collections.emptyList();
+        }
+        final Instance activeLayout = listLayout != null ? listLayout : gridLayout;
+        if (activeLayout != null) {
+            final int sortOrder = enumOf(activeLayout, "SortOrder", 2);
+            java.util.Collections.sort(kids, new Comparator<Instance>() {
+                @Override
+                public int compare(Instance a, Instance b) {
+                    if (sortOrder == 0) {
+                        return a.getName().compareToIgnoreCase(b.getName());
+                    }
+                    int la = (int) num(a, "LayoutOrder", 0.0f);
+                    int lb = (int) num(b, "LayoutOrder", 0.0f);
+                    return Integer.compare(la, lb);
+                }
+            });
+        } else {
+            java.util.Collections.sort(kids, new Comparator<Instance>() {
+                @Override
+                public int compare(Instance a, Instance b) {
+                    int za = (int) num(a, "ZIndex", 1.0f);
+                    int zb = (int) num(b, "ZIndex", 1.0f);
+                    return Integer.compare(za, zb);
+                }
+            });
+        }
+
+        ArrayList<Node> out = new ArrayList<>(kids.size());
+        float aw = area.width();
+        float ah = area.height();
+
+        if (listLayout != null) {
+            boolean horiz = enumOf(listLayout, "FillDirection", 1) == 0;
+            int hAlign = enumOf(listLayout, "HorizontalAlignment", 1);
+            int vAlign = enumOf(listLayout, "VerticalAlignment", 1);
+            Object padObj = listLayout.get("Padding");
+            float padPx = 0.0f;
+            if (padObj instanceof UDim) {
+                UDim pu = (UDim) padObj;
+                padPx = (pu.getScale() * (horiz ? aw : ah)) + (pu.getOffset() * this.d * childScale);
+            }
+            float[][] sizes = new float[kids.size()][];
+            float totalPrimary = 0.0f;
+            for (int i = 0; i < kids.size(); i++) {
+                sizes[i] = sizeOf(kids.get(i), area, childScale);
+                totalPrimary += horiz ? sizes[i][0] : sizes[i][1];
+                if (i > 0) totalPrimary += padPx;
+            }
+            float cursor;
+            if (horiz) {
+                if (hAlign == 0) cursor = area.left + ((aw - totalPrimary) * 0.5f);
+                else if (hAlign == 2) cursor = area.right - totalPrimary;
+                else cursor = area.left;
+            } else {
+                if (vAlign == 0) cursor = area.top + ((ah - totalPrimary) * 0.5f);
+                else if (vAlign == 2) cursor = area.bottom - totalPrimary;
+                else cursor = area.top;
+            }
+            for (int i = 0; i < kids.size(); i++) {
+                Instance c = kids.get(i);
+                float cw = sizes[i][0];
+                float chh = sizes[i][1];
+                float x;
+                float y;
+                if (horiz) {
+                    x = cursor;
+                    if (vAlign == 0) y = area.top + ((ah - chh) * 0.5f);
+                    else if (vAlign == 2) y = area.bottom - chh;
+                    else y = area.top;
+                    cursor += cw + padPx;
+                } else {
+                    if (hAlign == 0) x = area.left + ((aw - cw) * 0.5f);
+                    else if (hAlign == 2) x = area.right - cw;
+                    else x = area.left;
+                    y = cursor;
+                    cursor += chh + padPx;
+                }
+                out.add(new Node(c, new RectF(x, y, x + cw, y + chh), childScale, area, true));
+            }
+            return out;
+        }
+
+        if (gridLayout != null) {
+            UDim2 cs = udim(gridLayout.get("CellSize"));
+            UDim2 cp = udim(gridLayout.get("CellPadding"));
+            float cw = Math.max(1.0f, (cs.getXs() * aw) + (cs.getXo() * this.d * childScale));
+            float chh = Math.max(1.0f, (cs.getYs() * ah) + (cs.getYo() * this.d * childScale));
+            float px = (cp.getXs() * aw) + (cp.getXo() * this.d * childScale);
+            float py = (cp.getYs() * ah) + (cp.getYo() * this.d * childScale);
+            int cols = Math.max(1, (int) Math.floor((aw + px) / Math.max(cw + px, 1.0f)));
+            for (int i = 0; i < kids.size(); i++) {
+                int col = i % cols;
+                int row = i / cols;
+                float x = area.left + (col * (cw + px));
+                float y = area.top + (row * (chh + py));
+                out.add(new Node(kids.get(i), new RectF(x, y, x + cw, y + chh), childScale, area, true));
+            }
+            return out;
+        }
+
+        for (Instance c : kids) {
+            float[] sz = sizeOf(c, area, childScale);
+            float cw = sz[0];
+            float chh = sz[1];
+            UDim2 pos = udim(c.get("Position"));
+            Object apObj = c.get("AnchorPoint");
+            Vector2 ap = apObj instanceof Vector2 ? (Vector2) apObj : new Vector2(0.0f, 0.0f);
+            float px = area.left + (pos.getXs() * aw) + (pos.getXo() * this.d * childScale) - (ap.getX() * cw);
+            float py = area.top + (pos.getYs() * ah) + (pos.getYo() * this.d * childScale) - (ap.getY() * chh);
+            out.add(new Node(c, new RectF(px, py, px + cw, py + chh), childScale, area, false));
+        }
+        return out;
     }
 
     private final void drawChildren(Canvas canvas, Instance parent, RectF area, float scale, RectF clip) {

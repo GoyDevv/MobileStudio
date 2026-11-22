@@ -462,12 +462,28 @@ public final class LuaTypes {
         Code decompiled incorrectly, please refer to instructions dump.
         To view partially-correct add '--show-bad-code' argument
     */
-    static final org.luaj.vm2.LuaValue _init_$lambda$17(java.lang.Object r3, java.lang.String r4) {
-        /*
-            Method dump skipped, instruction units count: 490
-            To view this dump add '--comments-level debug' option
-        */
-        return org.luaj.vm2.LuaValue.NIL;
+    static final org.luaj.vm2.LuaValue _init_$lambda$17(java.lang.Object o, java.lang.String k) {
+        Vector3 v = (Vector3) o;
+        if (k == null) return LuaValue.NIL;
+        switch (k) {
+            case "X": case "x": return INSTANCE.n(v.getX());
+            case "Y": case "y": return INSTANCE.n(v.getY());
+            case "Z": case "z": return INSTANCE.n(v.getZ());
+            case "Magnitude": case "magnitude": return INSTANCE.n(v.getMagnitude());
+            case "Unit": case "unit": return INSTANCE.wrap(v.getUnit());
+            case "Dot": case "dot": return INSTANCE.method(new Function1<Varargs, Varargs>() { @Override public Varargs invoke(Varargs a) { return lambda$17$lambda$6(a); } });
+            case "Cross": case "cross": return INSTANCE.method(new Function1<Varargs, Varargs>() { @Override public Varargs invoke(Varargs a) { return lambda$17$lambda$7(a); } });
+            case "Lerp": case "lerp": return INSTANCE.method(new Function1<Varargs, Varargs>() { @Override public Varargs invoke(Varargs a) { return lambda$17$lambda$8(a); } });
+            case "Abs": return INSTANCE.method(new Function1<Varargs, Varargs>() { @Override public Varargs invoke(Varargs a) { return lambda$17$lambda$9(a); } });
+            case "Floor": return INSTANCE.method(new Function1<Varargs, Varargs>() { @Override public Varargs invoke(Varargs a) { return lambda$17$lambda$10(a); } });
+            case "Ceil": return INSTANCE.method(new Function1<Varargs, Varargs>() { @Override public Varargs invoke(Varargs a) { return lambda$17$lambda$11(a); } });
+            case "Sign": return INSTANCE.method(new Function1<Varargs, Varargs>() { @Override public Varargs invoke(Varargs a) { return lambda$17$lambda$12(a); } });
+            case "Min": return INSTANCE.method(new Function1<Varargs, Varargs>() { @Override public Varargs invoke(Varargs a) { return lambda$17$lambda$13(a); } });
+            case "Max": return INSTANCE.method(new Function1<Varargs, Varargs>() { @Override public Varargs invoke(Varargs a) { return lambda$17$lambda$14(a); } });
+            case "Angle": return INSTANCE.method(new Function1<Varargs, Varargs>() { @Override public Varargs invoke(Varargs a) { return lambda$17$lambda$15(a); } });
+            case "FuzzyEq": return INSTANCE.method(new Function1<Varargs, Varargs>() { @Override public Varargs invoke(Varargs a) { return lambda$17$lambda$16(a); } });
+            default: return LuaValue.NIL;
+        }
     }
 
     static final Varargs lambda$17$lambda$6(Varargs a) {
@@ -761,12 +777,18 @@ public final class LuaTypes {
         Code decompiled incorrectly, please refer to instructions dump.
         To view partially-correct add '--show-bad-code' argument
     */
-    static final org.luaj.vm2.LuaValue _init_$lambda$26(java.lang.Object r3, java.lang.String r4) {
-        /*
-            Method dump skipped, instruction units count: 218
-            To view this dump add '--comments-level debug' option
-        */
-        return org.luaj.vm2.LuaValue.NIL;
+    static final org.luaj.vm2.LuaValue _init_$lambda$26(java.lang.Object o, java.lang.String k) {
+        Vector2 v = (Vector2) o;
+        if (k == null) return LuaValue.NIL;
+        switch (k) {
+            case "X": case "x": return INSTANCE.n(v.getX());
+            case "Y": case "y": return INSTANCE.n(v.getY());
+            case "Magnitude": case "magnitude": return INSTANCE.n(v.getMagnitude());
+            case "Unit": case "unit": return INSTANCE.wrap(v.getUnit());
+            case "Dot": case "dot": return INSTANCE.method(new Function1<Varargs, Varargs>() { @Override public Varargs invoke(Varargs a) { return lambda$26$lambda$24(a); } });
+            case "Lerp": case "lerp": return INSTANCE.method(new Function1<Varargs, Varargs>() { @Override public Varargs invoke(Varargs a) { return lambda$26$lambda$25(a); } });
+            default: return LuaValue.NIL;
+        }
     }
 
     static final Varargs lambda$26$lambda$24(Varargs a) {
@@ -1186,12 +1208,33 @@ public final class LuaTypes {
         Code decompiled incorrectly, please refer to instructions dump.
         To view partially-correct add '--show-bad-code' argument
     */
-    static final org.luaj.vm2.LuaValue _init_$lambda$47(java.lang.Object r6, java.lang.String r7) {
-        /*
-            Method dump skipped, instruction units count: 898
-            To view this dump add '--comments-level debug' option
-        */
-        return org.luaj.vm2.LuaValue.NIL;
+    static final org.luaj.vm2.LuaValue _init_$lambda$47(java.lang.Object o, java.lang.String k) {
+        CFrame cf = (CFrame) o;
+        if (k == null) return LuaValue.NIL;
+        switch (k) {
+            case "Position": case "p": return INSTANCE.wrap(cf.getPosition());
+            case "X": case "x": return INSTANCE.n(cf.getX());
+            case "Y": case "y": return INSTANCE.n(cf.getY());
+            case "Z": case "z": return INSTANCE.n(cf.getZ());
+            case "LookVector": case "lookVector": return INSTANCE.wrap(cf.getLookVector());
+            case "RightVector": case "rightVector": case "XVector": return INSTANCE.wrap(cf.getRightVector());
+            case "UpVector": case "upVector": case "YVector": return INSTANCE.wrap(cf.getUpVector());
+            case "ZVector": return INSTANCE.wrap(cf.getBackVector());
+            case "Rotation": return INSTANCE.wrap(cf.rotationOnly());
+            case "Inverse": case "inverse": return INSTANCE.method(new Function1<Varargs, Varargs>() { @Override public Varargs invoke(Varargs a) { return INSTANCE.wrap(((CFrame) a.arg(1).touserdata()).inverse()); } });
+            case "Lerp": case "lerp": return INSTANCE.method(new Function1<Varargs, Varargs>() { @Override public Varargs invoke(Varargs a) { return lambda$47$lambda$34(a); } });
+            case "ToWorldSpace": case "toWorldSpace": return INSTANCE.method(new Function1<Varargs, Varargs>() { @Override public Varargs invoke(Varargs a) { return lambda$47$lambda$35(a); } });
+            case "ToObjectSpace": case "toObjectSpace": return INSTANCE.method(new Function1<Varargs, Varargs>() { @Override public Varargs invoke(Varargs a) { return lambda$47$lambda$36(a); } });
+            case "PointToWorldSpace": case "pointToWorldSpace": return INSTANCE.method(new Function1<Varargs, Varargs>() { @Override public Varargs invoke(Varargs a) { return lambda$47$lambda$37(a); } });
+            case "PointToObjectSpace": case "pointToObjectSpace": return INSTANCE.method(new Function1<Varargs, Varargs>() { @Override public Varargs invoke(Varargs a) { return lambda$47$lambda$38(a); } });
+            case "VectorToWorldSpace": case "vectorToWorldSpace": return INSTANCE.method(new Function1<Varargs, Varargs>() { @Override public Varargs invoke(Varargs a) { return lambda$47$lambda$39(a); } });
+            case "VectorToObjectSpace": case "vectorToObjectSpace": return INSTANCE.method(new Function1<Varargs, Varargs>() { @Override public Varargs invoke(Varargs a) { return lambda$47$lambda$40(a); } });
+            case "GetComponents": case "components": return INSTANCE.method(new Function1<Varargs, Varargs>() { @Override public Varargs invoke(Varargs a) { return lambda$47$lambda$41(a); } });
+            case "ToEulerAnglesXYZ": case "toEulerAnglesXYZ": return INSTANCE.method(new Function1<Varargs, Varargs>() { @Override public Varargs invoke(Varargs a) { return lambda$47$lambda$42(a); } });
+            case "ToEulerAnglesYXZ": case "toEulerAnglesYXZ": case "ToOrientation": case "toOrientation": return INSTANCE.method(new Function1<Varargs, Varargs>() { @Override public Varargs invoke(Varargs a) { return lambda$47$lambda$44(a); } });
+            case "ToAxisAngle": case "toAxisAngle": return INSTANCE.method(new Function1<Varargs, Varargs>() { @Override public Varargs invoke(Varargs a) { return lambda$47$lambda$46(a); } });
+            default: return LuaValue.NIL;
+        }
     }
 
     static final Varargs lambda$47$lambda$33(Varargs a) {
@@ -1593,12 +1636,18 @@ public final class LuaTypes {
         Code decompiled incorrectly, please refer to instructions dump.
         To view partially-correct add '--show-bad-code' argument
     */
-    static final org.luaj.vm2.LuaValue _init_$lambda$55(java.lang.Object r3, java.lang.String r4) {
-        /*
-            Method dump skipped, instruction units count: 214
-            To view this dump add '--comments-level debug' option
-        */
-        return org.luaj.vm2.LuaValue.NIL;
+    static final org.luaj.vm2.LuaValue _init_$lambda$55(java.lang.Object o, java.lang.String k) {
+        Color3 c = (Color3) o;
+        if (k == null) return LuaValue.NIL;
+        switch (k) {
+            case "R": case "r": return INSTANCE.n(c.getR());
+            case "G": case "g": return INSTANCE.n(c.getG());
+            case "B": case "b": return INSTANCE.n(c.getB());
+            case "Lerp": case "lerp": return INSTANCE.method(new Function1<Varargs, Varargs>() { @Override public Varargs invoke(Varargs a) { return lambda$55$lambda$52(a); } });
+            case "ToHSV": case "toHSV": return INSTANCE.method(new Function1<Varargs, Varargs>() { @Override public Varargs invoke(Varargs a) { return lambda$55$lambda$53(a); } });
+            case "ToHex": case "toHex": return INSTANCE.method(new Function1<Varargs, Varargs>() { @Override public Varargs invoke(Varargs a) { return lambda$55$lambda$54(a); } });
+            default: return LuaValue.NIL;
+        }
     }
 
     static final Varargs lambda$55$lambda$52(Varargs a) {

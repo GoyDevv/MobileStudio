@@ -1644,25 +1644,12 @@ public final class Avatar {
                         next6 = it6.next();
                         i3 = i9;
                         Instance instance4 = (Instance) next6;
-                        if (Intrinsics.areEqual(instance4.getName(), "Head")) {
-                            list2 = listR15PartsIn;
-                            if (!Intrinsics.areEqual(instance4.getClassName(), "MeshPart") || PartData.INSTANCE.meshContent(instance4) != null) {
-                                i6 = i3;
-                            }
-                            if (i6 == 0) {
-                                i9 = i3;
-                                listR15PartsIn = list2;
-                            }
-                        } else {
-                            list2 = listR15PartsIn;
-                        }
-                        i6 = z8 ? 1 : 0;
-                        if (i6 == 0) {
-                            i9 = i3;
-                            listR15PartsIn = list2;
-                        } else {
+                        list2 = listR15PartsIn;
+                        if (Intrinsics.areEqual(instance4.getName(), "Head") && (!Intrinsics.areEqual(instance4.getClassName(), "MeshPart") || PartData.INSTANCE.meshContent(instance4) != null)) {
                             break;
                         }
+                        i9 = i3;
+                        listR15PartsIn = list2;
                     } else {
                         i3 = i9;
                         next6 = null;
@@ -1968,20 +1955,13 @@ public final class Avatar {
                                     tpl = next9;
                                     z4 = false;
                                 } else {
+                                    tpl = next9;
+                                    z4 = false;
                                     Iterator it18 = atts3.iterator();
-                                    while (true) {
-                                        if (it18.hasNext()) {
-                                            Iterator it19 = it18;
-                                            tpl = next9;
-                                            if (Intrinsics.areEqual(((Pair) it18.next()).getFirst(), pair2.getFirst())) {
-                                                z4 = true;
-                                            } else {
-                                                it18 = it19;
-                                                next9 = tpl;
-                                            }
-                                        } else {
-                                            tpl = next9;
-                                            z4 = false;
+                                    while (it18.hasNext()) {
+                                        if (Intrinsics.areEqual(((Pair) it18.next()).getFirst(), pair2.getFirst())) {
+                                            z4 = true;
+                                            break;
                                         }
                                     }
                                 }

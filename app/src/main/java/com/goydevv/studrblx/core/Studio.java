@@ -119,6 +119,10 @@ public final class Studio {
     private final ArrayList<Instance> selection;
     private volatile boolean shadowsEnabled;
     private final ArrayList<Instance> soundsCache;
+    private final ArrayList<Instance> lightsCache;
+    private final ArrayList<Instance> beamsCache;
+    private final ArrayList<Instance> trailsCache;
+    private final ArrayList<Instance> particlesCache;
     private final ArrayList<Instance> surfaceGuisCache;
     private Function1<? super String, Unit> toastHandler;
     private Tool tool;
@@ -207,6 +211,10 @@ public final class Studio {
         this.clothingCache = new ArrayList<>();
         this.adornCache = new ArrayList<>();
         this.soundsCache = new ArrayList<>();
+        this.lightsCache = new ArrayList<>();
+        this.beamsCache = new ArrayList<>();
+        this.trailsCache = new ArrayList<>();
+        this.particlesCache = new ArrayList<>();
         this.ADORNMENTS = SetsKt.setOf(new String[]{"SelectionBox", "Highlight", "BoxHandleAdornment", "SelectionSphere", "Handles", "ArcHandles"});
         this.shadowsEnabled = true;
         this.glJobs = new ConcurrentLinkedQueue<>();
@@ -714,6 +722,10 @@ public final class Studio {
             this.clothingCache.clear();
             this.adornCache.clear();
             this.soundsCache.clear();
+            this.lightsCache.clear();
+            this.beamsCache.clear();
+            this.trailsCache.clear();
+            this.particlesCache.clear();
             Instance ws = getModel().findService("Workspace");
             if (ws != null && (iterableDescendants$default6 = Instance.descendants$default(ws, null, 1, null)) != null) {
                 for (Instance instance : iterableDescendants$default6) {
@@ -736,6 +748,14 @@ public final class Studio {
                             this.adornCache.add(instance);
                         } else if (Intrinsics.areEqual(instance.getClassName(), "Sound")) {
                             this.soundsCache.add(instance);
+                        } else if (Intrinsics.areEqual(instance.getClassName(), "PointLight") || Intrinsics.areEqual(instance.getClassName(), "SpotLight") || Intrinsics.areEqual(instance.getClassName(), "SurfaceLight")) {
+                            this.lightsCache.add(instance);
+                        } else if (Intrinsics.areEqual(instance.getClassName(), "Beam")) {
+                            this.beamsCache.add(instance);
+                        } else if (Intrinsics.areEqual(instance.getClassName(), "Trail")) {
+                            this.trailsCache.add(instance);
+                        } else if (Intrinsics.areEqual(instance.getClassName(), "Fire") || Intrinsics.areEqual(instance.getClassName(), "Smoke") || Intrinsics.areEqual(instance.getClassName(), "Sparkles") || Intrinsics.areEqual(instance.getClassName(), "ParticleEmitter")) {
+                            this.particlesCache.add(instance);
                         } else if (Intrinsics.areEqual(instance.getClassName(), "RopeConstraint") || Intrinsics.areEqual(instance.getClassName(), "RodConstraint") || Intrinsics.areEqual(instance.getClassName(), "SpringConstraint")) {
                             this.constraintsCache.add(instance);
                         }
@@ -821,6 +841,26 @@ public final class Studio {
     public final List<Instance> audibleSounds() {
         renderParts();
         return this.soundsCache;
+    }
+
+    public final List<Instance> renderLights() {
+        renderParts();
+        return this.lightsCache;
+    }
+
+    public final List<Instance> renderBeams() {
+        renderParts();
+        return this.beamsCache;
+    }
+
+    public final List<Instance> renderTrails() {
+        renderParts();
+        return this.trailsCache;
+    }
+
+    public final List<Instance> renderParticles() {
+        renderParts();
+        return this.particlesCache;
     }
 
     public final void invalidateRenderLists() {
@@ -1397,8 +1437,31 @@ public final class Studio {
                             }
                         }
                     }
+                    boolean isLightOnly = false;
+                    if (!isMatOnly) {
+                        String rcn = next.getClassName();
+                        if ("Sky".equals(rcn) || "Atmosphere".equals(rcn) || "Clouds".equals(rcn) || "ColorCorrectionEffect".equals(rcn) || "BloomEffect".equals(rcn) || "SunRaysEffect".equals(rcn) || "BlurEffect".equals(rcn) || "DepthOfFieldEffect".equals(rcn) || "Lighting".equals(rcn)) {
+                            isLightOnly = true;
+                        } else if (("Folder".equals(rcn) || "Model".equals(rcn)) && !next.getChildren().isEmpty()) {
+                            boolean hasLightChild = false;
+                            boolean hasPartChild = false;
+                            for (Instance dInst : Instance.descendants$default(next, null, 1, null)) {
+                                String dcn = dInst.getClassName();
+                                if (dInst.isA("BasePart")) {
+                                    hasPartChild = true;
+                                    break;
+                                }
+                                if ("Sky".equals(dcn) || "Atmosphere".equals(dcn) || "ColorCorrectionEffect".equals(dcn) || "BloomEffect".equals(dcn) || "SunRaysEffect".equals(dcn)) {
+                                    hasLightChild = true;
+                                }
+                            }
+                            isLightOnly = hasLightChild && !hasPartChild;
+                        }
+                    }
                     if (isMatOnly) {
                         service = getModel().getService("MaterialService");
+                    } else if (isLightOnly) {
+                        service = getModel().getService("Lighting");
                     } else if (next.isA("LayerCollector") && !Intrinsics.areEqual(next.getClassName(), "BillboardGui") && !Intrinsics.areEqual(next.getClassName(), "SurfaceGui")) {
                         service = getModel().getService("StarterGui");
                     } else if (next.isA("GuiObject")) {

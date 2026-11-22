@@ -537,7 +537,683 @@ public final class RobloxGlobals {
             }
         }));
         utf8.set("charpattern", "[\u0000-\u007fÂ-ý][\u0080-¿]*");
+        utf8.set("codepoint", LuaTypesKt.fnv(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                Varargs a = (Varargs) obj;
+                String s = a.arg(1).checkjstring();
+                int len = s.length();
+                int i = a.arg(2).optint(1);
+                int j = a.arg(3).optint(i);
+                if (i < 0) i = len + i + 1;
+                if (j < 0) j = len + j + 1;
+                if (i < 1) i = 1;
+                if (j > len) j = len;
+                if (i > j) return LuaValue.NONE;
+                ArrayList<LuaValue> cps = new ArrayList<>();
+                int idx = i - 1;
+                while (idx < j) {
+                    int cp = s.codePointAt(idx);
+                    cps.add(LuaValue.valueOf(cp));
+                    idx += Character.charCount(cp);
+                }
+                return LuaValue.varargsOf(cps.toArray(new LuaValue[0]));
+            }
+        }));
+        utf8.set("offset", LuaTypesKt.fnv(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                Varargs a = (Varargs) obj;
+                String s = a.arg(1).checkjstring();
+                int n = a.arg(2).checkint();
+                int pos = a.arg(3).optint(n >= 0 ? 1 : s.length() + 1);
+                if (pos < 0) pos = s.length() + pos + 1;
+                int target = pos + (n > 0 ? n - 1 : n);
+                if (target < 1 || target > s.length() + 1) return LuaValue.NIL;
+                return LuaValue.valueOf(target);
+            }
+        }));
         g.set("utf8", utf8);
+        math.set("isfinite", LuaTypesKt.fn1(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                double d = ((LuaValue) obj).checkdouble();
+                return LuaValue.valueOf(!Double.isNaN(d) && !Double.isInfinite(d));
+            }
+        }));
+        math.set("isnan", LuaTypesKt.fn1(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                return LuaValue.valueOf(Double.isNaN(((LuaValue) obj).checkdouble()));
+            }
+        }));
+        math.set("isinf", LuaTypesKt.fn1(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                return LuaValue.valueOf(Double.isInfinite(((LuaValue) obj).checkdouble()));
+            }
+        }));
+        installBuffer(g);
+        installDateTime(g);
+        installDebugAndOs(g, table, string);
+    }
+
+    private static final java.nio.ByteBuffer checkBuf(LuaValue v) {
+        Object ud = v.isuserdata() ? v.touserdata() : null;
+        if (ud instanceof java.nio.ByteBuffer) {
+            return (java.nio.ByteBuffer) ud;
+        }
+        throw new org.luaj.vm2.LuaError("buffer expected, got " + LuaTypes.INSTANCE.typeOf(v));
+    }
+
+    private final void installBuffer(Globals g) {
+        LuaTable buf = new LuaTable();
+        buf.set("create", LuaTypesKt.fn1(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                int sz = ((LuaValue) obj).checkint();
+                if (sz < 0) throw new org.luaj.vm2.LuaError("buffer size cannot be negative");
+                java.nio.ByteBuffer bb = java.nio.ByteBuffer.allocate(sz).order(java.nio.ByteOrder.LITTLE_ENDIAN);
+                return new org.luaj.vm2.LuaUserdata(bb);
+            }
+        }));
+        buf.set("fromstring", LuaTypesKt.fn1(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                org.luaj.vm2.LuaString ls = ((LuaValue) obj).checkstring();
+                byte[] arr = new byte[ls.m_length];
+                System.arraycopy(ls.m_bytes, ls.m_offset, arr, 0, ls.m_length);
+                java.nio.ByteBuffer bb = java.nio.ByteBuffer.wrap(arr).order(java.nio.ByteOrder.LITTLE_ENDIAN);
+                return new org.luaj.vm2.LuaUserdata(bb);
+            }
+        }));
+        buf.set("tostring", LuaTypesKt.fn1(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                java.nio.ByteBuffer bb = checkBuf((LuaValue) obj);
+                return org.luaj.vm2.LuaString.valueOf(bb.array(), 0, bb.capacity());
+            }
+        }));
+        buf.set("len", LuaTypesKt.fn1(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                return LuaValue.valueOf(checkBuf((LuaValue) obj).capacity());
+            }
+        }));
+        buf.set("readi8", LuaTypesKt.fnv(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                Varargs a = (Varargs) obj;
+                return LuaValue.valueOf((int) checkBuf(a.arg(1)).get(a.arg(2).checkint()));
+            }
+        }));
+        buf.set("readu8", LuaTypesKt.fnv(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                Varargs a = (Varargs) obj;
+                return LuaValue.valueOf(checkBuf(a.arg(1)).get(a.arg(2).checkint()) & 0xFF);
+            }
+        }));
+        buf.set("readi16", LuaTypesKt.fnv(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                Varargs a = (Varargs) obj;
+                return LuaValue.valueOf((int) checkBuf(a.arg(1)).getShort(a.arg(2).checkint()));
+            }
+        }));
+        buf.set("readu16", LuaTypesKt.fnv(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                Varargs a = (Varargs) obj;
+                return LuaValue.valueOf(checkBuf(a.arg(1)).getShort(a.arg(2).checkint()) & 0xFFFF);
+            }
+        }));
+        buf.set("readi32", LuaTypesKt.fnv(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                Varargs a = (Varargs) obj;
+                return LuaValue.valueOf(checkBuf(a.arg(1)).getInt(a.arg(2).checkint()));
+            }
+        }));
+        buf.set("readu32", LuaTypesKt.fnv(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                Varargs a = (Varargs) obj;
+                return LuaValue.valueOf(((long) checkBuf(a.arg(1)).getInt(a.arg(2).checkint())) & 0xFFFFFFFFL);
+            }
+        }));
+        buf.set("readf32", LuaTypesKt.fnv(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                Varargs a = (Varargs) obj;
+                return LuaValue.valueOf((double) checkBuf(a.arg(1)).getFloat(a.arg(2).checkint()));
+            }
+        }));
+        buf.set("readf64", LuaTypesKt.fnv(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                Varargs a = (Varargs) obj;
+                return LuaValue.valueOf(checkBuf(a.arg(1)).getDouble(a.arg(2).checkint()));
+            }
+        }));
+        buf.set("writei8", LuaTypesKt.fnv(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                Varargs a = (Varargs) obj;
+                checkBuf(a.arg(1)).put(a.arg(2).checkint(), (byte) a.arg(3).checkint());
+                return LuaValue.NONE;
+            }
+        }));
+        buf.set("writeu8", LuaTypesKt.fnv(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                Varargs a = (Varargs) obj;
+                checkBuf(a.arg(1)).put(a.arg(2).checkint(), (byte) (a.arg(3).checkint() & 0xFF));
+                return LuaValue.NONE;
+            }
+        }));
+        buf.set("writei16", LuaTypesKt.fnv(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                Varargs a = (Varargs) obj;
+                checkBuf(a.arg(1)).putShort(a.arg(2).checkint(), (short) a.arg(3).checkint());
+                return LuaValue.NONE;
+            }
+        }));
+        buf.set("writeu16", LuaTypesKt.fnv(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                Varargs a = (Varargs) obj;
+                checkBuf(a.arg(1)).putShort(a.arg(2).checkint(), (short) (a.arg(3).checkint() & 0xFFFF));
+                return LuaValue.NONE;
+            }
+        }));
+        buf.set("writei32", LuaTypesKt.fnv(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                Varargs a = (Varargs) obj;
+                checkBuf(a.arg(1)).putInt(a.arg(2).checkint(), a.arg(3).checkint());
+                return LuaValue.NONE;
+            }
+        }));
+        buf.set("writeu32", LuaTypesKt.fnv(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                Varargs a = (Varargs) obj;
+                checkBuf(a.arg(1)).putInt(a.arg(2).checkint(), (int) a.arg(3).checklong());
+                return LuaValue.NONE;
+            }
+        }));
+        buf.set("writef32", LuaTypesKt.fnv(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                Varargs a = (Varargs) obj;
+                checkBuf(a.arg(1)).putFloat(a.arg(2).checkint(), (float) a.arg(3).checkdouble());
+                return LuaValue.NONE;
+            }
+        }));
+        buf.set("writef64", LuaTypesKt.fnv(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                Varargs a = (Varargs) obj;
+                checkBuf(a.arg(1)).putDouble(a.arg(2).checkint(), a.arg(3).checkdouble());
+                return LuaValue.NONE;
+            }
+        }));
+        buf.set("readstring", LuaTypesKt.fnv(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                Varargs a = (Varargs) obj;
+                java.nio.ByteBuffer bb = checkBuf(a.arg(1));
+                int off = a.arg(2).checkint();
+                int cnt = a.arg(3).checkint();
+                return org.luaj.vm2.LuaString.valueOf(bb.array(), off, cnt);
+            }
+        }));
+        buf.set("writestring", LuaTypesKt.fnv(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                Varargs a = (Varargs) obj;
+                java.nio.ByteBuffer bb = checkBuf(a.arg(1));
+                int off = a.arg(2).checkint();
+                org.luaj.vm2.LuaString ls = a.arg(3).checkstring();
+                int cnt = a.arg(4).optint(ls.m_length);
+                System.arraycopy(ls.m_bytes, ls.m_offset, bb.array(), off, Math.min(cnt, ls.m_length));
+                return LuaValue.NONE;
+            }
+        }));
+        buf.set("copy", LuaTypesKt.fnv(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                Varargs a = (Varargs) obj;
+                java.nio.ByteBuffer dst = checkBuf(a.arg(1));
+                int dstOff = a.arg(2).checkint();
+                java.nio.ByteBuffer src = checkBuf(a.arg(3));
+                int srcOff = a.arg(4).optint(0);
+                int cnt = a.arg(5).optint(src.capacity() - srcOff);
+                System.arraycopy(src.array(), srcOff, dst.array(), dstOff, cnt);
+                return LuaValue.NONE;
+            }
+        }));
+        buf.set("fill", LuaTypesKt.fnv(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                Varargs a = (Varargs) obj;
+                java.nio.ByteBuffer bb = checkBuf(a.arg(1));
+                int off = a.arg(2).checkint();
+                byte val = (byte) (a.arg(3).checkint() & 0xFF);
+                int cnt = a.arg(4).optint(bb.capacity() - off);
+                java.util.Arrays.fill(bb.array(), off, off + cnt, val);
+                return LuaValue.NONE;
+            }
+        }));
+        buf.set("readbits", LuaTypesKt.fnv(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                Varargs a = (Varargs) obj;
+                byte[] arr = checkBuf(a.arg(1)).array();
+                int bitOff = a.arg(2).checkint();
+                int bitCnt = a.arg(3).checkint();
+                long res = 0L;
+                for (int i = 0; i < bitCnt; i++) {
+                    int bIdx = (bitOff + i) >>> 3;
+                    int bBit = (bitOff + i) & 7;
+                    if (((arr[bIdx] >>> bBit) & 1) != 0) {
+                        res |= (1L << i);
+                    }
+                }
+                return LuaValue.valueOf(res);
+            }
+        }));
+        buf.set("writebits", LuaTypesKt.fnv(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                Varargs a = (Varargs) obj;
+                byte[] arr = checkBuf(a.arg(1)).array();
+                int bitOff = a.arg(2).checkint();
+                int bitCnt = a.arg(3).checkint();
+                long val = a.arg(4).checklong();
+                for (int i = 0; i < bitCnt; i++) {
+                    int bIdx = (bitOff + i) >>> 3;
+                    int bBit = (bitOff + i) & 7;
+                    if (((val >>> i) & 1L) != 0L) {
+                        arr[bIdx] = (byte) (arr[bIdx] | (1 << bBit));
+                    } else {
+                        arr[bIdx] = (byte) (arr[bIdx] & ~(1 << bBit));
+                    }
+                }
+                return LuaValue.NONE;
+            }
+        }));
+        g.set("buffer", buf);
+    }
+
+    private static final LuaTable makeDateTime(final long ms) {
+        LuaTable t = new LuaTable();
+        t.set("UnixTimestamp", LuaValue.valueOf(ms / 1000L));
+        t.set("UnixTimestampMillis", LuaValue.valueOf(ms));
+        t.set("ToIsoDate", LuaTypesKt.fnv(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                java.text.SimpleDateFormat sdf = new java.text.SimpleDateFormat("yyyy-MM-dd'T'HH:mm:ss'Z'", java.util.Locale.US);
+                sdf.setTimeZone(java.util.TimeZone.getTimeZone("UTC"));
+                return LuaValue.valueOf(sdf.format(new java.util.Date(ms)));
+            }
+        }));
+        t.set("ToUniversalTime", LuaTypesKt.fnv(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                java.util.Calendar cal = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"));
+                cal.setTimeInMillis(ms);
+                LuaTable r = new LuaTable();
+                r.set("Year", cal.get(java.util.Calendar.YEAR));
+                r.set("Month", cal.get(java.util.Calendar.MONTH) + 1);
+                r.set("Day", cal.get(java.util.Calendar.DAY_OF_MONTH));
+                r.set("Hour", cal.get(java.util.Calendar.HOUR_OF_DAY));
+                r.set("Minute", cal.get(java.util.Calendar.MINUTE));
+                r.set("Second", cal.get(java.util.Calendar.SECOND));
+                r.set("Millisecond", cal.get(java.util.Calendar.MILLISECOND));
+                return r;
+            }
+        }));
+        t.set("ToLocalTime", LuaTypesKt.fnv(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                java.util.Calendar cal = java.util.Calendar.getInstance();
+                cal.setTimeInMillis(ms);
+                LuaTable r = new LuaTable();
+                r.set("Year", cal.get(java.util.Calendar.YEAR));
+                r.set("Month", cal.get(java.util.Calendar.MONTH) + 1);
+                r.set("Day", cal.get(java.util.Calendar.DAY_OF_MONTH));
+                r.set("Hour", cal.get(java.util.Calendar.HOUR_OF_DAY));
+                r.set("Minute", cal.get(java.util.Calendar.MINUTE));
+                r.set("Second", cal.get(java.util.Calendar.SECOND));
+                r.set("Millisecond", cal.get(java.util.Calendar.MILLISECOND));
+                return r;
+            }
+        }));
+        return t;
+    }
+
+
+    private final void installDebugAndOs(Globals g, LuaValue table, LuaValue string) {
+        table.set("pack", LuaTypesKt.fnv(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                Varargs a = (Varargs) obj;
+                int n = a.narg();
+                LuaTable t = new LuaTable();
+                for (int i = 1; i <= n; i++) {
+                    t.set(i, a.arg(i));
+                }
+                t.set("n", n);
+                return t;
+            }
+        }));
+        LuaTable dbg = new LuaTable();
+        dbg.set("profilebegin", LuaTypesKt.fnv(new Function1() {
+            @Override
+            public final Object invoke(Object obj) { return LuaValue.NONE; }
+        }));
+        dbg.set("profileend", LuaTypesKt.fnv(new Function1() {
+            @Override
+            public final Object invoke(Object obj) { return LuaValue.NONE; }
+        }));
+        dbg.set("setmemorycategory", LuaTypesKt.fnv(new Function1() {
+            @Override
+            public final Object invoke(Object obj) { return LuaValue.NONE; }
+        }));
+        dbg.set("resetmemorycategory", LuaTypesKt.fnv(new Function1() {
+            @Override
+            public final Object invoke(Object obj) { return LuaValue.NONE; }
+        }));
+        dbg.set("traceback", LuaTypesKt.fnv(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                Varargs a = (Varargs) obj;
+                String msg = a.arg(1).isstring() ? a.arg(1).tojstring() : "";
+                return LuaValue.valueOf(msg.length() > 0 ? msg + "\nstack traceback:" : "stack traceback:");
+            }
+        }));
+        dbg.set("info", LuaTypesKt.fnv(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                Varargs a = (Varargs) obj;
+                LuaValue target = a.arg(1);
+                String opts = a.arg(2).optjstring("sln");
+                ArrayList<LuaValue> out = new ArrayList<>();
+                for (int i = 0; i < opts.length(); i++) {
+                    char ch = opts.charAt(i);
+                    if (ch == 's') out.add(LuaValue.valueOf("[Script]"));
+                    else if (ch == 'l') out.add(LuaValue.valueOf(1));
+                    else if (ch == 'n') out.add(LuaValue.valueOf(""));
+                    else if (ch == 'a') { out.add(LuaValue.valueOf(0)); out.add(LuaValue.TRUE); }
+                    else if (ch == 'f') out.add(target.isfunction() ? target : LuaValue.NIL);
+                }
+                return LuaValue.varargsOf(out.toArray(new LuaValue[0]));
+            }
+        }));
+        g.set("debug", dbg);
+
+        LuaValue osVal = g.get("os");
+        LuaTable osTbl = osVal.istable() ? osVal.checktable() : new LuaTable();
+        osTbl.set("clock", LuaTypesKt.fnv(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                return LuaValue.valueOf(((double) System.nanoTime()) / 1.0E9d);
+            }
+        }));
+        osTbl.set("difftime", LuaTypesKt.fnv(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                Varargs a = (Varargs) obj;
+                return LuaValue.valueOf(a.arg(1).checkdouble() - a.arg(2).checkdouble());
+            }
+        }));
+        osTbl.set("time", LuaTypesKt.fnv(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                Varargs a = (Varargs) obj;
+                if (a.arg(1).istable()) {
+                    LuaTable t = a.arg(1).checktable();
+                    java.util.Calendar cal = java.util.Calendar.getInstance(java.util.TimeZone.getTimeZone("UTC"));
+                    cal.set(java.util.Calendar.YEAR, t.get("year").optint(1970));
+                    cal.set(java.util.Calendar.MONTH, t.get("month").optint(1) - 1);
+                    cal.set(java.util.Calendar.DAY_OF_MONTH, t.get("day").optint(1));
+                    cal.set(java.util.Calendar.HOUR_OF_DAY, t.get("hour").optint(12));
+                    cal.set(java.util.Calendar.MINUTE, t.get("min").optint(0));
+                    cal.set(java.util.Calendar.SECOND, t.get("sec").optint(0));
+                    cal.set(java.util.Calendar.MILLISECOND, 0);
+                    return LuaValue.valueOf(cal.getTimeInMillis() / 1000L);
+                }
+                return LuaValue.valueOf(System.currentTimeMillis() / 1000L);
+            }
+        }));
+        osTbl.set("date", LuaTypesKt.fnv(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                Varargs a = (Varargs) obj;
+                String fmt = a.arg(1).optjstring("%c");
+                long ms = a.arg(2).isnumber() ? ((long) (a.arg(2).checkdouble() * 1000.0d)) : System.currentTimeMillis();
+                boolean utc = fmt.startsWith("!");
+                String f = utc ? fmt.substring(1) : fmt;
+                java.util.TimeZone tz = utc ? java.util.TimeZone.getTimeZone("UTC") : java.util.TimeZone.getDefault();
+                java.util.Calendar cal = java.util.Calendar.getInstance(tz);
+                cal.setTimeInMillis(ms);
+                if ("*t".equals(f)) {
+                    LuaTable r = new LuaTable();
+                    r.set("year", cal.get(java.util.Calendar.YEAR));
+                    r.set("month", cal.get(java.util.Calendar.MONTH) + 1);
+                    r.set("day", cal.get(java.util.Calendar.DAY_OF_MONTH));
+                    r.set("yday", cal.get(java.util.Calendar.DAY_OF_YEAR));
+                    r.set("wday", cal.get(java.util.Calendar.DAY_OF_WEEK));
+                    r.set("hour", cal.get(java.util.Calendar.HOUR_OF_DAY));
+                    r.set("min", cal.get(java.util.Calendar.MINUTE));
+                    r.set("sec", cal.get(java.util.Calendar.SECOND));
+                    r.set("isdst", LuaValue.valueOf(tz.inDaylightTime(new java.util.Date(ms))));
+                    return r;
+                }
+                StringBuilder sb = new StringBuilder();
+                for (int i = 0; i < f.length(); i++) {
+                    char c = f.charAt(i);
+                    if (c == '%' && i + 1 < f.length()) {
+                        char nc = f.charAt(++i);
+                        switch (nc) {
+                            case 'Y': sb.append(String.format(java.util.Locale.US, "%04d", cal.get(java.util.Calendar.YEAR))); break;
+                            case 'y': sb.append(String.format(java.util.Locale.US, "%02d", cal.get(java.util.Calendar.YEAR) % 100)); break;
+                            case 'm': sb.append(String.format(java.util.Locale.US, "%02d", cal.get(java.util.Calendar.MONTH) + 1)); break;
+                            case 'd': sb.append(String.format(java.util.Locale.US, "%02d", cal.get(java.util.Calendar.DAY_OF_MONTH))); break;
+                            case 'H': sb.append(String.format(java.util.Locale.US, "%02d", cal.get(java.util.Calendar.HOUR_OF_DAY))); break;
+                            case 'M': sb.append(String.format(java.util.Locale.US, "%02d", cal.get(java.util.Calendar.MINUTE))); break;
+                            case 'S': sb.append(String.format(java.util.Locale.US, "%02d", cal.get(java.util.Calendar.SECOND))); break;
+                            case 'j': sb.append(String.format(java.util.Locale.US, "%03d", cal.get(java.util.Calendar.DAY_OF_YEAR))); break;
+                            case '%': sb.append('%'); break;
+                            default: sb.append(new java.text.SimpleDateFormat("EEE MMM dd HH:mm:ss yyyy", java.util.Locale.US).format(new java.util.Date(ms))); break;
+                        }
+                    } else {
+                        sb.append(c);
+                    }
+                }
+                return LuaValue.valueOf(sb.toString());
+            }
+        }));
+        g.set("os", osTbl);
+
+        string.set("packsize", LuaTypesKt.fn1(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                String fmt = ((LuaValue) obj).checkjstring();
+                int sz = 0;
+                for (int i = 0; i < fmt.length(); i++) {
+                    char c = fmt.charAt(i);
+                    switch (c) {
+                        case '<': case '>': case '=': case ' ': break;
+                        case 'b': case 'B': case 'x': sz += 1; break;
+                        case 'h': case 'H': sz += 2; break;
+                        case 'i': case 'I': case 'l': case 'L': case 'f': sz += 4; break;
+                        case 'd': sz += 8; break;
+                        case 'c': {
+                            int num = 0;
+                            while (i + 1 < fmt.length() && Character.isDigit(fmt.charAt(i + 1))) {
+                                num = num * 10 + (fmt.charAt(++i) - '0');
+                            }
+                            sz += num;
+                            break;
+                        }
+                        default: break;
+                    }
+                }
+                return LuaValue.valueOf(sz);
+            }
+        }));
+        string.set("pack", LuaTypesKt.fnv(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                Varargs a = (Varargs) obj;
+                String fmt = a.arg(1).checkjstring();
+                java.io.ByteArrayOutputStream baos = new java.io.ByteArrayOutputStream();
+                java.nio.ByteOrder ord = java.nio.ByteOrder.LITTLE_ENDIAN;
+                int argIdx = 2;
+                byte[] tmp8 = new byte[8];
+                for (int i = 0; i < fmt.length(); i++) {
+                    char c = fmt.charAt(i);
+                    switch (c) {
+                        case '<': ord = java.nio.ByteOrder.LITTLE_ENDIAN; break;
+                        case '>': ord = java.nio.ByteOrder.BIG_ENDIAN; break;
+                        case '=': case ' ': break;
+                        case 'x': baos.write(0); break;
+                        case 'b': case 'B': baos.write(a.arg(argIdx++).checkint() & 0xFF); break;
+                        case 'h': case 'H': {
+                            java.nio.ByteBuffer.wrap(tmp8).order(ord).putShort(0, (short) a.arg(argIdx++).checkint());
+                            baos.write(tmp8, 0, 2);
+                            break;
+                        }
+                        case 'i': case 'I': case 'l': case 'L': {
+                            java.nio.ByteBuffer.wrap(tmp8).order(ord).putInt(0, (int) a.arg(argIdx++).checklong());
+                            baos.write(tmp8, 0, 4);
+                            break;
+                        }
+                        case 'f': {
+                            java.nio.ByteBuffer.wrap(tmp8).order(ord).putFloat(0, (float) a.arg(argIdx++).checkdouble());
+                            baos.write(tmp8, 0, 4);
+                            break;
+                        }
+                        case 'd': {
+                            java.nio.ByteBuffer.wrap(tmp8).order(ord).putDouble(0, a.arg(argIdx++).checkdouble());
+                            baos.write(tmp8, 0, 8);
+                            break;
+                        }
+                        case 'z': {
+                            org.luaj.vm2.LuaString ls = a.arg(argIdx++).checkstring();
+                            baos.write(ls.m_bytes, ls.m_offset, ls.m_length);
+                            baos.write(0);
+                            break;
+                        }
+                        case 'c': {
+                            int num = 0;
+                            while (i + 1 < fmt.length() && Character.isDigit(fmt.charAt(i + 1))) {
+                                num = num * 10 + (fmt.charAt(++i) - '0');
+                            }
+                            org.luaj.vm2.LuaString ls = a.arg(argIdx++).checkstring();
+                            int cp = Math.min(num, ls.m_length);
+                            baos.write(ls.m_bytes, ls.m_offset, cp);
+                            for (int p = cp; p < num; p++) baos.write(0);
+                            break;
+                        }
+                        case 's': {
+                            org.luaj.vm2.LuaString ls = a.arg(argIdx++).checkstring();
+                            java.nio.ByteBuffer.wrap(tmp8).order(ord).putInt(0, ls.m_length);
+                            baos.write(tmp8, 0, 4);
+                            baos.write(ls.m_bytes, ls.m_offset, ls.m_length);
+                            break;
+                        }
+                        default: break;
+                    }
+                }
+                byte[] res = baos.toByteArray();
+                return org.luaj.vm2.LuaString.valueOf(res, 0, res.length);
+            }
+        }));
+        string.set("unpack", LuaTypesKt.fnv(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                Varargs a = (Varargs) obj;
+                String fmt = a.arg(1).checkjstring();
+                org.luaj.vm2.LuaString data = a.arg(2).checkstring();
+                int pos = a.arg(3).optint(1) - 1;
+                if (pos < 0) pos = 0;
+                java.nio.ByteOrder ord = java.nio.ByteOrder.LITTLE_ENDIAN;
+                java.nio.ByteBuffer bb = java.nio.ByteBuffer.wrap(data.m_bytes, data.m_offset, data.m_length);
+                ArrayList<LuaValue> out = new ArrayList<>();
+                for (int i = 0; i < fmt.length(); i++) {
+                    char c = fmt.charAt(i);
+                    bb.order(ord);
+                    switch (c) {
+                        case '<': ord = java.nio.ByteOrder.LITTLE_ENDIAN; break;
+                        case '>': ord = java.nio.ByteOrder.BIG_ENDIAN; break;
+                        case '=': case ' ': break;
+                        case 'x': pos += 1; break;
+                        case 'b': out.add(LuaValue.valueOf((int) bb.get(data.m_offset + pos))); pos += 1; break;
+                        case 'B': out.add(LuaValue.valueOf(bb.get(data.m_offset + pos) & 0xFF)); pos += 1; break;
+                        case 'h': out.add(LuaValue.valueOf((int) bb.getShort(data.m_offset + pos))); pos += 2; break;
+                        case 'H': out.add(LuaValue.valueOf(bb.getShort(data.m_offset + pos) & 0xFFFF)); pos += 2; break;
+                        case 'i': case 'l': out.add(LuaValue.valueOf(bb.getInt(data.m_offset + pos))); pos += 4; break;
+                        case 'I': case 'L': out.add(LuaValue.valueOf(((long) bb.getInt(data.m_offset + pos)) & 0xFFFFFFFFL)); pos += 4; break;
+                        case 'f': out.add(LuaValue.valueOf((double) bb.getFloat(data.m_offset + pos))); pos += 4; break;
+                        case 'd': out.add(LuaValue.valueOf(bb.getDouble(data.m_offset + pos))); pos += 8; break;
+                        case 'z': {
+                            int start = pos;
+                            while (pos < data.m_length && data.m_bytes[data.m_offset + pos] != 0) pos++;
+                            out.add(org.luaj.vm2.LuaString.valueOf(data.m_bytes, data.m_offset + start, pos - start));
+                            if (pos < data.m_length) pos++;
+                            break;
+                        }
+                        case 'c': {
+                            int num = 0;
+                            while (i + 1 < fmt.length() && Character.isDigit(fmt.charAt(i + 1))) {
+                                num = num * 10 + (fmt.charAt(++i) - '0');
+                            }
+                            out.add(org.luaj.vm2.LuaString.valueOf(data.m_bytes, data.m_offset + pos, Math.min(num, data.m_length - pos)));
+                            pos += num;
+                            break;
+                        }
+                        case 's': {
+                            int slen = bb.getInt(data.m_offset + pos);
+                            pos += 4;
+                            out.add(org.luaj.vm2.LuaString.valueOf(data.m_bytes, data.m_offset + pos, Math.min(slen, data.m_length - pos)));
+                            pos += slen;
+                            break;
+                        }
+                        default: break;
+                    }
+                }
+                out.add(LuaValue.valueOf(pos + 1));
+                return LuaValue.varargsOf(out.toArray(new LuaValue[0]));
+            }
+        }));
+    }
+
+    private final void installDateTime(Globals g) {
+        LuaTable dt = new LuaTable();
+        dt.set("now", LuaTypesKt.fnv(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                return makeDateTime(System.currentTimeMillis());
+            }
+        }));
+        dt.set("fromUnixTimestamp", LuaTypesKt.fn1(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                return makeDateTime((long) (((LuaValue) obj).checkdouble() * 1000.0d));
+            }
+        }));
+        dt.set("fromUnixTimestampMillis", LuaTypesKt.fn1(new Function1() {
+            @Override
+            public final Object invoke(Object obj) {
+                return makeDateTime(((LuaValue) obj).checklong());
+            }
+        }));
+        g.set("DateTime", dt);
     }
 
     private static final String install$joinArgs(Globals g, Varargs a) {

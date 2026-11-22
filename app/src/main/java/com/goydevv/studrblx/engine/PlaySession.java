@@ -3738,6 +3738,7 @@ public final class PlaySession implements TreeListener {
         List<RayHit> listFrontHits = (this.climbing || ((Vector3) objectRef.element).getMagnitude() > 0.1f) ? frontHits() : CollectionsKt.emptyList();
         Vector3 vector3FacingVec = facingVec();
         boolean z2 = (((Vector3) objectRef.element).getMagnitude() <= 0.1f || ((Vector3) objectRef.element).getUnit().dot(vector3FacingVec) <= 0.3f) ? false : true;
+        boolean ladderKicked = false;
         if (!this.climbing) {
             f2 = gravity;
             if (z2 && canClimb(listFrontHits, false) && (this.grounded || this.vel.getY() < 5.0f)) {
@@ -3746,8 +3747,16 @@ public final class PlaySession implements TreeListener {
             }
         } else if (this.jumpRequested) {
             this.climbing = false;
+            this.grounded = false;
+            ladderKicked = true;
             f2 = gravity;
-            this.vel = new Vector3((-vector3FacingVec.getX()) * 25.0f, f4 * 0.6f, (-vector3FacingVec.getZ()) * 25.0f);
+            float kickHoriz = Math.max(fFloatValue2 * 1.15f, 18.0f);
+            this.vel = new Vector3((-vector3FacingVec.getX()) * kickHoriz, f4 * 0.85f, (-vector3FacingVec.getZ()) * kickHoriz);
+            this.jumpAnimTime = 0.3f;
+            if (this.animator != null) {
+                this.animator.triggerJump();
+                playCharSound("Jumping", "rbxassetid://9114222045", 0.55f);
+            }
             this.jumpRequested = this.jumpHeld;
             setState("Jumping", 3);
             LuaRuntime luaRuntime2 = this.rt;
@@ -3759,14 +3768,26 @@ public final class PlaySession implements TreeListener {
             if (!canClimb(listFrontHits, true)) {
                 this.climbing = false;
                 if (this.vel.getY() > 0.0f) {
-                    this.vel = new Vector3(vector3FacingVec.getX() * 8.0f, 22.0f, vector3FacingVec.getZ() * 8.0f);
+                    ladderKicked = true;
+                    this.vel = new Vector3(vector3FacingVec.getX() * 10.0f, Math.max(24.0f, f4 * 0.48f), vector3FacingVec.getZ() * 10.0f);
                 }
                 setState("Freefall", 5);
             }
         }
         if (!this.climbing) {
             Vector3 vector3Times = ((Vector3) objectRef.element).times(fFloatValue2);
-            this.vel = new Vector3(vector3Times.getX(), this.vel.getY() - (f2 * dt), vector3Times.getZ());
+            if (ladderKicked) {
+                this.vel = new Vector3(this.vel.getX(), this.vel.getY() - (f2 * dt), this.vel.getZ());
+            } else if (this.grounded) {
+                this.vel = new Vector3(vector3Times.getX(), this.vel.getY() - (f2 * dt), vector3Times.getZ());
+            } else {
+                // Roblox Freefall air-strafe & ladder-bounce momentum preservation
+                float moveMag = ((Vector3) objectRef.element).getMagnitude();
+                float blend = RangesKt.coerceIn(dt * (moveMag > 0.05f ? 10.5f : 1.5f), 0.0f, 1.0f);
+                float vx = this.vel.getX() + ((vector3Times.getX() - this.vel.getX()) * blend);
+                float vz = this.vel.getZ() + ((vector3Times.getZ() - this.vel.getZ()) * blend);
+                this.vel = new Vector3(vx, this.vel.getY() - (f2 * dt), vz);
+            }
             if (Intrinsics.areEqual(instance.get("Jump"), (Object) true)) {
                 this.jumpRequested = true;
                 instance.set("Jump", false, false);
@@ -5980,11 +6001,100 @@ public final class PlaySession implements TreeListener {
         	... 5 more
         */
     private final void solveDistanceConstraints() {
-        /*
-            Method dump skipped, instruction units count: 649
-            To view this dump add '--comments-level debug' option
-        */
-        return;
+        List<Instance> list = this.studio.renderConstraints();
+        if (list.isEmpty()) {
+            return;
+        }
+        for (int i = 0; i < list.size(); i++) {
+            Instance c = list.get(i);
+            if (Intrinsics.areEqual(c.get("Enabled"), (Object) false)) {
+                continue;
+            }
+            Object a0Obj = c.get("Attachment0");
+            Object a1Obj = c.get("Attachment1");
+            if (!(a0Obj instanceof Instance) || !(a1Obj instanceof Instance)) {
+                continue;
+            }
+            Instance a0 = (Instance) a0Obj;
+            Instance a1 = (Instance) a1Obj;
+            Instance p0 = a0.getParent();
+            Instance p1 = a1.getParent();
+            if (p0 == null || p1 == null || !p0.isA("BasePart") || !p1.isA("BasePart")) {
+                continue;
+            }
+            CFrame cf0 = PartData.INSTANCE.cframe(p0);
+            CFrame cf1 = PartData.INSTANCE.cframe(p1);
+            Vector3 off0 = (a0.get("CFrame") instanceof CFrame) ? ((CFrame) a0.get("CFrame")).getPosition() : Vector3.INSTANCE.getZERO();
+            Vector3 off1 = (a1.get("CFrame") instanceof CFrame) ? ((CFrame) a1.get("CFrame")).getPosition() : Vector3.INSTANCE.getZERO();
+            Vector3 w0 = cf0.times(off0);
+            Vector3 w1 = cf1.times(off1);
+            Vector3 delta = w1.minus(w0);
+            float dist = delta.getMagnitude();
+            if (dist < 1.0E-4f) {
+                continue;
+            }
+            Vector3 dir = delta.div(dist);
+            Body b0 = this.bodyOf.get(p0);
+            Body b1 = this.bodyOf.get(p1);
+            boolean m0 = b0 != null && !PartData.INSTANCE.anchored(p0);
+            boolean m1 = b1 != null && !PartData.INSTANCE.anchored(p1);
+            if (!m0 && !m1) {
+                continue;
+            }
+            String cn = c.getClassName();
+            if (Intrinsics.areEqual(cn, "SpringConstraint")) {
+                float freeLen = (c.get("FreeLength") instanceof Number) ? ((Number) c.get("FreeLength")).floatValue() : 1.0f;
+                float stiff = (c.get("Stiffness") instanceof Number) ? ((Number) c.get("Stiffness")).floatValue() : 1000.0f;
+                float damp = (c.get("Damping") instanceof Number) ? ((Number) c.get("Damping")).floatValue() : 0.0f;
+                float stretch = dist - freeLen;
+                float relVel = (m1 ? b1.getVel().dot(dir) : 0.0f) - (m0 ? b0.getVel().dot(dir) : 0.0f);
+                float fMag = (stretch * stiff) + (relVel * damp);
+                float dt = 0.016666668f;
+                if (m0) {
+                    float invM0 = 1.0f / Math.max(b0.getMass(), 0.2f);
+                    b0.setVel(b0.getVel().plus(dir.times(fMag * invM0 * dt)));
+                    b0.setSleeping(false);
+                }
+                if (m1) {
+                    float invM1 = 1.0f / Math.max(b1.getMass(), 0.2f);
+                    b1.setVel(b1.getVel().minus(dir.times(fMag * invM1 * dt)));
+                    b1.setSleeping(false);
+                }
+            } else {
+                float targetLen = (c.get("Length") instanceof Number) ? ((Number) c.get("Length")).floatValue() : 5.0f;
+                boolean isRod = Intrinsics.areEqual(cn, "RodConstraint");
+                if (!isRod && dist <= targetLen) {
+                    continue;
+                }
+                float err = dist - targetLen;
+                float wSum = (m0 ? 1.0f : 0.0f) + (m1 ? 1.0f : 0.0f);
+                float corr = err / wSum;
+                if (m0) {
+                    Vector3 shift0 = dir.times(corr);
+                    for (Instance part : b0.getParts()) {
+                        CFrame cur = PartData.INSTANCE.cframe(part);
+                        Instance.set$default(part, "CFrame", cur.plus(shift0), false, 4, null);
+                    }
+                    float vn0 = b0.getVel().dot(dir);
+                    if (isRod || vn0 < 0.0f) {
+                        b0.setVel(b0.getVel().minus(dir.times(vn0 * (m1 ? 0.5f : 1.0f))));
+                    }
+                    b0.setSleeping(false);
+                }
+                if (m1) {
+                    Vector3 shift1 = dir.times(-corr);
+                    for (Instance part : b1.getParts()) {
+                        CFrame cur = PartData.INSTANCE.cframe(part);
+                        Instance.set$default(part, "CFrame", cur.plus(shift1), false, 4, null);
+                    }
+                    float vn1 = b1.getVel().dot(dir);
+                    if (isRod || vn1 > 0.0f) {
+                        b1.setVel(b1.getVel().minus(dir.times(vn1 * (m0 ? 0.5f : 1.0f))));
+                    }
+                    b1.setSleeping(false);
+                }
+            }
+        }
     }
 
     /* JADX WARN: Code duplicated, block: B:138:0x048b A[Catch: all -> 0x0605, TryCatch #1 {all -> 0x0605, blocks: (B:94:0x033e, B:96:0x034f, B:98:0x035b, B:100:0x0363, B:103:0x0373, B:108:0x03c6, B:112:0x03df, B:116:0x03f6, B:120:0x040e, B:122:0x0419, B:123:0x0421, B:125:0x0427, B:126:0x043f, B:128:0x044d, B:130:0x045c, B:133:0x0462, B:137:0x046e, B:141:0x049f, B:143:0x04a5, B:145:0x04af, B:147:0x04b6, B:149:0x04c1, B:153:0x04d4, B:155:0x0509, B:159:0x0523, B:162:0x0538, B:164:0x054c, B:166:0x0560, B:170:0x0586, B:172:0x0591, B:186:0x05c6, B:187:0x05d1, B:189:0x05d7, B:190:0x05e4, B:175:0x059c, B:176:0x05a0, B:178:0x05a6, B:168:0x0572, B:158:0x051b, B:138:0x048b, B:169:0x057a, B:115:0x03f0, B:111:0x03d9, B:195:0x05fc), top: B:206:0x033e }] */
@@ -7037,11 +7147,38 @@ public final class PlaySession implements TreeListener {
         To view partially-correct add '--show-bad-code' argument
     */
     static final org.luaj.vm2.LuaValue mouseValue$lambda$151(final com.goydevv.studrblx.engine.PlaySession r2, final org.luaj.vm2.LuaTable r3, org.luaj.vm2.LuaValue r4, org.luaj.vm2.LuaValue r5) {
-        /*
-            Method dump skipped, instruction units count: 252
-            To view this dump add '--comments-level debug' option
-        */
-        return org.luaj.vm2.LuaValue.NIL;
+        String key = r5 != null ? r5.tojstring() : "";
+        switch (key) {
+            case "Button1Down":
+            case "Button1Up":
+            case "Button2Down":
+            case "Button2Up":
+            case "Move":
+            case "Idle":
+            case "WheelForward":
+            case "WheelBackward":
+            case "KeyDown":
+            case "KeyUp":
+            case "Changed":
+                return r2.rt.getApi().signal(r3, key);
+            case "IsA":
+                return LuaTypesKt.fnv(new Function1() {
+                    @Override
+                    public final Object invoke(Object obj) {
+                        return PlaySession.mouseValue$lambda$151$lambda$149((Varargs) obj);
+                    }
+                });
+            case "GetPropertyChangedSignal":
+                return LuaTypesKt.fnv(new Function1() {
+                    @Override
+                    public final Object invoke(Object obj) {
+                        return PlaySession.mouseValue$lambda$151$lambda$150(r2, r3, (Varargs) obj);
+                    }
+                });
+            default:
+                LuaValue raw = r3.rawget(r5);
+                return raw != null ? raw : LuaValue.NIL;
+        }
     }
 
     static final Varargs mouseValue$lambda$151$lambda$149(Varargs a) {

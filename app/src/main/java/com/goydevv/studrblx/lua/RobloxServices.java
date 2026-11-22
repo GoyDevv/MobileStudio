@@ -599,12 +599,346 @@ public final class RobloxServices {
         Code decompiled incorrectly, please refer to instructions dump.
         To view partially-correct add '--show-bad-code' argument
     */
-    public final org.luaj.vm2.Varargs call(com.goydevv.studrblx.lua.InstanceApi r34, com.goydevv.studrblx.lua.LuaRuntime r35, com.goydevv.studrblx.model.Instance r36, java.lang.String r37, org.luaj.vm2.Varargs r38) throws java.io.UnsupportedEncodingException {
-        /*
-            Method dump skipped, instruction units count: 8924
-            To view this dump add '--comments-level debug' option
-        */
-        return org.luaj.vm2.LuaValue.NIL;
+    public final org.luaj.vm2.Varargs call(com.goydevv.studrblx.lua.InstanceApi api, com.goydevv.studrblx.lua.LuaRuntime rt, com.goydevv.studrblx.model.Instance svc, java.lang.String name, org.luaj.vm2.Varargs a) throws java.io.UnsupportedEncodingException {
+        String scn = svc.getClassName();
+        switch (scn) {
+            case "TweenService":
+                if ("Create".equals(name)) {
+                    Object instObj = a.arg(2).isuserdata() ? a.arg(2).touserdata() : null;
+                    Object infoObj = a.arg(3).isuserdata() ? a.arg(3).touserdata() : null;
+                    LuaTable goalTbl = a.arg(4).istable() ? a.arg(4).checktable() : null;
+                    if (instObj instanceof Instance && infoObj instanceof TweenInfoV && goalTbl != null) {
+                        java.util.LinkedHashMap<String, Object> goals = new java.util.LinkedHashMap<>();
+                        LuaValue k = LuaValue.NIL;
+                        while (true) {
+                            Varargs n = goalTbl.next(k);
+                            k = n.arg1();
+                            if (k.isnil()) break;
+                            String ks = k.tojstring();
+                            if (ks != null) {
+                                goals.put(ks, rt.fromLua(n.arg(2), null, (Instance) instObj, ks));
+                            }
+                        }
+                        return tweenValue(rt, new Tween((Instance) instObj, (TweenInfoV) infoObj, goals));
+                    }
+                }
+                if ("GetValue".equals(name)) {
+                    double alpha = Math.max(0.0d, Math.min(1.0d, a.arg(2).optdouble(0.0d)));
+                    Object stObj = a.arg(3).isuserdata() ? a.arg(3).touserdata() : null;
+                    int style = (stObj instanceof EnumItemV) ? ((EnumItemV) stObj).getValue() : a.arg(3).optint(0);
+                    Object drObj = a.arg(4).isuserdata() ? a.arg(4).touserdata() : null;
+                    int dir = (drObj instanceof EnumItemV) ? ((EnumItemV) drObj).getValue() : a.arg(4).optint(1);
+                    return LuaValue.valueOf(evalEasing(alpha, style, dir));
+                }
+                if ("SmoothDamp".equals(name)) {
+                    double smoothTime = Math.max(1.0E-4d, a.arg(5).optdouble(0.3d));
+                    double maxSpeed = a.arg(6).isnumber() ? a.arg(6).checkdouble() : Double.POSITIVE_INFINITY;
+                    double dt = a.arg(7).optdouble(0.016666667d);
+                    double omega = 2.0d / smoothTime;
+                    double x = omega * dt;
+                    double exp = 1.0d / (1.0d + x + (0.48d * x * x) + (0.235d * x * x * x));
+                    LuaValue curV = a.arg(2);
+                    LuaValue tgtV = a.arg(3);
+                    LuaValue velV = a.arg(4);
+                    if (curV.isnumber()) {
+                        double cur = curV.checkdouble();
+                        double tgt = tgtV.checkdouble();
+                        double vel = velV.optdouble(0.0d);
+                        double change = cur - tgt;
+                        double maxChg = maxSpeed * smoothTime;
+                        change = Math.max(-maxChg, Math.min(maxChg, change));
+                        double adjTgt = cur - change;
+                        double temp = (vel + (omega * change)) * dt;
+                        double newVel = (vel - (omega * temp)) * exp;
+                        double outVal = adjTgt + ((change + temp) * exp);
+                        return LuaValue.varargsOf(new LuaValue[]{LuaValue.valueOf(outVal), LuaValue.valueOf(newVel)});
+                    }
+                    Object co = curV.isuserdata() ? curV.touserdata() : null;
+                    Object to = tgtV.isuserdata() ? tgtV.touserdata() : null;
+                    Object vo = velV.isuserdata() ? velV.touserdata() : null;
+                    if (co instanceof Vector3 && to instanceof Vector3) {
+                        Vector3 c3 = (Vector3) co;
+                        Vector3 t3 = (Vector3) to;
+                        Vector3 v3 = vo instanceof Vector3 ? (Vector3) vo : Vector3.INSTANCE.getZERO();
+                        Vector3 chg = c3.minus(t3);
+                        float mag = chg.getMagnitude();
+                        float maxChg = (float) Math.min(maxSpeed * smoothTime, 1.0E9d);
+                        if (mag > maxChg && mag > 1.0E-5f) chg = chg.div(mag).times(maxChg);
+                        Vector3 adj = c3.minus(chg);
+                        Vector3 tmp = v3.plus(chg.times((float) omega)).times((float) dt);
+                        Vector3 nVel = v3.minus(tmp.times((float) omega)).times((float) exp);
+                        Vector3 nPos = adj.plus(chg.plus(tmp).times((float) exp));
+                        return LuaValue.varargsOf(new LuaValue[]{LuaTypes.INSTANCE.wrap(nPos), LuaTypes.INSTANCE.wrap(nVel)});
+                    }
+                    return LuaValue.varargsOf(new LuaValue[]{curV, velV});
+                }
+                return LuaValue.NIL;
+            case "ContextActionService": {
+                if ("BindAction".equals(name) || "BindActionAtPriority".equals(name)) {
+                    final String actName = a.arg(2).checkjstring();
+                    final LuaValue fn = a.arg(3);
+                    boolean makeBtn = a.arg(4).toboolean();
+                    int prio = "BindActionAtPriority".equals(name) ? a.arg(5).optint(2000) : 2000;
+                    LuaTable info = new LuaTable();
+                    info.set("priorityLevel", prio);
+                    info.set("stackOrder", CAS_ACTIONS.size() + 1);
+                    info.set("createTouchButton", LuaValue.valueOf(makeBtn));
+                    CAS_ACTIONS.put(actName, new CasEntry(actName, fn, prio, info, null));
+                    if (makeBtn && rt.getPlay() != null && rt.getPlay().getPlayer() != null && CAS_BTN_COUNT < 7) {
+                        Instance pg = Instance.findFirstChild$default(rt.getPlay().getPlayer(), "PlayerGui", false, 2, null);
+                        if (pg != null) {
+                            Instance cag = Instance.findFirstChild$default(pg, "ContextActionGui", false, 2, null);
+                            if (cag == null) {
+                                cag = com.goydevv.studrblx.model.InstanceFactory.INSTANCE.create("ScreenGui");
+                                cag.setName("ContextActionGui");
+                                Instance.setParent$default(cag, pg, 0, 2, null);
+                            }
+                            Instance frame = Instance.findFirstChild$default(cag, "ContextButtonFrame", false, 2, null);
+                            if (frame == null) {
+                                frame = com.goydevv.studrblx.model.InstanceFactory.INSTANCE.create("Frame");
+                                frame.setName("ContextButtonFrame");
+                                frame.set("BackgroundTransparency", Float.valueOf(1.0f), false);
+                                frame.set("Size", new com.goydevv.studrblx.model.UDim2(0.4f, 0, 0.4f, 0), false);
+                                frame.set("Position", new com.goydevv.studrblx.model.UDim2(0.58f, 0, 0.52f, 0), false);
+                                Instance.setParent$default(frame, cag, 0, 2, null);
+                            }
+                            Instance btn = com.goydevv.studrblx.model.InstanceFactory.INSTANCE.create("TextButton");
+                            btn.setName(actName);
+                            btn.set("Text", actName, false);
+                            btn.set("Size", new com.goydevv.studrblx.model.UDim2(0.0f, 64, 0.0f, 64), false);
+                            btn.set("Position", new com.goydevv.studrblx.model.UDim2(0.0f, (CAS_BTN_COUNT % 3) * 72, 0.0f, (CAS_BTN_COUNT / 3) * 72), false);
+                            btn.set("BackgroundColor3", com.goydevv.studrblx.model.Color3.INSTANCE.fromRGB(30, 34, 42), false);
+                            btn.set("BackgroundTransparency", Float.valueOf(0.25f), false);
+                            btn.set("TextColor3", com.goydevv.studrblx.model.Color3.INSTANCE.fromRGB(255, 255, 255), false);
+                            Instance.setParent$default(btn, frame, 0, 2, null);
+                            CAS_BTN_COUNT++;
+                            CAS_ACTIONS.get(actName).button = btn;
+                            if (fn.isfunction()) {
+                                rt.connect(btn, "MouseButton1Down", LuaTypesKt.fnv(new Function1() {
+                                    @Override
+                                    public final Object invoke(Object obj) {
+                                        fn.invoke(LuaValue.varargsOf(new LuaValue[]{LuaValue.valueOf(actName), LuaTypes.INSTANCE.enumItem("UserInputState", "Begin"), new LuaTable()}));
+                                        return LuaValue.NONE;
+                                    }
+                                }), false);
+                                rt.connect(btn, "MouseButton1Up", LuaTypesKt.fnv(new Function1() {
+                                    @Override
+                                    public final Object invoke(Object obj) {
+                                        fn.invoke(LuaValue.varargsOf(new LuaValue[]{LuaValue.valueOf(actName), LuaTypes.INSTANCE.enumItem("UserInputState", "End"), new LuaTable()}));
+                                        return LuaValue.NONE;
+                                    }
+                                }), false);
+                            }
+                        }
+                    }
+                    return LuaValue.NONE;
+                }
+                if ("UnbindAction".equals(name)) {
+                    CasEntry ce = CAS_ACTIONS.remove(a.arg(2).optjstring(""));
+                    if (ce != null && ce.button != null) {
+                        ce.button.destroy();
+                        if (CAS_BTN_COUNT > 0) CAS_BTN_COUNT--;
+                    }
+                    return LuaValue.NONE;
+                }
+                if ("UnbindAllActions".equals(name)) {
+                    for (CasEntry ce : CAS_ACTIONS.values()) {
+                        if (ce.button != null) ce.button.destroy();
+                    }
+                    CAS_ACTIONS.clear();
+                    CAS_BTN_COUNT = 0;
+                    return LuaValue.NONE;
+                }
+                if ("GetButton".equals(name)) {
+                    CasEntry ce = CAS_ACTIONS.get(a.arg(2).optjstring(""));
+                    return (ce != null && ce.button != null) ? rt.wrap(ce.button) : LuaValue.NIL;
+                }
+                if ("SetTitle".equals(name)) {
+                    CasEntry ce = CAS_ACTIONS.get(a.arg(2).optjstring(""));
+                    if (ce != null && ce.button != null) ce.button.set("Text", a.arg(3).optjstring(""), false);
+                    return LuaValue.NONE;
+                }
+                if ("SetPosition".equals(name)) {
+                    CasEntry ce = CAS_ACTIONS.get(a.arg(2).optjstring(""));
+                    Object uo = a.arg(3).isuserdata() ? a.arg(3).touserdata() : null;
+                    if (ce != null && ce.button != null && uo instanceof com.goydevv.studrblx.model.UDim2) {
+                        ce.button.set("Position", uo, false);
+                    }
+                    return LuaValue.NONE;
+                }
+                if ("SetImage".equals(name) || "SetDescription".equals(name)) {
+                    return LuaValue.NONE;
+                }
+                if ("GetBoundActionInfo".equals(name)) {
+                    CasEntry ce = CAS_ACTIONS.get(a.arg(2).optjstring(""));
+                    return ce != null ? ce.info : new LuaTable();
+                }
+                if ("GetAllBoundActionInfo".equals(name)) {
+                    LuaTable all = new LuaTable();
+                    for (CasEntry ce : CAS_ACTIONS.values()) {
+                        all.set(ce.name, ce.info);
+                    }
+                    return all;
+                }
+                return LuaValue.NIL;
+            }
+            case "StarterGui": {
+                if ("SetCoreGuiEnabled".equals(name)) {
+                    CORE_GUI_ENABLED.put(Integer.valueOf(a.arg(2).isuserdata() && a.arg(2).touserdata() instanceof EnumItemV ? ((EnumItemV) a.arg(2).touserdata()).getValue() : a.arg(2).optint(0)), Boolean.valueOf(a.arg(3).toboolean()));
+                    return LuaValue.NONE;
+                }
+                if ("GetCoreGuiEnabled".equals(name)) {
+                    int key = a.arg(2).isuserdata() && a.arg(2).touserdata() instanceof EnumItemV ? ((EnumItemV) a.arg(2).touserdata()).getValue() : a.arg(2).optint(0);
+                    Boolean b = CORE_GUI_ENABLED.get(Integer.valueOf(key));
+                    return LuaValue.valueOf(b == null || b.booleanValue());
+                }
+                if ("SetCore".equals(name)) {
+                    return LuaValue.NONE;
+                }
+                if ("GetCore".equals(name)) {
+                    return LuaValue.TRUE;
+                }
+                return LuaValue.NIL;
+            }
+            case "GuiService": {
+                if ("GetGuiInset".equals(name)) {
+                    return LuaValue.varargsOf(new LuaValue[]{LuaTypes.INSTANCE.wrap(new com.goydevv.studrblx.model.Vector2(0.0f, 36.0f)), LuaTypes.INSTANCE.wrap(new com.goydevv.studrblx.model.Vector2(0.0f, 0.0f))});
+                }
+                if ("IsTenFootInterface".equals(name)) {
+                    return LuaValue.FALSE;
+                }
+                return LuaValue.NIL;
+            }
+            case "Teams": {
+                if ("GetTeams".equals(name)) {
+                    LuaTable out = new LuaTable();
+                    int idx = 1;
+                    for (Instance ch : svc.getChildren()) {
+                        if ("Team".equals(ch.getClassName())) out.set(idx++, rt.wrap(ch));
+                    }
+                    return out;
+                }
+                return LuaValue.NIL;
+            }
+            case "PhysicsService": {
+                if ("RegisterCollisionGroup".equals(name) || "CreateCollisionGroup".equals(name)) {
+                    COLLISION_GROUPS.add(a.arg(2).optjstring("Default"));
+                    return LuaValue.NONE;
+                }
+                if ("IsCollisionGroupRegistered".equals(name)) {
+                    String gn = a.arg(2).optjstring("");
+                    return LuaValue.valueOf("Default".equals(gn) || COLLISION_GROUPS.contains(gn));
+                }
+                if ("GetRegisteredCollisionGroups".equals(name)) {
+                    LuaTable out = new LuaTable();
+                    int idx = 1;
+                    LuaTable def = new LuaTable(); def.set("name", "Default"); def.set("mask", -1);
+                    out.set(idx++, def);
+                    for (String g : COLLISION_GROUPS) {
+                        if ("Default".equals(g)) continue;
+                        LuaTable e = new LuaTable(); e.set("name", g); e.set("mask", -1);
+                        out.set(idx++, e);
+                    }
+                    return out;
+                }
+                if ("CollisionGroupsAreCollidable".equals(name)) {
+                    return LuaValue.TRUE;
+                }
+                return LuaValue.NONE;
+            }
+            case "BadgeService": {
+                if ("UserHasBadgeAsync".equals(name)) return LuaValue.FALSE;
+                if ("AwardBadge".equals(name)) return LuaValue.TRUE;
+                if ("GetBadgeInfoAsync".equals(name)) {
+                    LuaTable bi = new LuaTable();
+                    bi.set("Name", "Badge"); bi.set("Description", ""); bi.set("IconImageId", 0); bi.set("IsEnabled", LuaValue.TRUE);
+                    return bi;
+                }
+                return LuaValue.NIL;
+            }
+            case "TeleportService": {
+                return LuaValue.NONE;
+            }
+            case "Debris":
+                if ("AddItem".equals(name)) {
+                    Object o = a.arg(2).isuserdata() ? a.arg(2).touserdata() : null;
+                    double sec = a.optdouble(3, 10.0d);
+                    if (o instanceof Instance) {
+                        final Instance item = (Instance) o;
+                        rt.after(sec, new Function0<Unit>() {
+                            @Override public Unit invoke() { return call$lambda$3(item); }
+                        });
+                    }
+                }
+                return LuaValue.NIL;
+            case "Players":
+                if ("GetPlayers".equals(name)) {
+                    LuaTable tbl = new LuaTable();
+                    com.goydevv.studrblx.engine.PlaySession pl = rt.getPlay();
+                    if (pl != null && pl.getPlayer() != null) tbl.set(1, rt.wrap(pl.getPlayer()));
+                    return tbl;
+                }
+                if ("GetPlayerFromCharacter".equals(name)) {
+                    Object o = a.arg(2).isuserdata() ? a.arg(2).touserdata() : null;
+                    com.goydevv.studrblx.engine.PlaySession pl = rt.getPlay();
+                    if (pl != null && o instanceof Instance && o == pl.getCharacter() && pl.getPlayer() != null) {
+                        return rt.wrap(pl.getPlayer());
+                    }
+                    return LuaValue.NIL;
+                }
+                return LuaValue.NIL;
+            case "RunService":
+                if ("IsClient".equals(name) || "IsServer".equals(name) || "IsStudio".equals(name)) return LuaValue.TRUE;
+                if ("IsRunning".equals(name) || "IsRunMode".equals(name)) return LuaValue.valueOf(rt.getPlay() != null);
+                return LuaValue.NIL;
+            case "HttpService":
+                return http(rt, svc, name, a);
+            case "DataStoreService":
+                if ("GetDataStore".equals(name) || "GetOrderedDataStore".equals(name)) {
+                    return dataStore(rt, a.checkjstring(2));
+                }
+                return LuaValue.NIL;
+            case "PathfindingService":
+                if ("CreatePath".equals(name)) {
+                    return pathObject(rt);
+                }
+                return LuaValue.NIL;
+            case "MarketplaceService":
+                if ("GetProductInfo".equals(name)) {
+                    return productInfo(rt, a.checklong(2), a.optjstring(3, "Asset"));
+                }
+                return LuaValue.NIL;
+            case "Lighting":
+                if ("GetMinutesAfterMidnight".equals(name)) {
+                    Object ct = svc.get("ClockTime");
+                    float ctf = ct instanceof Number ? ((Number) ct).floatValue() : 14.0f;
+                    return LuaValue.valueOf(ctf * 60.0f);
+                }
+                if ("SetMinutesAfterMidnight".equals(name)) {
+                    float mins = (float) a.checkdouble(2);
+                    svc.set("ClockTime", Float.valueOf((mins / 60.0f) % 24.0f), true);
+                    return LuaValue.NIL;
+                }
+                return LuaValue.NIL;
+            case "SoundService":
+                if ("PlayLocalSound".equals(name)) {
+                    Object o = a.arg(2).isuserdata() ? a.arg(2).touserdata() : null;
+                    if (o instanceof Instance) {
+                        Instance snd = (Instance) o;
+                        Object sq = snd.getAttributes().get("__playSeq");
+                        int nsq = (sq instanceof Integer) ? ((Integer) sq).intValue() + 1 : 1;
+                        snd.getAttributes().put("__playSeq", Integer.valueOf(nsq));
+                        snd.set("Playing", Boolean.TRUE, true);
+                    }
+                }
+                return LuaValue.NIL;
+            case "UserInputService":
+                if ("IsKeyDown".equals(name)) return LuaValue.FALSE;
+                if ("GetMouseLocation".equals(name)) return LuaTypes.INSTANCE.wrap(new com.goydevv.studrblx.model.Vector2(0.0f, 0.0f));
+                return LuaValue.NIL;
+            default:
+                return LuaValue.NIL;
+        }
     }
 
     static final Unit call$lambda$3(Instance $item) {
@@ -1333,4 +1667,53 @@ public final class RobloxServices {
         $rt.resume($co, result);
         return Unit.INSTANCE;
     }
+
+    private static final double easeIn(double t, int style) {
+        switch (style) {
+            case 0: return t; // Linear
+            case 1: return 1.0d - Math.cos((t * Math.PI) * 0.5d); // Sine
+            case 2: { double s = 1.70158d; return t * t * (((s + 1.0d) * t) - s); } // Back
+            case 3: return t * t; // Quad
+            case 4: return t * t * t * t; // Quart
+            case 5: return t * t * t * t * t; // Quint
+            case 6: return 1.0d - easeOutBounce(1.0d - t); // Bounce
+            case 7: {
+                if (t <= 0.0d || t >= 1.0d) return t;
+                return -Math.pow(2.0d, (10.0d * t) - 10.0d) * Math.sin((((t * 10.0d) - 10.75d) * (2.0d * Math.PI)) / 3.0d);
+            } // Elastic
+            case 8: return t <= 0.0d ? 0.0d : Math.pow(2.0d, (10.0d * t) - 10.0d); // Exponential
+            case 9: return 1.0d - Math.sqrt(Math.max(0.0d, 1.0d - (t * t))); // Circular
+            case 10: return t * t * t; // Cubic
+            default: return t;
+        }
+    }
+
+    private static final double easeOutBounce(double t) {
+        if (t < 1.0d / 2.75d) return 7.5625d * t * t;
+        if (t < 2.0d / 2.75d) { t -= 1.5d / 2.75d; return (7.5625d * t * t) + 0.75d; }
+        if (t < 2.5d / 2.75d) { t -= 2.25d / 2.75d; return (7.5625d * t * t) + 0.9375d; }
+        t -= 2.625d / 2.75d;
+        return (7.5625d * t * t) + 0.984375d;
+    }
+
+    private static final double evalEasing(double t, int style, int dir) {
+        if (dir == 0) return easeIn(t, style); // In
+        if (dir == 1) return 1.0d - easeIn(1.0d - t, style); // Out
+        return t < 0.5d ? (0.5d * easeIn(t * 2.0d, style)) : (0.5d + (0.5d * (1.0d - easeIn(2.0d - (t * 2.0d), style)))); // InOut
+    }
+
+    private static final class CasEntry {
+        final String name;
+        final LuaValue fn;
+        final int priority;
+        final LuaTable info;
+        Instance button;
+        CasEntry(String name, LuaValue fn, int priority, LuaTable info, Instance button) {
+            this.name = name; this.fn = fn; this.priority = priority; this.info = info; this.button = button;
+        }
+    }
+    private static final java.util.LinkedHashMap<String, CasEntry> CAS_ACTIONS = new java.util.LinkedHashMap<>();
+    private static int CAS_BTN_COUNT = 0;
+    private static final java.util.HashMap<Integer, Boolean> CORE_GUI_ENABLED = new java.util.HashMap<>();
+    private static final java.util.LinkedHashSet<String> COLLISION_GROUPS = new java.util.LinkedHashSet<>();
 }

@@ -741,12 +741,84 @@ public final class InstanceApi {
         Code decompiled incorrectly, please refer to instructions dump.
         To view partially-correct add '--show-bad-code' argument
     */
-    public final java.lang.Object getK(com.goydevv.studrblx.model.Instance r11, java.lang.String r12) {
-        /*
-            Method dump skipped, instruction units count: 2652
-            To view this dump add '--comments-level debug' option
-        */
-        return null;
+    public final java.lang.Object getK(com.goydevv.studrblx.model.Instance inst, java.lang.String k) {
+        if (inst == null || k == null) return null;
+        switch (k) {
+            case "Name": return inst.getName();
+            case "ClassName": return inst.getClassName();
+            case "Parent": return inst.getParent();
+            case "CFrame":
+                if (inst.isA("BasePart")) return PartData.INSTANCE.cframe(inst);
+                return inst.get("CFrame");
+            case "Position":
+                if (inst.isA("BasePart")) return PartData.INSTANCE.cframe(inst).getPosition();
+                return inst.get("Position");
+            case "Size":
+                if (inst.isA("BasePart")) return PartData.INSTANCE.size(inst);
+                return inst.get("Size");
+            case "Color": case "Color3":
+                if (inst.isA("BasePart")) return PartData.INSTANCE.color(inst);
+                return inst.get(k);
+            case "BrickColor":
+                return inst.get("BrickColor");
+            case "Transparency":
+                if (inst.isA("BasePart")) return Float.valueOf(PartData.INSTANCE.transparency(inst));
+                return inst.get("Transparency");
+            case "Material":
+                if (inst.isA("BasePart")) return new EnumValue(PartData.INSTANCE.material(inst));
+                return inst.get("Material");
+            case "Anchored":
+                Object anc = inst.get("Anchored");
+                return anc instanceof Boolean ? anc : Boolean.FALSE;
+            case "CanCollide":
+                Object cc = inst.get("CanCollide");
+                return cc instanceof Boolean ? cc : Boolean.TRUE;
+            case "Visible":
+                Object vis = inst.get("Visible");
+                return vis instanceof Boolean ? vis : Boolean.TRUE;
+            case "Enabled":
+                Object en = inst.get("Enabled");
+                return en instanceof Boolean ? en : Boolean.TRUE;
+            case "Health":
+                Object hp = inst.get("Health");
+                if (hp == null) hp = inst.get("Health_XML");
+                return hp instanceof Number ? hp : Float.valueOf(100.0f);
+            case "MaxHealth":
+                Object mhp = inst.get("MaxHealth");
+                return mhp instanceof Number ? mhp : Float.valueOf(100.0f);
+            case "WalkSpeed":
+                Object ws = inst.get("WalkSpeed");
+                return ws instanceof Number ? ws : Float.valueOf(16.0f);
+            case "JumpPower":
+                Object jp = inst.get("JumpPower");
+                return jp instanceof Number ? jp : Float.valueOf(50.0f);
+            case "JumpHeight":
+                Object jh = inst.get("JumpHeight");
+                return jh instanceof Number ? jh : Float.valueOf(7.2f);
+            case "LocalPlayer":
+                if ("Players".equals(inst.getClassName())) {
+                    PlaySession pl = this.rt.getPlay();
+                    return pl != null ? pl.getPlayer() : null;
+                }
+                return inst.get(k);
+            case "Character":
+                if ("Player".equals(inst.getClassName())) {
+                    PlaySession pl = this.rt.getPlay();
+                    if (pl != null && pl.getPlayer() == inst) return pl.getCharacter();
+                }
+                return inst.get(k);
+            case "CurrentCamera":
+                if ("Workspace".equals(inst.getClassName())) {
+                    Object cam = inst.get("CurrentCamera");
+                    if (cam != null) return cam;
+                    return Instance.findFirstChild$default(inst, "Camera", false, 2, null);
+                }
+                return inst.get(k);
+            default:
+                Object v = inst.get(k);
+                if (v == null && "Size".equals(k)) v = inst.get("size");
+                return v;
+        }
     }
 
     public final boolean hasK(Instance inst, String name) {
@@ -819,12 +891,63 @@ public final class InstanceApi {
         Code decompiled incorrectly, please refer to instructions dump.
         To view partially-correct add '--show-bad-code' argument
     */
-    public final void setK(com.goydevv.studrblx.model.Instance r19, java.lang.String r20, java.lang.Object r21) {
-        /*
-            Method dump skipped, instruction units count: 1238
-            To view this dump add '--comments-level debug' option
-        */
-        return;
+    public final void setK(com.goydevv.studrblx.model.Instance inst, java.lang.String k, java.lang.Object v) {
+        if (inst == null || k == null) return;
+        switch (k) {
+            case "Name":
+                if (v != null) inst.setName(v.toString());
+                return;
+            case "Parent":
+                Instance np = v instanceof Instance ? (Instance) v : null;
+                Instance.setParent$default(inst, np, 0, 2, null);
+                return;
+            case "Position":
+                if (inst.isA("BasePart") && v instanceof Vector3) {
+                    CFrame cur = PartData.INSTANCE.cframe(inst);
+                    inst.set("CFrame", cur.withPosition((Vector3) v), true);
+                    return;
+                }
+                inst.set(k, v, true);
+                return;
+            case "CFrame":
+                if (inst.isA("BasePart") && v instanceof CFrame) {
+                    inst.set("CFrame", v, true);
+                    return;
+                }
+                inst.set(k, v, true);
+                return;
+            case "Size":
+                if (inst.isA("BasePart") && v instanceof Vector3) {
+                    PartData.INSTANCE.setSize(inst, (Vector3) v);
+                    return;
+                }
+                inst.set(k, v, true);
+                return;
+            case "Color": case "Color3":
+                if (inst.isA("BasePart") && v instanceof Color3) {
+                    PartData.INSTANCE.setColor(inst, (Color3) v);
+                    return;
+                }
+                inst.set(k, v, true);
+                return;
+            case "BrickColor":
+                inst.set("BrickColor", v, true);
+                return;
+            case "Health":
+                inst.set(inst.getProps().containsKey("Health") ? "Health" : "Health_XML", v, true);
+                return;
+            case "Playing":
+                if ("Sound".equals(inst.getClassName()) && Boolean.TRUE.equals(v)) {
+                    Object sq = inst.getAttributes().get("__playSeq");
+                    int nsq = (sq instanceof Integer) ? ((Integer) sq).intValue() + 1 : 1;
+                    inst.getAttributes().put("__playSeq", Integer.valueOf(nsq));
+                }
+                inst.set("Playing", v, true);
+                return;
+            default:
+                inst.set(k, v, true);
+                return;
+        }
     }
 
     /* JADX WARN: Can't fix incorrect switch cases order, some code will duplicate */
@@ -901,11 +1024,269 @@ public final class InstanceApi {
         To view partially-correct add '--show-bad-code' argument
     */
     private final java.lang.Integer typeHint(com.goydevv.studrblx.model.Instance r18, java.lang.String r19) {
-        /*
-            Method dump skipped, instruction units count: 1648
-            To view this dump add '--comments-level debug' option
-        */
-        return null;
+        if (r19 == null) {
+            return null;
+        }
+        String cn = r18 != null ? r18.getClassName() : "";
+        switch (r19) {
+            case "Name":
+            case "Text":
+            case "PlaceholderText":
+            case "ToolTip":
+            case "TimeOfDay":
+            case "CollisionGroup":
+            case "MaterialVariant":
+            case "ActionText":
+            case "ObjectText":
+            case "DisplayName":
+            case "Title":
+                return 1;
+            case "SoundId":
+            case "Image":
+            case "HoverImage":
+            case "PressedImage":
+            case "Texture":
+            case "TextureId":
+            case "TextureID":
+            case "MeshId":
+            case "AnimationId":
+            case "ShirtTemplate":
+            case "PantsTemplate":
+            case "Graphic":
+            case "SkyboxBk":
+            case "SkyboxDn":
+            case "SkyboxFt":
+            case "SkyboxLf":
+            case "SkyboxRt":
+            case "SkyboxUp":
+            case "ColorMap":
+            case "NormalMap":
+            case "MetalnessMap":
+            case "RoughnessMap":
+                return 34;
+            case "Anchored":
+            case "CanCollide":
+            case "CanTouch":
+            case "CanQuery":
+            case "Locked":
+            case "Massless":
+            case "CastShadow":
+            case "Archivable":
+            case "Enabled":
+            case "Visible":
+            case "Active":
+            case "ClipsDescendants":
+            case "Selectable":
+            case "Interactable":
+            case "Modal":
+            case "Selected":
+            case "AutoButtonColor":
+            case "TextScaled":
+            case "TextWrapped":
+            case "RichText":
+            case "ClearTextOnFocus":
+            case "MultiLine":
+            case "TextEditable":
+            case "ResetOnSpawn":
+            case "IgnoreGuiInset":
+            case "AlwaysOnTop":
+            case "ScrollingEnabled":
+            case "GlobalShadows":
+            case "Looped":
+            case "Playing":
+            case "PlayOnRemove":
+            case "AutoRotate":
+            case "Jump":
+            case "Sit":
+            case "PlatformStand":
+            case "UseJumpPower":
+            case "BreakJointsOnDeath":
+            case "Disabled":
+            case "Neutral":
+            case "AllowTeamChangeOnTouch":
+            case "RequiresHandle":
+            case "CanBeDropped":
+            case "ManualActivationOnly":
+            case "Shadows":
+            case "DoubleSided":
+            case "RequiresLineOfSight":
+            case "HttpEnabled":
+            case "AutoAssignable":
+                return 2;
+            case "ZIndex":
+            case "LayoutOrder":
+            case "BorderSizePixel":
+            case "DisplayOrder":
+            case "ScrollBarThickness":
+            case "MaxVisibleGraphemes":
+            case "Duration":
+                return 3;
+            case "Transparency":
+            case "Reflectance":
+            case "BackgroundTransparency":
+            case "TextTransparency":
+            case "TextStrokeTransparency":
+            case "ImageTransparency":
+            case "TextSize":
+            case "Rotation":
+            case "LineHeight":
+            case "Thickness":
+            case "Scale":
+            case "Health":
+            case "MaxHealth":
+            case "WalkSpeed":
+            case "JumpPower":
+            case "JumpHeight":
+            case "HipHeight":
+            case "Volume":
+            case "PlaybackSpeed":
+            case "TimePosition":
+            case "RollOffMaxDistance":
+            case "RollOffMinDistance":
+            case "Brightness":
+            case "Range":
+            case "Angle":
+            case "ClockTime":
+            case "FogStart":
+            case "FogEnd":
+            case "ExposureCompensation":
+            case "GeographicLatitude":
+            case "ShadowSoftness":
+            case "EnvironmentDiffuseScale":
+            case "EnvironmentSpecularScale":
+            case "Density":
+            case "Offset":
+            case "Haze":
+            case "Glare":
+            case "FieldOfView":
+            case "Gravity":
+            case "FallenPartsDestroyHeight":
+            case "Length":
+            case "FreeLength":
+            case "Stiffness":
+            case "Damping":
+            case "MaxActivationDistance":
+            case "HoldDuration":
+            case "FillTransparency":
+            case "OutlineTransparency":
+            case "Rate":
+            case "Drag":
+            case "LightEmission":
+            case "StudsPerTileU":
+            case "StudsPerTileV":
+            case "OffsetStudsU":
+            case "OffsetStudsV":
+            case "MaxSpeed":
+            case "Torque":
+            case "Throttle":
+            case "Steer":
+            case "TurnSpeed":
+                return 4;
+            case "Size":
+            case "Position":
+                if (r18 != null && (r18.isA("GuiObject") || Intrinsics.areEqual(cn, "BillboardGui"))) {
+                    return 7;
+                }
+                return 14;
+            case "CanvasSize":
+                if (Intrinsics.areEqual(cn, "ScrollingFrame")) {
+                    return 7;
+                }
+                return null;
+            case "BrickColor":
+            case "TeamColor":
+                return 11;
+            case "Color":
+            case "Color3":
+            case "BackgroundColor3":
+            case "BorderColor3":
+            case "TextColor3":
+            case "TextStrokeColor3":
+            case "PlaceholderColor3":
+            case "ImageColor3":
+            case "ScrollBarImageColor3":
+            case "Ambient":
+            case "OutdoorAmbient":
+            case "FogColor":
+            case "ColorShift_Top":
+            case "ColorShift_Bottom":
+            case "TintColor":
+            case "Decay":
+            case "FillColor":
+            case "OutlineColor":
+                return 12;
+            case "Orientation":
+            case "Velocity":
+            case "AssemblyLinearVelocity":
+            case "AssemblyAngularVelocity":
+            case "MoveDirection":
+            case "WalkToPoint":
+            case "StudsOffset":
+            case "StudsOffsetWorldSpace":
+            case "VertexColor":
+            case "Acceleration":
+                return 14;
+            case "CFrame":
+            case "C0":
+            case "C1":
+            case "Transform":
+            case "Focus":
+            case "Grip":
+            case "WorldCFrame":
+                return 16;
+            case "WorldPivot":
+                return 30;
+            case "Material":
+            case "Shape":
+            case "Face":
+            case "Font":
+            case "TextXAlignment":
+            case "TextYAlignment":
+            case "TextTruncate":
+            case "ScaleType":
+            case "FillDirection":
+            case "HorizontalAlignment":
+            case "VerticalAlignment":
+            case "SortOrder":
+            case "ZIndexBehavior":
+            case "AutomaticSize":
+            case "SizeConstraint":
+            case "CameraType":
+            case "RigType":
+            case "Technology":
+            case "TopSurface":
+            case "BottomSurface":
+            case "FrontSurface":
+            case "BackSurface":
+            case "LeftSurface":
+            case "RightSurface":
+            case "MeshType":
+            case "DepthMode":
+            case "Style":
+            case "KeyboardKeyCode":
+            case "GamepadKeyCode":
+                return 18;
+            case "Parent":
+            case "PrimaryPart":
+            case "Adornee":
+            case "Part0":
+            case "Part1":
+            case "Attachment0":
+            case "Attachment1":
+            case "CameraSubject":
+            case "Occupant":
+            case "RespawnLocation":
+            case "Team":
+            case "SoundGroup":
+                return 19;
+            case "UserId":
+                return 27;
+            default:
+                if (Enums.INSTANCE.typeForProp(cn, r19) != null) {
+                    return 18;
+                }
+                return null;
+        }
     }
 
     /* JADX WARN: Failed to restore switch over string. Please report as a decompilation issue */
@@ -1579,12 +1960,31 @@ public final class InstanceApi {
         Code decompiled incorrectly, please refer to instructions dump.
         To view partially-correct add '--show-bad-code' argument
     */
-    static final org.luaj.vm2.LuaValue animationTrack$lambda$40(com.goydevv.studrblx.engine.PlaySession.ScriptTrack r4, kotlin.jvm.internal.Ref.BooleanRef r5, kotlin.jvm.internal.Ref.FloatRef r6, kotlin.jvm.internal.Ref.ObjectRef r7, com.goydevv.studrblx.lua.InstanceApi r8, kotlin.jvm.internal.Ref.ObjectRef r9, com.goydevv.studrblx.model.Instance r10, org.luaj.vm2.LuaTable r11, org.luaj.vm2.LuaValue r12, org.luaj.vm2.LuaValue r13) {
-        /*
-            Method dump skipped, instruction units count: 422
-            To view this dump add '--comments-level debug' option
-        */
-        return org.luaj.vm2.LuaValue.NIL;
+    static final org.luaj.vm2.LuaValue animationTrack$lambda$40(com.goydevv.studrblx.engine.PlaySession.ScriptTrack st, kotlin.jvm.internal.Ref.BooleanRef playing, kotlin.jvm.internal.Ref.FloatRef speed, kotlin.jvm.internal.Ref.ObjectRef looped, com.goydevv.studrblx.lua.InstanceApi this$0, kotlin.jvm.internal.Ref.ObjectRef priority, com.goydevv.studrblx.model.Instance anim, org.luaj.vm2.LuaTable table, org.luaj.vm2.LuaValue self, org.luaj.vm2.LuaValue key) {
+        String k = key.tojstring();
+        if (k == null) return LuaValue.NIL;
+        switch (k) {
+            case "IsPlaying": return LuaValue.valueOf(st != null ? st.isPlaying() : playing.element);
+            case "Length": return LuaValue.valueOf(st != null ? st.getLength() : 0.0f);
+            case "TimePosition": return LuaValue.valueOf(st != null ? st.getTime() : 0.0f);
+            case "Speed": return LuaValue.valueOf(speed.element);
+            case "Looped":
+                Boolean lp = (Boolean) looped.element;
+                if (lp != null) return LuaValue.valueOf(lp.booleanValue());
+                com.goydevv.studrblx.engine.AnimClip cl = st != null ? st.getClip() : null;
+                return LuaValue.valueOf(cl != null && cl.getLooped());
+            case "Priority":
+                Integer pr = (Integer) priority.element;
+                return LuaTypes.INSTANCE.wrap(this$0.priorityItem(pr != null ? pr.intValue() : 1000));
+            case "WeightCurrent": case "WeightTarget":
+                return LuaValue.valueOf(st != null && st.isPlaying() ? 1.0f : 0.0f);
+            case "Animation":
+                return this$0.rt.wrap(anim);
+            case "Stopped": case "Ended": case "DidLoop": case "Played":
+                return new LuaUserdata(new SignalRef(table, k), this$0.signalMeta);
+            default:
+                return LuaValue.NIL;
+        }
     }
 
     private final Instance self(Varargs a, String name) {
@@ -1801,12 +2201,218 @@ public final class InstanceApi {
         Code decompiled incorrectly, please refer to instructions dump.
         To view partially-correct add '--show-bad-code' argument
     */
-    public final org.luaj.vm2.Varargs callMethod(java.lang.String r20, org.luaj.vm2.Varargs r21) {
-        /*
-            Method dump skipped, instruction units count: 1760
-            To view this dump add '--comments-level debug' option
-        */
-        return org.luaj.vm2.LuaValue.NIL;
+    public final org.luaj.vm2.Varargs callMethod(java.lang.String name, org.luaj.vm2.Varargs args) {
+        Instance inst = self(args, name);
+        String cn = inst.getClassName();
+        switch (name) {
+            case "FindFirstChild": {
+                String n = args.checkjstring(2);
+                boolean rec = args.optboolean(3, false);
+                Instance f = inst.findFirstChild(n, rec);
+                return f != null ? this.rt.wrap(f) : LuaValue.NIL;
+            }
+            case "FindFirstChildOfClass": {
+                Instance f = inst.findFirstChildOfClass(args.checkjstring(2));
+                return f != null ? this.rt.wrap(f) : LuaValue.NIL;
+            }
+            case "FindFirstChildWhichIsA": {
+                Instance f = inst.findFirstChildWhichIsA(args.checkjstring(2), args.optboolean(3, false));
+                return f != null ? this.rt.wrap(f) : LuaValue.NIL;
+            }
+            case "WaitForChild": {
+                String n = args.checkjstring(2);
+                Instance f = inst.findFirstChild(n, false);
+                if (f != null) return this.rt.wrap(f);
+                double timeout = args.optdouble(3, 5.0d);
+                double waited = 0.0d;
+                while (f == null && waited < timeout && !this.rt.getStopped()) {
+                    try { this.rt.yieldFor(0.05d); } catch (Exception ignored) { break; }
+                    waited += 0.05d;
+                    f = inst.findFirstChild(n, false);
+                }
+                return f != null ? this.rt.wrap(f) : LuaValue.NIL;
+            }
+            case "GetChildren": {
+                LuaTable tbl = new LuaTable();
+                ArrayList<Instance> chs = inst.getChildren();
+                for (int i = 0; i < chs.size(); i++) {
+                    tbl.set(i + 1, this.rt.wrap(chs.get(i)));
+                }
+                return tbl;
+            }
+            case "GetDescendants": {
+                LuaTable tbl = new LuaTable();
+                List<Instance> descs = Instance.descendants$default(inst, null, 1, null);
+                for (int i = 0; i < descs.size(); i++) {
+                    tbl.set(i + 1, this.rt.wrap(descs.get(i)));
+                }
+                return tbl;
+            }
+            case "Clone": {
+                return this.rt.wrap(inst.cloneTree());
+            }
+            case "Destroy": case "Remove": {
+                inst.destroy();
+                return LuaValue.NIL;
+            }
+            case "ClearAllChildren": {
+                ArrayList<Instance> copy = new ArrayList<>(inst.getChildren());
+                for (Instance ch : copy) ch.destroy();
+                return LuaValue.NIL;
+            }
+            case "IsA": {
+                return LuaValue.valueOf(inst.isA(args.checkjstring(2)));
+            }
+            case "IsDescendantOf": {
+                Object o = args.arg(2).isuserdata() ? args.arg(2).touserdata() : null;
+                return LuaValue.valueOf((o instanceof Instance) && inst.isDescendantOf((Instance) o));
+            }
+            case "IsAncestorOf": {
+                Object o = args.arg(2).isuserdata() ? args.arg(2).touserdata() : null;
+                return LuaValue.valueOf((o instanceof Instance) && ((Instance) o).isDescendantOf(inst));
+            }
+            case "GetFullName": {
+                return LuaValue.valueOf(inst.fullName());
+            }
+            case "GetAttribute": {
+                Object av = inst.getAttributes().get(args.checkjstring(2));
+                return av != null ? this.rt.toLua(av, inst, args.checkjstring(2)) : LuaValue.NIL;
+            }
+            case "SetAttribute": {
+                String ak = args.checkjstring(2);
+                LuaValue av = args.arg(3);
+                if (av.isnil()) inst.getAttributes().remove(ak);
+                else inst.getAttributes().put(ak, this.rt.fromLua(av, null, inst, ak));
+                return LuaValue.NIL;
+            }
+            case "GetAttributes": {
+                LuaTable tbl = new LuaTable();
+                for (Map.Entry<String, Object> e : inst.getAttributes().entrySet()) {
+                    tbl.set(e.getKey(), this.rt.toLua(e.getValue(), inst, e.getKey()));
+                }
+                return tbl;
+            }
+            case "GetPropertyChangedSignal": {
+                return new LuaUserdata(new SignalRef(inst, "prop:" + args.checkjstring(2)), this.signalMeta);
+            }
+            case "GetService": case "FindService": {
+                String sn = args.checkjstring(2);
+                com.goydevv.studrblx.model.DataModel dm = this.rt.getStudio().getModel();
+                Instance svc = "GetService".equals(name) ? dm.getService(sn) : dm.findService(sn);
+                return svc != null ? this.rt.wrap(svc) : LuaValue.NIL;
+            }
+            case "Play": {
+                if ("Sound".equals(cn)) {
+                    Object sq = inst.getAttributes().get("__playSeq");
+                    int nsq = (sq instanceof Integer) ? ((Integer) sq).intValue() + 1 : 1;
+                    inst.getAttributes().put("__playSeq", Integer.valueOf(nsq));
+                    inst.set("Playing", Boolean.TRUE, true);
+                }
+                return LuaValue.NIL;
+            }
+            case "Stop": case "Pause": {
+                if ("Sound".equals(cn)) {
+                    inst.set("Playing", Boolean.FALSE, true);
+                }
+                return LuaValue.NIL;
+            }
+            case "Resume": {
+                if ("Sound".equals(cn)) {
+                    inst.set("Playing", Boolean.TRUE, true);
+                }
+                return LuaValue.NIL;
+            }
+            case "Stop": {
+                if ("Sound".equals(cn)) {
+                    inst.set("Playing", Boolean.FALSE, true);
+                    inst.set("TimePosition", Float.valueOf(0.0f), false);
+                }
+                return LuaValue.NIL;
+            }
+            case "Pause": {
+                if ("Sound".equals(cn)) {
+                    inst.set("Playing", Boolean.FALSE, true);
+                }
+                return LuaValue.NIL;
+            }
+            case "Resume": {
+                if ("Sound".equals(cn)) {
+                    inst.set("Playing", Boolean.TRUE, true);
+                }
+                return LuaValue.NIL;
+            }
+            case "FireServer": case "FireClient": case "FireAllClients": {
+                if ("RemoteEvent".equals(cn) || "UnreliableRemoteEvent".equals(cn)) {
+                    int start = "FireClient".equals(name) ? 3 : 2;
+                    int cnt = Math.max(0, args.narg() - start + 1);
+                    LuaValue[] pass = new LuaValue[cnt];
+                    for (int i = 0; i < cnt; i++) pass[i] = args.arg(start + i);
+                    if ("FireServer".equals(name)) {
+                        PlaySession pl = this.rt.getPlay();
+                        LuaValue[] withPlr = new LuaValue[cnt + 1];
+                        withPlr[0] = (pl != null && pl.getPlayer() != null) ? this.rt.wrap(pl.getPlayer()) : LuaValue.NIL;
+                        System.arraycopy(pass, 0, withPlr, 1, cnt);
+                        this.rt.fire(inst, "OnServerEvent", withPlr);
+                    } else {
+                        this.rt.fire(inst, "OnClientEvent", pass);
+                    }
+                } else if ("BindableEvent".equals(cn)) {
+                    int cnt = Math.max(0, args.narg() - 1);
+                    LuaValue[] pass = new LuaValue[cnt];
+                    for (int i = 0; i < cnt; i++) pass[i] = args.arg(2 + i);
+                    this.rt.fire(inst, "Event", pass);
+                }
+                return LuaValue.NIL;
+            }
+            case "InvokeServer": case "InvokeClient": case "Invoke": {
+                HashMap<String, LuaValue> cbs = this.rt.getCallbacks().get(inst);
+                String cbKey = "InvokeServer".equals(name) ? "OnServerInvoke" : ("InvokeClient".equals(name) ? "OnClientInvoke" : "OnInvoke");
+                LuaValue fn = cbs != null ? cbs.get(cbKey) : null;
+                if (fn != null && fn.isfunction()) {
+                    int start = "InvokeClient".equals(name) ? 3 : 2;
+                    int cnt = Math.max(0, args.narg() - start + 1);
+                    if ("InvokeServer".equals(name)) {
+                        PlaySession pl = this.rt.getPlay();
+                        LuaValue[] withPlr = new LuaValue[cnt + 1];
+                        withPlr[0] = (pl != null && pl.getPlayer() != null) ? this.rt.wrap(pl.getPlayer()) : LuaValue.NIL;
+                        for (int i = 0; i < cnt; i++) withPlr[i + 1] = args.arg(start + i);
+                        return fn.invoke(LuaValue.varargsOf(withPlr));
+                    }
+                    LuaValue[] pass = new LuaValue[cnt];
+                    for (int i = 0; i < cnt; i++) pass[i] = args.arg(start + i);
+                    return fn.invoke(LuaValue.varargsOf(pass));
+                }
+                return LuaValue.NIL;
+            }
+            case "Fire": {
+                if ("BindableEvent".equals(cn)) {
+                    int cnt = Math.max(0, args.narg() - 1);
+                    LuaValue[] pass = new LuaValue[cnt];
+                    for (int i = 0; i < cnt; i++) pass[i] = args.arg(2 + i);
+                    this.rt.fire(inst, "Event", pass);
+                }
+                return LuaValue.NIL;
+            }
+            case "LoadAnimation": {
+                Object aObj = args.arg(2).isuserdata() ? args.arg(2).touserdata() : null;
+                if (aObj instanceof Instance) {
+                    return animationTrack(inst, (Instance) aObj);
+                }
+                return LuaValue.NIL;
+            }
+            default:
+                break;
+        }
+        if ("Workspace".equals(cn)) return workspaceCall(name, args);
+        if ("CollectionService".equals(cn)) return collectionCall(name, args);
+        if ("Humanoid".equals(cn) || "Animator".equals(cn) || "AnimationController".equals(cn)) return humanoidCall(inst, name, args);
+        if (inst.isA("Model")) return modelCall(inst, name, args);
+        if (inst.isA("BasePart")) return partCall(inst, name, args);
+        try {
+            return RobloxServices.INSTANCE.call(this, this.rt, inst, name, args);
+        } catch (Exception e) {
+            return LuaValue.NIL;
+        }
     }
 
     /* JADX WARN: Can't fix incorrect switch cases order, some code will duplicate */
@@ -1831,12 +2437,54 @@ public final class InstanceApi {
         Code decompiled incorrectly, please refer to instructions dump.
         To view partially-correct add '--show-bad-code' argument
     */
-    public final org.luaj.vm2.Varargs collectionCall(java.lang.String r14, org.luaj.vm2.Varargs r15) {
-        /*
-            Method dump skipped, instruction units count: 462
-            To view this dump add '--comments-level debug' option
-        */
-        return org.luaj.vm2.LuaValue.NIL;
+    public final org.luaj.vm2.Varargs collectionCall(java.lang.String name, org.luaj.vm2.Varargs args) {
+        switch (name) {
+            case "AddTag": {
+                Object o = args.arg(2).isuserdata() ? args.arg(2).touserdata() : null;
+                String tag = args.checkjstring(3);
+                if (o instanceof Instance) {
+                    ((Instance) o).getAttributes().put("__tag:" + tag, Boolean.TRUE);
+                }
+                return LuaValue.NIL;
+            }
+            case "RemoveTag": {
+                Object o = args.arg(2).isuserdata() ? args.arg(2).touserdata() : null;
+                String tag = args.checkjstring(3);
+                if (o instanceof Instance) {
+                    ((Instance) o).getAttributes().remove("__tag:" + tag);
+                }
+                return LuaValue.NIL;
+            }
+            case "HasTag": {
+                Object o = args.arg(2).isuserdata() ? args.arg(2).touserdata() : null;
+                String tag = args.checkjstring(3);
+                return LuaValue.valueOf((o instanceof Instance) && Boolean.TRUE.equals(((Instance) o).getAttributes().get("__tag:" + tag)));
+            }
+            case "GetTagged": {
+                String tag = args.checkjstring(2);
+                LuaTable tbl = new LuaTable();
+                int idx = 1;
+                for (Instance d : Instance.descendants$default(this.rt.getStudio().getModel(), null, 1, null)) {
+                    if (Boolean.TRUE.equals(d.getAttributes().get("__tag:" + tag))) {
+                        tbl.set(idx++, this.rt.wrap(d));
+                    }
+                }
+                return tbl;
+            }
+            case "GetTags": {
+                Object o = args.arg(2).isuserdata() ? args.arg(2).touserdata() : null;
+                LuaTable tbl = new LuaTable();
+                if (o instanceof Instance) {
+                    int idx = 1;
+                    for (String k : ((Instance) o).getAttributes().keySet()) {
+                        if (k.startsWith("__tag:")) tbl.set(idx++, LuaValue.valueOf(k.substring(6)));
+                    }
+                }
+                return tbl;
+            }
+            default:
+                return LuaValue.NIL;
+        }
     }
 
     /* JADX WARN: Can't fix incorrect switch cases order, some code will duplicate */
@@ -2422,12 +3070,154 @@ public final class InstanceApi {
         Code decompiled incorrectly, please refer to instructions dump.
         To view partially-correct add '--show-bad-code' argument
     */
-    public final org.luaj.vm2.Varargs workspaceCall(java.lang.String r30, org.luaj.vm2.Varargs r31) {
-        /*
-            Method dump skipped, instruction units count: 2854
-            To view this dump add '--comments-level debug' option
-        */
-        return org.luaj.vm2.LuaValue.NIL;
+    public final org.luaj.vm2.Varargs workspaceCall(java.lang.String name, org.luaj.vm2.Varargs args) {
+        if ("Raycast".equals(name)) {
+            Object oObj = args.arg(2).isuserdata() ? args.arg(2).touserdata() : null;
+            Object dObj = args.arg(3).isuserdata() ? args.arg(3).touserdata() : null;
+            if (!(oObj instanceof Vector3) || !(dObj instanceof Vector3)) return LuaValue.NIL;
+            Vector3 origin = (Vector3) oObj;
+            Vector3 dir = (Vector3) dObj;
+            float maxDist = dir.getMagnitude();
+            if (maxDist <= 1.0E-5f) return LuaValue.NIL;
+            Vector3 unit = dir.div(maxDist);
+            Object rpObj = args.arg(4).isuserdata() ? args.arg(4).touserdata() : null;
+            final RaycastParamsV rp = rpObj instanceof RaycastParamsV ? (RaycastParamsV) rpObj : null;
+            com.goydevv.studrblx.engine.RayHit hit = com.goydevv.studrblx.engine.Geometry.INSTANCE.raycast(
+                this.rt.getStudio().renderParts(), origin, unit, maxDist,
+                new Function1<Instance, Boolean>() {
+                    @Override
+                    public Boolean invoke(Instance p) {
+                        if (rp == null) return Boolean.TRUE;
+                        boolean inList = false;
+                        for (Instance fi : rp.getFilter()) {
+                            if (p == fi || p.isDescendantOf(fi)) { inList = true; break; }
+                        }
+                        return Boolean.valueOf((rp.getFilterType() == 1) ? inList : !inList);
+                    }
+                }
+            );
+            if (hit == null) return LuaValue.NIL;
+            return LuaTypes.INSTANCE.wrap(new RaycastResultV(new RayHitInfo(hit.getPart(), hit.getPoint(), hit.getNormal(), hit.getDist(), PartData.INSTANCE.material(hit.getPart()))));
+        }
+        if ("GetPartBoundsInRadius".equals(name)) {
+            Object pObj = args.arg(2).isuserdata() ? args.arg(2).touserdata() : null;
+            if (!(pObj instanceof Vector3)) return new LuaTable();
+            Vector3 center = (Vector3) pObj;
+            float radius = (float) args.arg(3).optdouble(1.0d);
+            LuaTable out = new LuaTable();
+            int idx = 1;
+            for (Instance p : this.rt.getStudio().renderParts()) {
+                CFrame cf = PartData.INSTANCE.cframe(p);
+                Vector3 sz = PartData.INSTANCE.size(p);
+                float pr = sz.getMagnitude() * 0.5f;
+                if (cf.getPosition().minus(center).getMagnitude() <= radius + pr) {
+                    out.set(idx++, this.rt.wrap(p));
+                }
+            }
+            return out;
+        }
+        if ("GetPartBoundsInBox".equals(name)) {
+            Object cObj = args.arg(2).isuserdata() ? args.arg(2).touserdata() : null;
+            Object sObj = args.arg(3).isuserdata() ? args.arg(3).touserdata() : null;
+            if (!(cObj instanceof CFrame) || !(sObj instanceof Vector3)) return new LuaTable();
+            Vector3 center = ((CFrame) cObj).getPosition();
+            Vector3 half = ((Vector3) sObj).div(2.0f);
+            LuaTable out = new LuaTable();
+            int idx = 1;
+            for (Instance p : this.rt.getStudio().renderParts()) {
+                Vector3 pc = PartData.INSTANCE.cframe(p).getPosition();
+                Vector3 ph = PartData.INSTANCE.size(p).div(2.0f);
+                if (Math.abs(pc.getX() - center.getX()) <= half.getX() + ph.getX()
+                    && Math.abs(pc.getY() - center.getY()) <= half.getY() + ph.getY()
+                    && Math.abs(pc.getZ() - center.getZ()) <= half.getZ() + ph.getZ()) {
+                    out.set(idx++, this.rt.wrap(p));
+                }
+            }
+            return out;
+        }
+        if ("GetPartsInPart".equals(name)) {
+            Object pObj = args.arg(2).isuserdata() ? args.arg(2).touserdata() : null;
+            if (!(pObj instanceof Instance) || !((Instance) pObj).isA("BasePart")) return new LuaTable();
+            Instance target = (Instance) pObj;
+            Vector3 center = PartData.INSTANCE.cframe(target).getPosition();
+            Vector3 half = PartData.INSTANCE.size(target).div(2.0f);
+            LuaTable out = new LuaTable();
+            int idx = 1;
+            for (Instance p : this.rt.getStudio().renderParts()) {
+                if (p == target) continue;
+                Vector3 pc = PartData.INSTANCE.cframe(p).getPosition();
+                Vector3 ph = PartData.INSTANCE.size(p).div(2.0f);
+                if (Math.abs(pc.getX() - center.getX()) <= half.getX() + ph.getX()
+                    && Math.abs(pc.getY() - center.getY()) <= half.getY() + ph.getY()
+                    && Math.abs(pc.getZ() - center.getZ()) <= half.getZ() + ph.getZ()) {
+                    out.set(idx++, this.rt.wrap(p));
+                }
+            }
+            return out;
+        }
+        if ("Spherecast".equals(name) || "Blockcast".equals(name)) {
+            Vector3 origin;
+            Vector3 dir;
+            Object rpObj;
+            if ("Spherecast".equals(name)) {
+                Object oObj = args.arg(2).isuserdata() ? args.arg(2).touserdata() : null;
+                Object dObj = args.arg(4).isuserdata() ? args.arg(4).touserdata() : null;
+                if (!(oObj instanceof Vector3) || !(dObj instanceof Vector3)) return LuaValue.NIL;
+                origin = (Vector3) oObj;
+                dir = (Vector3) dObj;
+                rpObj = args.arg(5).isuserdata() ? args.arg(5).touserdata() : null;
+            } else {
+                Object cObj = args.arg(2).isuserdata() ? args.arg(2).touserdata() : null;
+                Object dObj = args.arg(4).isuserdata() ? args.arg(4).touserdata() : null;
+                if (!(cObj instanceof CFrame) || !(dObj instanceof Vector3)) return LuaValue.NIL;
+                origin = ((CFrame) cObj).getPosition();
+                dir = (Vector3) dObj;
+                rpObj = args.arg(5).isuserdata() ? args.arg(5).touserdata() : null;
+            }
+            float maxDist = dir.getMagnitude();
+            if (maxDist <= 1.0E-5f) return LuaValue.NIL;
+            final RaycastParamsV rp = rpObj instanceof RaycastParamsV ? (RaycastParamsV) rpObj : null;
+            com.goydevv.studrblx.engine.RayHit hit = com.goydevv.studrblx.engine.Geometry.INSTANCE.raycast(
+                this.rt.getStudio().renderParts(), origin, dir.div(maxDist), maxDist,
+                new Function1<Instance, Boolean>() {
+                    @Override
+                    public Boolean invoke(Instance p) {
+                        if (rp == null) return Boolean.TRUE;
+                        boolean inList = false;
+                        for (Instance fi : rp.getFilter()) {
+                            if (p == fi || p.isDescendantOf(fi)) { inList = true; break; }
+                        }
+                        return Boolean.valueOf((rp.getFilterType() == 1) ? inList : !inList);
+                    }
+                }
+            );
+            if (hit == null) return LuaValue.NIL;
+            return LuaTypes.INSTANCE.wrap(new RaycastResultV(new RayHitInfo(hit.getPart(), hit.getPoint(), hit.getNormal(), hit.getDist(), PartData.INSTANCE.material(hit.getPart()))));
+        }
+        if ("BulkMoveTo".equals(name)) {
+            if (args.arg(2).istable() && args.arg(3).istable()) {
+                LuaTable pts = args.arg(2).checktable();
+                LuaTable cfs = args.arg(3).checktable();
+                int len = Math.min(pts.length(), cfs.length());
+                for (int i = 1; i <= len; i++) {
+                    LuaValue pv = pts.get(i);
+                    LuaValue cv = cfs.get(i);
+                    Object po = pv.isuserdata() ? pv.touserdata() : null;
+                    Object co = cv.isuserdata() ? cv.touserdata() : null;
+                    if (po instanceof Instance && co instanceof CFrame) {
+                        ((Instance) po).set("CFrame", co, false);
+                    }
+                }
+            }
+            return LuaValue.NONE;
+        }
+        if ("GetServerTimeNow".equals(name)) {
+            return LuaValue.valueOf(((double) System.currentTimeMillis()) / 1000.0d);
+        }
+        if ("GetRealPhysicsFPS".equals(name)) {
+            return LuaValue.valueOf(60.0d);
+        }
+        return LuaValue.NIL;
     }
 
     static final boolean workspaceCall$lambda$52(List $list, boolean $white, Instance p) {
@@ -2574,12 +3364,44 @@ public final class InstanceApi {
         Code decompiled incorrectly, please refer to instructions dump.
         To view partially-correct add '--show-bad-code' argument
     */
-    public final org.luaj.vm2.Varargs modelCall(com.goydevv.studrblx.model.Instance r13, java.lang.String r14, org.luaj.vm2.Varargs r15) {
-        /*
-            Method dump skipped, instruction units count: 796
-            To view this dump add '--comments-level debug' option
-        */
-        return org.luaj.vm2.LuaValue.NIL;
+    public final org.luaj.vm2.Varargs modelCall(com.goydevv.studrblx.model.Instance m, java.lang.String name, org.luaj.vm2.Varargs args) {
+        switch (name) {
+            case "GetPivot": case "GetPrimaryPartCFrame": {
+                Object pp = m.get("PrimaryPart");
+                if (pp instanceof Instance && ((Instance) pp).isA("BasePart")) {
+                    return LuaTypes.INSTANCE.wrap(PartData.INSTANCE.cframe((Instance) pp));
+                }
+                for (Instance d : Instance.descendants$default(m, null, 1, null)) {
+                    if (d.isA("BasePart")) return LuaTypes.INSTANCE.wrap(PartData.INSTANCE.cframe(d));
+                }
+                return LuaTypes.INSTANCE.wrap(CFrame.INSTANCE.getIDENTITY());
+            }
+            case "PivotTo": case "SetPrimaryPartCFrame": case "MoveTo": {
+                Object argObj = args.arg(2).isuserdata() ? args.arg(2).touserdata() : null;
+                CFrame target = null;
+                if (argObj instanceof CFrame) target = (CFrame) argObj;
+                else if (argObj instanceof Vector3) target = CFrame.INSTANCE.at((Vector3) argObj);
+                if (target == null) return LuaValue.NIL;
+                CFrame cur = CFrame.INSTANCE.getIDENTITY();
+                Object pp = m.get("PrimaryPart");
+                if (pp instanceof Instance && ((Instance) pp).isA("BasePart")) {
+                    cur = PartData.INSTANCE.cframe((Instance) pp);
+                } else {
+                    for (Instance d : Instance.descendants$default(m, null, 1, null)) {
+                        if (d.isA("BasePart")) { cur = PartData.INSTANCE.cframe(d); break; }
+                    }
+                }
+                CFrame delta = target.times(cur.inverse());
+                for (Instance d : Instance.descendants$default(m, null, 1, null)) {
+                    if (d.isA("BasePart")) {
+                        d.set("CFrame", delta.times(PartData.INSTANCE.cframe(d)), true);
+                    }
+                }
+                return LuaValue.NIL;
+            }
+            default:
+                return LuaValue.NIL;
+        }
     }
 
     /* JADX WARN: Can't fix incorrect switch cases order, some code will duplicate */
@@ -2606,12 +3428,26 @@ public final class InstanceApi {
         Code decompiled incorrectly, please refer to instructions dump.
         To view partially-correct add '--show-bad-code' argument
     */
-    public final org.luaj.vm2.Varargs partCall(com.goydevv.studrblx.model.Instance r8, java.lang.String r9, org.luaj.vm2.Varargs r10) {
-        /*
-            Method dump skipped, instruction units count: 532
-            To view this dump add '--comments-level debug' option
-        */
-        return org.luaj.vm2.LuaValue.NIL;
+    public final org.luaj.vm2.Varargs partCall(com.goydevv.studrblx.model.Instance p, java.lang.String name, org.luaj.vm2.Varargs args) {
+        switch (name) {
+            case "GetMass": {
+                Vector3 sz = PartData.INSTANCE.size(p);
+                return LuaValue.valueOf(sz.getX() * sz.getY() * sz.getZ() * 0.7f);
+            }
+            case "GetPivot": {
+                return LuaTypes.INSTANCE.wrap(PartData.INSTANCE.cframe(p));
+            }
+            case "PivotTo": {
+                Object cfObj = args.arg(2).isuserdata() ? args.arg(2).touserdata() : null;
+                if (cfObj instanceof CFrame) p.set("CFrame", cfObj, true);
+                return LuaValue.NIL;
+            }
+            case "GetTouchingParts": case "GetConnectedParts": {
+                return new LuaTable();
+            }
+            default:
+                return LuaValue.NIL;
+        }
     }
 
     /* JADX WARN: Can't fix incorrect switch cases order, some code will duplicate */
@@ -2628,11 +3464,37 @@ public final class InstanceApi {
         Code decompiled incorrectly, please refer to instructions dump.
         To view partially-correct add '--show-bad-code' argument
     */
-    public final org.luaj.vm2.Varargs humanoidCall(com.goydevv.studrblx.model.Instance r21, java.lang.String r22, org.luaj.vm2.Varargs r23) {
-        /*
-            Method dump skipped, instruction units count: 862
-            To view this dump add '--comments-level debug' option
-        */
-        return org.luaj.vm2.LuaValue.NIL;
+    public final org.luaj.vm2.Varargs humanoidCall(com.goydevv.studrblx.model.Instance h, java.lang.String name, org.luaj.vm2.Varargs args) {
+        switch (name) {
+            case "LoadAnimation": {
+                Object aObj = args.arg(2).isuserdata() ? args.arg(2).touserdata() : null;
+                if (aObj instanceof Instance) {
+                    return animationTrack(h, (Instance) aObj);
+                }
+                return LuaValue.NIL;
+            }
+            case "TakeDamage": {
+                float dmg = (float) args.optdouble(2, 0.0d);
+                Object cur = h.get("Health");
+                if (cur == null) cur = h.get("Health_XML");
+                float hp = cur instanceof Number ? ((Number) cur).floatValue() : 100.0f;
+                float nextHp = Math.max(0.0f, hp - dmg);
+                h.set(h.getProps().containsKey("Health") ? "Health" : "Health_XML", Float.valueOf(nextHp), true);
+                return LuaValue.NIL;
+            }
+            case "MoveTo": {
+                Object vObj = args.arg(2).isuserdata() ? args.arg(2).touserdata() : null;
+                PlaySession pl = this.rt.getPlay();
+                if (pl != null && vObj instanceof Vector3) {
+                    pl.moveTo((Vector3) vObj);
+                }
+                return LuaValue.NIL;
+            }
+            case "GetPlayingAnimationTracks": {
+                return new LuaTable();
+            }
+            default:
+                return LuaValue.NIL;
+        }
     }
 }

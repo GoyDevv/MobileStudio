@@ -155,11 +155,118 @@ public final class PluginApi {
         To view partially-correct add '--show-bad-code' argument
     */
     public final org.luaj.vm2.Varargs call(com.goydevv.studrblx.lua.LuaRuntime r29, com.goydevv.studrblx.model.Instance r30, java.lang.String r31, org.luaj.vm2.Varargs r32) {
-        /*
-            Method dump skipped, instruction units count: 1760
-            To view this dump add '--comments-level debug' option
-        */
-        return org.luaj.vm2.LuaValue.NIL;
+        Intrinsics.checkNotNullParameter(r29, "rt");
+        Intrinsics.checkNotNullParameter(r30, "inst");
+        Intrinsics.checkNotNullParameter(r31, "name");
+        Intrinsics.checkNotNullParameter(r32, "a");
+        Studio studio = r29.getStudio();
+        LuaValue arg2 = r32.arg(2);
+        switch (r31) {
+            case "CreateToolbar": {
+                Instance tb = com.goydevv.studrblx.model.InstanceFactory.INSTANCE.create("PluginToolbar");
+                String tName = arg2.optjstring("Toolbar");
+                Intrinsics.checkNotNullExpressionValue(tName, "optjstring(...)");
+                tb.setName(tName);
+                Instance.setParent$default(tb, r30, 0, 2, null);
+                return r29.wrap(tb);
+            }
+            case "CreateButton": {
+                Instance btn = com.goydevv.studrblx.model.InstanceFactory.INSTANCE.create("PluginToolbarButton");
+                String bId = arg2.optjstring("Button");
+                String tip = r32.arg(3).optjstring("");
+                String icon = r32.arg(4).optjstring("");
+                String text = r32.arg(5).optjstring(bId);
+                btn.setName(text.length() > 0 ? text : bId);
+                btn.set("Tooltip", tip, false);
+                btn.set("Icon", icon, false);
+                btn.set("Enabled", Boolean.TRUE, false);
+                Instance.setParent$default(btn, r30, 0, 2, null);
+                studio.addPluginButton(btn, pluginId(r30.getParent() != null ? r30.getParent() : r30), r29);
+                return r29.wrap(btn);
+            }
+            case "SetActive": {
+                r30.set("Active", Boolean.valueOf(arg2.toboolean()), false);
+                studio.notifyPluginButtons();
+                return LuaValue.NONE;
+            }
+            case "CreateDockWidgetPluginGui":
+            case "CreateDockWidgetPluginGuiAsync":
+            case "CreateQWidgetPluginGui": {
+                Instance w = com.goydevv.studrblx.model.InstanceFactory.INSTANCE.create("DockWidgetPluginGui");
+                String wName = arg2.optjstring("Widget");
+                Intrinsics.checkNotNullExpressionValue(wName, "optjstring(...)");
+                w.setName(wName);
+                LuaValue info = r32.arg(3);
+                boolean enabled = info.istable() && info.get("InitialEnabled").toboolean();
+                w.set("Enabled", Boolean.valueOf(enabled), false);
+                w.set("Title", w.getName(), false);
+                w.set("ZIndexBehavior", new com.goydevv.studrblx.model.EnumValue(1), false);
+                if (info.istable()) {
+                    w.getAttributes().put("__w", Integer.valueOf(info.get("FloatingXSize").optint(300)));
+                    w.getAttributes().put("__h", Integer.valueOf(info.get("FloatingYSize").optint(300)));
+                }
+                studio.addPluginWidget(w, r29);
+                return r29.wrap(w);
+            }
+            case "GetSetting": {
+                String k = arg2.optjstring("");
+                String raw = studio.pluginSetting(pluginId(r30), k);
+                if (raw == null) {
+                    return LuaValue.NIL;
+                }
+                return LuaValue.valueOf(raw);
+            }
+            case "SetSetting": {
+                String k = arg2.optjstring("");
+                LuaValue v = r32.arg(3);
+                studio.setPluginSetting(pluginId(r30), k, v.isnil() ? null : v.tojstring());
+                return LuaValue.NONE;
+            }
+            case "Activate": {
+                studio.activatePlugin(r30, r29, arg2.optboolean(false));
+                return LuaValue.NONE;
+            }
+            case "Deactivate": {
+                studio.deactivatePlugin(r30);
+                return LuaValue.NONE;
+            }
+            case "IsActivated":
+                return LuaValue.valueOf(studio.getActivePlugin() == r30);
+            case "IsActivatedWithExclusiveMouse":
+                return LuaValue.valueOf(studio.getActivePlugin() == r30 && studio.getActivePluginExclusive());
+            case "GetMouse": {
+                LuaTable m = studio.getPluginMice().get(r30);
+                if (m == null) {
+                    m = pluginMouse(r29);
+                    studio.getPluginMice().put(r30, m);
+                }
+                return m;
+            }
+            case "CreatePluginAction": {
+                String id = arg2.optjstring("");
+                String txt = r32.arg(3).optjstring("");
+                String tip = r32.arg(4).optjstring("");
+                return action(r29, id, txt, tip);
+            }
+            case "CreatePluginMenu": {
+                String id = arg2.optjstring("");
+                String title = r32.arg(3).optjstring(id);
+                return menu(r29, studio, id, title);
+            }
+            case "GetStudioUserId":
+                return LuaValue.valueOf(0);
+            case "Select":
+            case "OpenScript":
+            case "OpenWikiPage":
+            case "SetReady":
+            case "StartDrag":
+            case "SaveSelectedToRoblox":
+            case "PromptSaveSelection":
+            case "PromptImportFile":
+                return LuaValue.NONE;
+            default:
+                return LuaValue.NIL;
+        }
     }
 
     private final String pluginId(Instance i) {
@@ -248,11 +355,39 @@ public final class PluginApi {
         To view partially-correct add '--show-bad-code' argument
     */
     static final org.luaj.vm2.LuaValue pluginMouse$lambda$10(final com.goydevv.studrblx.lua.LuaRuntime r2, final org.luaj.vm2.LuaTable r3, org.luaj.vm2.LuaValue r4, org.luaj.vm2.LuaValue r5) {
-        /*
-            Method dump skipped, instruction units count: 254
-            To view this dump add '--comments-level debug' option
-        */
-        return org.luaj.vm2.LuaValue.NIL;
+        String key = r5 != null ? r5.tojstring() : "";
+        switch (key) {
+            case "Button1Down":
+            case "Button1Up":
+            case "Button2Down":
+            case "Button2Up":
+            case "Move":
+            case "Idle":
+            case "WheelForward":
+            case "WheelBackward":
+            case "KeyDown":
+            case "KeyUp":
+            case "DragEnter":
+            case "Changed":
+                return r2.getApi().signal(r3, key);
+            case "IsA":
+                return LuaTypesKt.fnv(new Function1() {
+                    @Override
+                    public final Object invoke(Object obj) {
+                        return PluginApi.pluginMouse$lambda$10$lambda$8((Varargs) obj);
+                    }
+                });
+            case "GetPropertyChangedSignal":
+                return LuaTypesKt.fnv(new Function1() {
+                    @Override
+                    public final Object invoke(Object obj) {
+                        return PluginApi.pluginMouse$lambda$10$lambda$9(r2, r3, (Varargs) obj);
+                    }
+                });
+            default:
+                LuaValue raw = r3.rawget(r5);
+                return raw != null ? raw : LuaValue.NIL;
+        }
     }
 
     static final Varargs pluginMouse$lambda$10$lambda$8(Varargs a) {

@@ -80,14 +80,14 @@ public final class SceneRenderer implements GLSurfaceView.Renderer {
     private static final int GL_TEXTURE_MAX_ANISOTROPY = 34046;
     private static final String LINE_FS = "\nprecision mediump float;\nuniform vec4 uColor;\nvoid main() { gl_FragColor = uColor; }";
     private static final String LINE_VS = "\nuniform mat4 uVP; uniform mat4 uModel;\nattribute vec3 aPos;\nvoid main() { gl_Position = uVP * uModel * vec4(aPos, 1.0); }";
-    private static final String LIT_FS = "\n#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\n\n#ifdef BATCH\nvarying vec3 vN; varying vec3 vW; varying vec4 vS; varying vec3 vA; varying vec4 vCol; varying vec4 vMat;\n#else\nvarying vec3 vN; varying vec3 vW; varying vec3 vL; varying vec3 vLN; varying vec4 vS;\n#endif\nuniform vec4 uColor; uniform vec3 uLight; uniform vec3 uCam; uniform float uEmissive;\nuniform float uGrid; uniform vec3 uSize; uniform vec3 uHorizon; uniform vec3 uZenith; uniform vec3 uSun;\nuniform float uAmbient; uniform vec3 uFogColor; uniform vec3 uFog; uniform vec4 uMat; uniform vec3 uSurfA; uniform vec3 uSurfB;\nuniform sampler2D uShadow; uniform float uShadowOn; uniform vec2 uShadowTexel; uniform float uExposure; uniform float uTime; uniform float uTruss;\nuniform sampler2D uSurfTex; uniform float uHasSurfTex;\n#ifdef TEXTURED\nvarying vec3 vT; varying vec3 vB;\nuniform sampler2D uMatTex; uniform sampler2D uMatNrm; uniform float uTexScale; uniform float uHasNrm;\n#endif\n\nfloat hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }\nvec2 hash2(vec2 p) { return fract(sin(vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)))) * 43758.5453); }\nfloat noise(vec2 p) {\n  vec2 i = floor(p); vec2 f = fract(p); f = f * f * (3.0 - 2.0 * f);\n  return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);\n}\nfloat fbm(vec2 p) { return noise(p) * 0.5 + noise(p * 2.03 + 7.1) * 0.3 + noise(p * 4.1 + 3.3) * 0.2; }\n#ifdef ADVANCED\n// Cellular noise: x = distance to the nearest cell point, y = distance to the cell edge (approx).\nvec3 voro(vec2 x) {\n  vec2 n = floor(x); vec2 f = fract(x);\n  float d1 = 8.0; float d2 = 8.0; vec2 id = n;\n  for (int j = -1; j <= 1; j++) for (int i = -1; i <= 1; i++) {\n    vec2 g = vec2(float(i), float(j));\n    vec2 r = g + hash2(n + g) - f;\n    float d = dot(r, r);\n    if (d < d1) { d2 = d1; d1 = d; id = n + g; } else if (d < d2) { d2 = d; }\n  }\n  return vec3(sqrt(d1), sqrt(d2) - sqrt(d1), hash(id));\n}\n#endif\n// Roblox surface types on one face (sp = stud coordinates on the face, fsz = face size).\n// Roblox's stud look: a raised disc lit from the upper left with a soft shadow to the lower right.\nfloat studShade(vec2 f, float R) {\n  vec2 L = vec2(-0.62, 0.78);\n  float r = length(f);\n  float inside = smoothstep(R + 0.012, R - 0.012, r);\n  float rim = smoothstep(R - 0.09, R, r) * inside;\n  float side = dot(f / max(r, 0.001), L);\n  float shadow = smoothstep(R + 0.1, R, length(f + L * 0.05)) * (1.0 - inside);\n  return 1.0 + inside * 0.05 + rim * side * 0.22 - shadow * 0.2;\n}\nvec3 surface(vec3 c, float s, vec2 sp, vec2 fsz) {\n  if (s < 0.5 || s > 9.5) return c;\n  if (uHasSurfTex > 0.5 && s < 5.5) {\n    // Roblox's own surface textures: one 2x8-stud tile per type, shaded around grey 128\n    // (R = studs, G = weld/glue, B = inlet). Sampled with repeat (no fract) so mipmapping\n    // never sees a seam. s is the same for a whole face, so this branch is uniform per triangle.\n    vec2 st = vec2(sp.x * 0.5, -sp.y * 0.125);\n    vec3 t = texture2D(uSurfTex, st).rgb;\n    float k;\n    if (s < 2.5) k = t.g;\n    else if (s < 3.5) k = t.r;\n    else if (s < 4.5) k = t.b;\n    else { vec2 cell = floor(fract(st) * vec2(2.0, 8.0)); k = mod(cell.x + cell.y, 2.0) < 0.5 ? t.r : t.b; }\n    return c * (k * 2.0);\n  }\n  vec2 f = fract(sp) - 0.5; float r = length(f);\n  if (s > 2.5 && s < 3.5) { // Studs\n    c *= studShade(f, 0.29);\n  } else if (s > 3.5 && s < 4.5) { // Inlet: a sunken hole, shaded the opposite way\n    vec2 L = vec2(-0.62, 0.78);\n    float inside = smoothstep(0.302, 0.278, r);\n    float rim = smoothstep(0.2, 0.29, r) * inside;\n    c *= 1.0 - inside * 0.16 - rim * dot(f / max(r, 0.001), L) * 0.2 + smoothstep(0.36, 0.3, r) * (1.0 - inside) * 0.05;\n  } else if (s > 4.5 && s < 5.5) { // Universal: a stud with a hole in it\n    c *= studShade(f, 0.29) * (1.0 - smoothstep(0.14, 0.12, r) * 0.18);\n  } else if (s > 1.5 && s < 2.5) { // Weld: diagonal hatching\n    float l = fract((sp.x + sp.y) * 1.25);\n    c *= mix(1.0, 0.84, smoothstep(0.82, 0.88, l) * smoothstep(1.0, 0.94, l));\n  } else if (s > 0.5 && s < 1.5) { // Glue: grid of small crosses\n    vec2 g = abs(fract(sp * 2.0) - 0.5);\n    float cr = max(step(g.x, 0.05) * step(g.y, 0.22), step(g.y, 0.05) * step(g.x, 0.22));\n    c *= 1.0 - 0.14 * cr;\n  } else { // Hinge / Motor / SteppingMotor: a yellow joint in the middle of the face\n    float rr = length(sp - fsz * 0.5);\n    vec3 yellow = vec3(0.96, 0.8, 0.16);\n    if (s > 6.5) {\n      if (rr < 0.75) c = mix(c, vec3(0.45, 0.45, 0.47), smoothstep(0.75, 0.7, rr));\n      if (s > 7.5 && rr < 0.75 && rr > 0.5) { float a = atan(sp.y - fsz.y * 0.5, sp.x - fsz.x * 0.5); c *= 0.75 + 0.25 * step(0.5, fract(a * 1.273)); }\n    }\n    if (rr < 0.45) c = mix(c, yellow, smoothstep(0.45, 0.4, rr));\n  }\n  return c;\n}\nfloat unpackDepth(vec4 c) { return dot(c, vec4(1.0, 1.0 / 255.0, 1.0 / 65025.0, 1.0 / 16581375.0)); }\nfloat sampleShadow(vec2 uv, float z) { return z > unpackDepth(texture2D(uShadow, uv)) ? 0.0 : 1.0; }\nfloat shadowAt(float ndl) {\n  if (uShadowOn < 0.5 || ndl <= 0.0) return 1.0;\n  vec3 p = vS.xyz / vS.w * 0.5 + 0.5;\n  if (p.x <= 0.001 || p.x >= 0.999 || p.y <= 0.001 || p.y >= 0.999 || p.z >= 1.0) return 1.0;\n  float z = p.z - (0.00025 + 0.00085 * (1.0 - ndl));\n  vec2 t = uShadowTexel * 1.55;\n  float s = sampleShadow(p.xy, z) * 2.0;\n  s += sampleShadow(p.xy + vec2(-t.x, -t.y), z);\n  s += sampleShadow(p.xy + vec2(0.0, -t.y), z);\n  s += sampleShadow(p.xy + vec2(t.x, -t.y), z);\n  s += sampleShadow(p.xy + vec2(-t.x, 0.0), z);\n  s += sampleShadow(p.xy + vec2(t.x, 0.0), z);\n  s += sampleShadow(p.xy + vec2(-t.x, t.y), z);\n  s += sampleShadow(p.xy + vec2(0.0, t.y), z);\n  s += sampleShadow(p.xy + vec2(t.x, t.y), z);\n  s /= 10.0;\n  vec2 e = min(p.xy, 1.0 - p.xy);\n  float fade = clamp(min(e.x, e.y) * 12.0, 0.0, 1.0);\n  return mix(1.0, s, fade);\n}\nvoid main() {\n  vec3 n = normalize(vN);\n  if (!gl_FrontFacing) n = -n;\n#ifdef BATCH\n  vec3 c = vCol.rgb; vec4 mat = vMat; float emis = vCol.a; float alpha = 1.0;\n  vec2 uv = vA.xy; vec2 fsz = vec2(1.0); float sf = vA.z;\n#else\n  vec3 c = uColor.rgb; vec4 mat = uMat; float emis = uEmissive; float alpha = uColor.a;\n  vec3 a = abs(vLN);\n  vec3 p = vL * uSize + uSize * 0.5;\n  bool yFace = a.y > a.x && a.y > a.z; bool xFace = !yFace && a.x > a.z;\n  vec2 uv = yFace ? p.xz : (xFace ? p.zy : p.xy);\n  vec2 fsz = yFace ? uSize.xz : (xFace ? uSize.zy : uSize.xy);\n  // Surface types (studs, inlets, welds, hinges...) on whichever face this is.\n  float sf = yFace ? (vLN.y > 0.0 ? uSurfA.y : uSurfB.y) : (xFace ? (vLN.x > 0.0 ? uSurfA.x : uSurfB.x) : (vLN.z > 0.0 ? uSurfA.z : uSurfB.z));\n  if (uTruss > 0.5) {\n    // Lattice: frame and diagonals per 2-stud cell; everything else is see-through.\n    vec2 cell = fract(uv / 2.0);\n    float e = min(min(cell.x, cell.y), min(1.0 - cell.x, 1.0 - cell.y));\n    float dg = min(abs(cell.x - cell.y), abs(cell.x + cell.y - 1.0));\n    if (e > 0.11 && dg > 0.07) discard;\n  }\n#endif\n  vec3 glow = vec3(0.0);\n  float type = mat.x;\n#ifdef TEXTURED\n  // Roblox material textures: the color map tints the part color; the normal map bends the light.\n  vec2 tuv = vec2(uv.x, -uv.y) * uTexScale;\n  c *= texture2D(uMatTex, tuv).rgb * 1.08;\n  if (uHasNrm > 0.5) {\n    vec3 tn = texture2D(uMatNrm, tuv).xyz * 2.0 - 1.0;\n    n = normalize(normalize(vT) * tn.x + normalize(vB) * tn.y + n * max(tn.z, 0.25));\n  }\n  type = 0.0;\n#endif\n  if (type > 0.5) {\n    float amt = mat.y; float sc = mat.z;\n#ifdef ADVANCED\n    if (type > 10.5) {\n      if (type < 11.5) { // Marble veins\n        float v = abs(sin((uv.x * 0.6 + uv.y * 0.25 + fbm(uv * 0.35) * 5.0) * 1.7));\n        c *= mix(0.8, 1.05, pow(v, 0.35)) + (noise(uv * 3.0) - 0.5) * 0.04;\n      } else if (type < 12.5) { // Slate / sandstone: layered plates\n        float layer = floor(uv.y * sc * 2.0 + fbm(uv * 0.3) * 2.5);\n        c *= 0.9 + hash(vec2(layer, 3.0)) * 0.16 + (noise(uv * 5.0) - 0.5) * amt;\n      } else if (type < 13.5) { // Cobblestone / pebble / basalt: cells with dark gaps\n        vec3 v = voro(uv * sc);\n        c *= mix(0.62, 0.92 + v.z * 0.16, smoothstep(0.03, 0.12, v.y)) * (1.0 - v.x * 0.12);\n      } else if (type < 14.5) { // Cracked lava: dark rock with glowing cracks\n        vec3 v = voro(uv * sc);\n        c *= 0.55 + fbm(uv * 1.5) * 0.25;\n        glow = vec3(1.0, 0.36, 0.05) * smoothstep(0.08, 0.0, v.y) * (0.7 + 0.3 * sin(uTime * 1.5 + v.z * 6.0));\n      } else if (type < 15.5) { // Corroded metal: rust patches\n        float rust = smoothstep(0.42, 0.66, fbm(uv * sc));\n        c = mix(c * (0.95 + (noise(uv * vec2(18.0, 0.8)) - 0.5) * 0.08), c * vec3(0.7, 0.42, 0.24) + vec3(0.14, 0.05, 0.0), rust * 0.8);\n      } else if (type < 16.5) { // Tiles (ceramic / pavement)\n        vec2 tf = fract(uv / sc); float grout = step(0.035, tf.x) * step(0.035, tf.y);\n        c *= mix(0.72, 1.0 + (hash(floor(uv / sc)) - 0.5) * amt * 2.0 + (noise(uv * 3.0) - 0.5) * 0.04, grout);\n      } else if (type < 17.5) { // Roof tiles / shingles: overlapping rows\n        float row = floor(uv.y / (0.8 * sc));\n        vec2 q = vec2(uv.x / sc + mod(row, 2.0) * 0.5, fract(uv.y / (0.8 * sc)));\n        float edge = smoothstep(0.0, 0.08, fract(q.x)) * smoothstep(1.0, 0.92, fract(q.x));\n        c *= (0.8 + 0.25 * q.y) * mix(0.82, 1.0, edge) * (0.94 + hash(vec2(floor(q.x), row)) * 0.12);\n      } else if (type < 18.5) { // Cardboard corrugation\n        c *= 0.95 + 0.05 * sin(uv.x * 22.0) + (noise(uv * 8.0) - 0.5) * 0.06;\n      } else if (type < 19.5) { // ForceField: moving bands\n        float s = sin((uv.x + uv.y) * 2.5 - uTime * 2.2) * 0.5 + 0.5;\n        c = c * (0.55 + 0.45 * s) + vec3(0.12) * s;\n      } else if (type < 20.5) { // Leather: small creased cells\n        vec3 v = voro(uv * 6.0);\n        c *= 0.9 + 0.1 * smoothstep(0.0, 0.12, v.y) + (v.z - 0.5) * 0.04;\n      } else if (type < 21.5) { // Carpet: dense fibres\n        c *= 0.9 + hash(floor(uv * 28.0)) * 0.12 + (noise(uv * 6.0) - 0.5) * 0.1;\n      } else if (type < 22.5) { // Asphalt: speckled\n        c *= 0.9 + (hash(floor(uv * 16.0)) - 0.5) * 0.25 + (noise(uv * 2.0) - 0.5) * 0.08;\n      } else if (type < 23.5) { // Concrete: blotchy with pores\n        c *= 1.0 + (fbm(uv * sc) - 0.5) * amt * 2.4 - step(0.985, hash(floor(uv * 20.0))) * 0.18;\n      } else if (type < 24.5) { // Granite: mixed grains\n        float g = hash(floor(uv * 12.0));\n        c *= 0.88 + g * 0.22 - step(0.9, g) * 0.3 + (fbm(uv * 1.5) - 0.5) * 0.1;\n      } else { // Sand / snow / salt: fine grain with sparkle\n        float g = hash(floor(uv * 30.0));\n        c *= 1.0 + (g - 0.5) * amt * 2.0 + (fbm(uv * sc) - 0.5) * 0.1;\n        c += vec3(step(0.996, g) * 0.15);\n      }\n    } else\n    if (type < 1.5) { c *= 1.0 + (noise(uv * 2.2) - 0.5) * amt * 2.0; }\n    else if (type < 2.5) {\n      float g = sin((uv.x * 1.3 + fbm(uv * vec2(0.35, 2.2)) * 4.0) * 5.0);\n      c *= 1.0 + g * amt * 0.6 - amt * 0.2;\n    } else if (type < 3.5) {\n      float plank = floor(uv.y);\n      float seamY = smoothstep(0.0, 0.05, fract(uv.y)) * smoothstep(1.0, 0.95, fract(uv.y));\n      float off = hash(vec2(plank, 3.0)) * 8.0;\n      float seamX = smoothstep(0.0, 0.04, fract((uv.x + off) / 6.0) * 6.0);\n      float g = sin((uv.x * 1.6 + fbm(vec2(uv.x * 0.3, uv.y * 3.0 + plank)) * 3.0) * 6.0);\n      c *= (0.9 + hash(vec2(plank, 1.0)) * 0.18) * (1.0 + g * amt * 0.35) * mix(0.72, 1.0, seamY * seamX);\n    } else if (type < 4.5) {\n      // Brick: running bond with light grey mortar, like Roblox's brick material.\n      vec2 b = vec2(uv.x / 1.6, uv.y / 0.66);\n      float row = floor(b.y);\n      b.x += mod(row, 2.0) * 0.5;\n      vec2 f = fract(b);\n      float mortar = smoothstep(0.05, 0.09, f.y) * smoothstep(0.025, 0.05, f.x) * smoothstep(1.0, 0.985, f.x);\n      vec3 brick = c * (0.9 + (hash(floor(b)) - 0.5) * amt * 2.2 + (noise(uv * 7.0) - 0.5) * 0.08);\n      vec3 grout = mix(vec3(dot(c, vec3(0.3, 0.59, 0.11))), vec3(0.82), 0.55);\n      c = mix(grout, brick, mortar);\n    } else if (type < 5.5) { c *= 1.0 + (fbm(uv * sc) - 0.5) * amt * 2.6; }\n    else if (type < 6.5) {\n      vec2 q = vec2(uv.x + uv.y, uv.x - uv.y) * 1.4;\n      vec2 f = fract(q) - 0.5;\n      float bump = smoothstep(0.18, 0.05, abs(f.x) * 0.35 + abs(f.y));\n      c *= 0.92 + bump * 0.22 + (noise(uv * 8.0) - 0.5) * 0.05;\n    } else if (type < 7.5) { c *= 1.0 + (noise(uv * vec2(24.0, 0.6)) - 0.5) * amt * 2.0; }\n    else if (type < 8.5) {\n      float f = fbm(uv * sc);\n      c *= 1.0 + (f - 0.5) * amt * 2.4 + (noise(uv * 9.0) - 0.5) * 0.05;\n      c.r += (noise(uv * 0.25) - 0.5) * 0.04;\n    } else if (type < 9.5) { c *= 1.0 + sin(uv.x * 30.0) * sin(uv.y * 30.0) * amt; }\n    else { c *= 1.0 + (fbm(uv * sc) - 0.5) * amt * 2.0; }\n#else\n    // Lean variant: plastic grain only (other materials use the ADVANCED program).\n    c *= 1.0 + (noise(uv * 2.2) - 0.5) * amt * 2.0;\n#endif\n  }\n  c = surface(c, sf, uv, fsz);\n#ifndef BATCH\n  if (uGrid > 0.5) {\n    vec2 f = abs(fract(uv / 4.0 + 0.5) - 0.5) * 4.0;\n    float d = min(f.x, f.y);\n    c *= mix(0.84, 1.0, smoothstep(0.04, 0.09, d));\n  }\n#endif\n  vec3 col;\n  if (emis > 0.5) {\n    col = c * 1.15 + vec3(0.06);\n  } else {\n    float ndl = dot(n, uLight);\n    float diff = max(ndl, 0.0);\n    float sh = shadowAt(ndl);\n    vec3 skyTop = mix(vec3(1.0), mix(uHorizon, uZenith, 0.5), 0.22);\n    vec3 groundBounce = mix(vec3(0.58, 0.59, 0.62), uHorizon * 0.72, 0.18);\n    float hemi = clamp(n.y * 0.5 + 0.5, 0.0, 1.0);\n    vec3 amb = uAmbient * mix(groundBounce, skyTop, hemi);\n    // Subtle back-fill wrap so shadow sides retain Roblox OutdoorAmbient richness\n    float wrap = max(0.0, (-ndl) * 0.14);\n    col = c * (amb + uSun * (diff * sh + wrap * 0.35));\n    vec3 v = normalize(uCam - vW);\n    vec3 h = normalize(uLight + v);\n    float rough = clamp(1.0 - mat.w * 0.78, 0.12, 0.95);\n    float specPow = mix(128.0, 12.0, rough * rough);\n    float spec = pow(max(dot(n, h), 0.0), specPow) * (0.14 + mat.w * 0.72) * sh;\n    col += uSun * spec * 0.72;\n    float fres = pow(1.0 - max(dot(n, v), 0.0), 4.5) * (0.04 + mat.w * 0.26);\n    col = mix(col, mix(uHorizon, uZenith, 0.5), fres);\n  }\n  col += glow;\n  col *= uExposure;\n  // ACES Filmic tone mapping (matches Roblox Future/ShadowMap highlight roll-off)\n  vec3 mapped = clamp((col * (2.51 * col + 0.03)) / (col * (2.43 * col + 0.59) + 0.14), 0.0, 1.0); col = mix(clamp(col, 0.0, 1.0), mapped, 0.45);\n  float dist = length(uCam - vW);\n  float fog;\n  if (uFog.z > 1.5) fog = (1.0 - exp(-dist * uFog.x)) * uFog.y;\n  else if (uFog.z > 0.5) fog = clamp((dist - uFog.x) / max(uFog.y - uFog.x, 1.0), 0.0, 1.0);\n  else fog = smoothstep(140.0, 950.0, dist) * 0.88;\n  col = mix(col, uFogColor, fog);\n  gl_FragColor = vec4(col, alpha);\n}";
+    private static final String LIT_FS = "\n#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\n\n#ifdef BATCH\nvarying vec3 vN; varying vec3 vW; varying vec4 vS; varying vec3 vA; varying vec4 vCol; varying vec4 vMat;\n#else\nvarying vec3 vN; varying vec3 vW; varying vec3 vL; varying vec3 vLN; varying vec4 vS;\n#endif\nuniform vec4 uColor; uniform vec3 uLight; uniform vec3 uCam; uniform float uEmissive;\nuniform float uGrid; uniform vec3 uSize; uniform vec3 uHorizon; uniform vec3 uZenith; uniform vec3 uSun;\nuniform float uAmbient; uniform vec3 uFogColor; uniform vec3 uFog; uniform vec4 uMat; uniform vec3 uSurfA; uniform vec3 uSurfB;\nuniform sampler2D uShadow; uniform float uShadowOn; uniform vec2 uShadowTexel; uniform float uShadowSoft; uniform vec3 uShiftBot; uniform float uEnvSpec; uniform int uPtCount; uniform vec4 uPtPos[8]; uniform vec4 uPtCol[8]; uniform vec4 uPtDir[8]; uniform vec4 uCCParams; uniform vec3 uCCTint; uniform vec4 uBloom; uniform vec4 uDof; uniform float uExposure; uniform float uTime; uniform float uTruss;\nuniform sampler2D uSurfTex; uniform float uHasSurfTex;\n#ifdef TEXTURED\nvarying vec3 vT; varying vec3 vB;\nuniform sampler2D uMatTex; uniform sampler2D uMatNrm; uniform float uTexScale; uniform float uHasNrm;\n#endif\n\nfloat hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }\nvec2 hash2(vec2 p) { return fract(sin(vec2(dot(p, vec2(127.1, 311.7)), dot(p, vec2(269.5, 183.3)))) * 43758.5453); }\nfloat noise(vec2 p) {\n  vec2 i = floor(p); vec2 f = fract(p); f = f * f * (3.0 - 2.0 * f);\n  return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);\n}\nfloat fbm(vec2 p) { return noise(p) * 0.5 + noise(p * 2.03 + 7.1) * 0.3 + noise(p * 4.1 + 3.3) * 0.2; }\n#ifdef ADVANCED\n// Cellular noise: x = distance to the nearest cell point, y = distance to the cell edge (approx).\nvec3 voro(vec2 x) {\n  vec2 n = floor(x); vec2 f = fract(x);\n  float d1 = 8.0; float d2 = 8.0; vec2 id = n;\n  for (int j = -1; j <= 1; j++) for (int i = -1; i <= 1; i++) {\n    vec2 g = vec2(float(i), float(j));\n    vec2 r = g + hash2(n + g) - f;\n    float d = dot(r, r);\n    if (d < d1) { d2 = d1; d1 = d; id = n + g; } else if (d < d2) { d2 = d; }\n  }\n  return vec3(sqrt(d1), sqrt(d2) - sqrt(d1), hash(id));\n}\n#endif\n// Roblox surface types on one face (sp = stud coordinates on the face, fsz = face size).\n// Roblox's stud look: a raised disc lit from the upper left with a soft shadow to the lower right.\nfloat studShade(vec2 f, float R) {\n  vec2 L = vec2(-0.62, 0.78);\n  float r = length(f);\n  float inside = smoothstep(R + 0.012, R - 0.012, r);\n  float rim = smoothstep(R - 0.09, R, r) * inside;\n  float side = dot(f / max(r, 0.001), L);\n  float shadow = smoothstep(R + 0.1, R, length(f + L * 0.05)) * (1.0 - inside);\n  return 1.0 + inside * 0.05 + rim * side * 0.22 - shadow * 0.2;\n}\nvec3 surface(vec3 c, float s, vec2 sp, vec2 fsz) {\n  if (s < 0.5 || s > 9.5) return c;\n  if (uHasSurfTex > 0.5 && s < 5.5) {\n    // Roblox's own surface textures: one 2x8-stud tile per type, shaded around grey 128\n    // (R = studs, G = weld/glue, B = inlet). Sampled with repeat (no fract) so mipmapping\n    // never sees a seam. s is the same for a whole face, so this branch is uniform per triangle.\n    vec2 st = vec2(sp.x * 0.5, -sp.y * 0.125);\n    vec3 t = texture2D(uSurfTex, st).rgb;\n    float k;\n    if (s < 2.5) k = t.g;\n    else if (s < 3.5) k = t.r;\n    else if (s < 4.5) k = t.b;\n    else { vec2 cell = floor(fract(st) * vec2(2.0, 8.0)); k = mod(cell.x + cell.y, 2.0) < 0.5 ? t.r : t.b; }\n    return c * (k * 2.0);\n  }\n  vec2 f = fract(sp) - 0.5; float r = length(f);\n  if (s > 2.5 && s < 3.5) { // Studs\n    c *= studShade(f, 0.29);\n  } else if (s > 3.5 && s < 4.5) { // Inlet: a sunken hole, shaded the opposite way\n    vec2 L = vec2(-0.62, 0.78);\n    float inside = smoothstep(0.302, 0.278, r);\n    float rim = smoothstep(0.2, 0.29, r) * inside;\n    c *= 1.0 - inside * 0.16 - rim * dot(f / max(r, 0.001), L) * 0.2 + smoothstep(0.36, 0.3, r) * (1.0 - inside) * 0.05;\n  } else if (s > 4.5 && s < 5.5) { // Universal: a stud with a hole in it\n    c *= studShade(f, 0.29) * (1.0 - smoothstep(0.14, 0.12, r) * 0.18);\n  } else if (s > 1.5 && s < 2.5) { // Weld: diagonal hatching\n    float l = fract((sp.x + sp.y) * 1.25);\n    c *= mix(1.0, 0.84, smoothstep(0.82, 0.88, l) * smoothstep(1.0, 0.94, l));\n  } else if (s > 0.5 && s < 1.5) { // Glue: grid of small crosses\n    vec2 g = abs(fract(sp * 2.0) - 0.5);\n    float cr = max(step(g.x, 0.05) * step(g.y, 0.22), step(g.y, 0.05) * step(g.x, 0.22));\n    c *= 1.0 - 0.14 * cr;\n  } else { // Hinge / Motor / SteppingMotor: a yellow joint in the middle of the face\n    float rr = length(sp - fsz * 0.5);\n    vec3 yellow = vec3(0.96, 0.8, 0.16);\n    if (s > 6.5) {\n      if (rr < 0.75) c = mix(c, vec3(0.45, 0.45, 0.47), smoothstep(0.75, 0.7, rr));\n      if (s > 7.5 && rr < 0.75 && rr > 0.5) { float a = atan(sp.y - fsz.y * 0.5, sp.x - fsz.x * 0.5); c *= 0.75 + 0.25 * step(0.5, fract(a * 1.273)); }\n    }\n    if (rr < 0.45) c = mix(c, yellow, smoothstep(0.45, 0.4, rr));\n  }\n  return c;\n}\nfloat unpackDepth(vec4 c) { return dot(c, vec4(1.0, 1.0 / 255.0, 1.0 / 65025.0, 1.0 / 16581375.0)); }\nfloat sampleShadow(vec2 uv, float z) { return z > unpackDepth(texture2D(uShadow, uv)) ? 0.0 : 1.0; }\nfloat shadowAt(float ndl) {\n  if (uShadowOn < 0.5 || ndl <= 0.0) return 1.0;\n  vec3 p = vS.xyz / vS.w * 0.5 + 0.5;\n  if (p.x <= 0.001 || p.x >= 0.999 || p.y <= 0.001 || p.y >= 0.999 || p.z >= 1.0) return 1.0;\n  float z = p.z - (0.00025 + 0.00085 * (1.0 - ndl));\n  vec2 t = uShadowTexel * mix(0.65, 2.85, clamp(uShadowSoft, 0.0, 1.0));\n  float s = sampleShadow(p.xy, z) * 2.0;\n  s += sampleShadow(p.xy + vec2(-t.x, -t.y), z);\n  s += sampleShadow(p.xy + vec2(0.0, -t.y), z);\n  s += sampleShadow(p.xy + vec2(t.x, -t.y), z);\n  s += sampleShadow(p.xy + vec2(-t.x, 0.0), z);\n  s += sampleShadow(p.xy + vec2(t.x, 0.0), z);\n  s += sampleShadow(p.xy + vec2(-t.x, t.y), z);\n  s += sampleShadow(p.xy + vec2(0.0, t.y), z);\n  s += sampleShadow(p.xy + vec2(t.x, t.y), z);\n  s /= 10.0;\n  vec2 e = min(p.xy, 1.0 - p.xy);\n  float fade = clamp(min(e.x, e.y) * 12.0, 0.0, 1.0);\n  return mix(1.0, s, fade);\n}\nvoid main() {\n  vec3 n = normalize(vN);\n  if (!gl_FrontFacing) n = -n;\n#ifdef BATCH\n  vec3 c = vCol.rgb; vec4 mat = vMat; float emis = vCol.a; float alpha = 1.0;\n  vec2 uv = vA.xy; vec2 fsz = vec2(1.0); float sf = vA.z;\n#else\n  vec3 c = uColor.rgb; vec4 mat = uMat; float emis = uEmissive; float alpha = uColor.a;\n  vec3 a = abs(vLN);\n  vec3 p = vL * uSize + uSize * 0.5;\n  bool yFace = a.y > a.x && a.y > a.z; bool xFace = !yFace && a.x > a.z;\n  vec2 uv = yFace ? p.xz : (xFace ? p.zy : p.xy);\n  vec2 fsz = yFace ? uSize.xz : (xFace ? uSize.zy : uSize.xy);\n  // Surface types (studs, inlets, welds, hinges...) on whichever face this is.\n  float sf = yFace ? (vLN.y > 0.0 ? uSurfA.y : uSurfB.y) : (xFace ? (vLN.x > 0.0 ? uSurfA.x : uSurfB.x) : (vLN.z > 0.0 ? uSurfA.z : uSurfB.z));\n  if (uTruss > 0.5) {\n    // Lattice: frame and diagonals per 2-stud cell; everything else is see-through.\n    vec2 cell = fract(uv / 2.0);\n    float e = min(min(cell.x, cell.y), min(1.0 - cell.x, 1.0 - cell.y));\n    float dg = min(abs(cell.x - cell.y), abs(cell.x + cell.y - 1.0));\n    if (e > 0.11 && dg > 0.07) discard;\n  }\n#endif\n  vec3 glow = vec3(0.0);\n  float type = mat.x;\n#ifdef TEXTURED\n  // Roblox material textures: the color map tints the part color; the normal map bends the light.\n  vec2 tuv = vec2(uv.x, -uv.y) * uTexScale;\n  c *= texture2D(uMatTex, tuv).rgb * 1.08;\n  if (uHasNrm > 0.5) {\n    vec3 tn = texture2D(uMatNrm, tuv).xyz * 2.0 - 1.0;\n    n = normalize(normalize(vT) * tn.x + normalize(vB) * tn.y + n * max(tn.z, 0.25));\n  }\n  type = 0.0;\n#endif\n  if (type > 0.5) {\n    float amt = mat.y; float sc = mat.z;\n#ifdef ADVANCED\n    if (type > 10.5) {\n      if (type < 11.5) { // Marble veins\n        float v = abs(sin((uv.x * 0.6 + uv.y * 0.25 + fbm(uv * 0.35) * 5.0) * 1.7));\n        c *= mix(0.8, 1.05, pow(v, 0.35)) + (noise(uv * 3.0) - 0.5) * 0.04;\n      } else if (type < 12.5) { // Slate / sandstone: layered plates\n        float layer = floor(uv.y * sc * 2.0 + fbm(uv * 0.3) * 2.5);\n        c *= 0.9 + hash(vec2(layer, 3.0)) * 0.16 + (noise(uv * 5.0) - 0.5) * amt;\n      } else if (type < 13.5) { // Cobblestone / pebble / basalt: cells with dark gaps\n        vec3 v = voro(uv * sc);\n        c *= mix(0.62, 0.92 + v.z * 0.16, smoothstep(0.03, 0.12, v.y)) * (1.0 - v.x * 0.12);\n      } else if (type < 14.5) { // Cracked lava: dark rock with glowing cracks\n        vec3 v = voro(uv * sc);\n        c *= 0.55 + fbm(uv * 1.5) * 0.25;\n        glow = vec3(1.0, 0.36, 0.05) * smoothstep(0.08, 0.0, v.y) * (0.7 + 0.3 * sin(uTime * 1.5 + v.z * 6.0));\n      } else if (type < 15.5) { // Corroded metal: rust patches\n        float rust = smoothstep(0.42, 0.66, fbm(uv * sc));\n        c = mix(c * (0.95 + (noise(uv * vec2(18.0, 0.8)) - 0.5) * 0.08), c * vec3(0.7, 0.42, 0.24) + vec3(0.14, 0.05, 0.0), rust * 0.8);\n      } else if (type < 16.5) { // Tiles (ceramic / pavement)\n        vec2 tf = fract(uv / sc); float grout = step(0.035, tf.x) * step(0.035, tf.y);\n        c *= mix(0.72, 1.0 + (hash(floor(uv / sc)) - 0.5) * amt * 2.0 + (noise(uv * 3.0) - 0.5) * 0.04, grout);\n      } else if (type < 17.5) { // Roof tiles / shingles: overlapping rows\n        float row = floor(uv.y / (0.8 * sc));\n        vec2 q = vec2(uv.x / sc + mod(row, 2.0) * 0.5, fract(uv.y / (0.8 * sc)));\n        float edge = smoothstep(0.0, 0.08, fract(q.x)) * smoothstep(1.0, 0.92, fract(q.x));\n        c *= (0.8 + 0.25 * q.y) * mix(0.82, 1.0, edge) * (0.94 + hash(vec2(floor(q.x), row)) * 0.12);\n      } else if (type < 18.5) { // Cardboard corrugation\n        c *= 0.95 + 0.05 * sin(uv.x * 22.0) + (noise(uv * 8.0) - 0.5) * 0.06;\n      } else if (type < 19.5) { // ForceField: moving bands\n        float s = sin((uv.x + uv.y) * 2.5 - uTime * 2.2) * 0.5 + 0.5;\n        c = c * (0.55 + 0.45 * s) + vec3(0.12) * s;\n      } else if (type < 20.5) { // Leather: small creased cells\n        vec3 v = voro(uv * 6.0);\n        c *= 0.9 + 0.1 * smoothstep(0.0, 0.12, v.y) + (v.z - 0.5) * 0.04;\n      } else if (type < 21.5) { // Carpet: dense fibres\n        c *= 0.9 + hash(floor(uv * 28.0)) * 0.12 + (noise(uv * 6.0) - 0.5) * 0.1;\n      } else if (type < 22.5) { // Asphalt: speckled\n        c *= 0.9 + (hash(floor(uv * 16.0)) - 0.5) * 0.25 + (noise(uv * 2.0) - 0.5) * 0.08;\n      } else if (type < 23.5) { // Concrete: blotchy with pores\n        c *= 1.0 + (fbm(uv * sc) - 0.5) * amt * 2.4 - step(0.985, hash(floor(uv * 20.0))) * 0.18;\n      } else if (type < 24.5) { // Granite: mixed grains\n        float g = hash(floor(uv * 12.0));\n        c *= 0.88 + g * 0.22 - step(0.9, g) * 0.3 + (fbm(uv * 1.5) - 0.5) * 0.1;\n      } else { // Sand / snow / salt: fine grain with sparkle\n        float g = hash(floor(uv * 30.0));\n        c *= 1.0 + (g - 0.5) * amt * 2.0 + (fbm(uv * sc) - 0.5) * 0.1;\n        c += vec3(step(0.996, g) * 0.15);\n      }\n    } else\n    if (type < 1.5) { c *= 1.0 + (noise(uv * 2.2) - 0.5) * amt * 2.0; }\n    else if (type < 2.5) {\n      float g = sin((uv.x * 1.3 + fbm(uv * vec2(0.35, 2.2)) * 4.0) * 5.0);\n      c *= 1.0 + g * amt * 0.6 - amt * 0.2;\n    } else if (type < 3.5) {\n      float plank = floor(uv.y);\n      float seamY = smoothstep(0.0, 0.05, fract(uv.y)) * smoothstep(1.0, 0.95, fract(uv.y));\n      float off = hash(vec2(plank, 3.0)) * 8.0;\n      float seamX = smoothstep(0.0, 0.04, fract((uv.x + off) / 6.0) * 6.0);\n      float g = sin((uv.x * 1.6 + fbm(vec2(uv.x * 0.3, uv.y * 3.0 + plank)) * 3.0) * 6.0);\n      c *= (0.9 + hash(vec2(plank, 1.0)) * 0.18) * (1.0 + g * amt * 0.35) * mix(0.72, 1.0, seamY * seamX);\n    } else if (type < 4.5) {\n      // Brick: running bond with light grey mortar, like Roblox's brick material.\n      vec2 b = vec2(uv.x / 1.6, uv.y / 0.66);\n      float row = floor(b.y);\n      b.x += mod(row, 2.0) * 0.5;\n      vec2 f = fract(b);\n      float mortar = smoothstep(0.05, 0.09, f.y) * smoothstep(0.025, 0.05, f.x) * smoothstep(1.0, 0.985, f.x);\n      vec3 brick = c * (0.9 + (hash(floor(b)) - 0.5) * amt * 2.2 + (noise(uv * 7.0) - 0.5) * 0.08);\n      vec3 grout = mix(vec3(dot(c, vec3(0.3, 0.59, 0.11))), vec3(0.82), 0.55);\n      c = mix(grout, brick, mortar);\n    } else if (type < 5.5) { c *= 1.0 + (fbm(uv * sc) - 0.5) * amt * 2.6; }\n    else if (type < 6.5) {\n      vec2 q = vec2(uv.x + uv.y, uv.x - uv.y) * 1.4;\n      vec2 f = fract(q) - 0.5;\n      float bump = smoothstep(0.18, 0.05, abs(f.x) * 0.35 + abs(f.y));\n      c *= 0.92 + bump * 0.22 + (noise(uv * 8.0) - 0.5) * 0.05;\n    } else if (type < 7.5) { c *= 1.0 + (noise(uv * vec2(24.0, 0.6)) - 0.5) * amt * 2.0; }\n    else if (type < 8.5) {\n      float f = fbm(uv * sc);\n      c *= 1.0 + (f - 0.5) * amt * 2.4 + (noise(uv * 9.0) - 0.5) * 0.05;\n      c.r += (noise(uv * 0.25) - 0.5) * 0.04;\n    } else if (type < 9.5) { c *= 1.0 + sin(uv.x * 30.0) * sin(uv.y * 30.0) * amt; }\n    else { c *= 1.0 + (fbm(uv * sc) - 0.5) * amt * 2.0; }\n#else\n    // Lean variant: plastic grain only (other materials use the ADVANCED program).\n    c *= 1.0 + (noise(uv * 2.2) - 0.5) * amt * 2.0;\n#endif\n  }\n  c = surface(c, sf, uv, fsz);\n#ifndef BATCH\n  if (uGrid > 0.5) {\n    vec2 f = abs(fract(uv / 4.0 + 0.5) - 0.5) * 4.0;\n    float d = min(f.x, f.y);\n    c *= mix(0.84, 1.0, smoothstep(0.04, 0.09, d));\n  }\n#endif\n  vec3 col;\n  if (emis > 0.5) {\n    col = c * 1.15 + vec3(0.06);\n  } else {\n    float ndl = dot(n, uLight);\n    float diff = max(ndl, 0.0);\n    float sh = shadowAt(ndl);\n    vec3 skyTop = mix(vec3(1.0), mix(uHorizon, uZenith, 0.5), 0.22);\n    vec3 groundBounce = mix(vec3(0.58, 0.59, 0.62), uHorizon * 0.72, 0.18);\n    float hemi = clamp(n.y * 0.5 + 0.5, 0.0, 1.0);\n    vec3 amb = uAmbient * mix(groundBounce, skyTop, hemi);\n    // Subtle back-fill wrap so shadow sides retain Roblox OutdoorAmbient richness\n    float wrap = max(0.0, (-ndl) * 0.14);\n    col = c * (amb + uSun * (diff * sh + wrap * 0.35) + uShiftBot * max(-ndl, 0.0) * 0.35);\n    vec3 v = normalize(uCam - vW);\n    vec3 h = normalize(uLight + v);\n    float rough = clamp(1.0 - mat.w * 0.78, 0.12, 0.95);\n    float specPow = mix(128.0, 12.0, rough * rough);\n    float spec = pow(max(dot(n, h), 0.0), specPow) * (0.14 + mat.w * 0.72) * sh * uEnvSpec;\n    col += uSun * spec * 0.72;\n    for (int li = 0; li < 8; li++) {\n      if (li >= uPtCount) break;\n      vec3 L = uPtPos[li].xyz - vW;\n      float d = length(L);\n      float r = uPtPos[li].w;\n      if (d < r) {\n        vec3 ldir = L / max(d, 0.001);\n        float tt = clamp(1.0 - (d / r) * (d / r), 0.0, 1.0);\n        float att = (tt * tt) / (1.0 + 0.04 * d * d);\n        if (uPtDir[li].w > 0.5) {\n          float ca = dot(-ldir, uPtDir[li].xyz);\n          att *= smoothstep(uPtCol[li].w, min(uPtCol[li].w + 0.14, 0.999), ca);\n        }\n        float pndl = max(dot(n, ldir), 0.0);\n        vec3 ph = normalize(ldir + v);\n        float pspec = pow(max(dot(n, ph), 0.0), specPow) * (0.12 + mat.w * 0.55) * uEnvSpec;\n        col += (c * pndl + vec3(pspec)) * uPtCol[li].rgb * att;\n      }\n    }\n    float fres = pow(1.0 - max(dot(n, v), 0.0), 4.5) * (0.04 + mat.w * 0.26) * uEnvSpec;\n    col = mix(col, mix(uHorizon, uZenith, 0.5), fres);\n  }\n  col += glow;\n  col *= uExposure;\n  // ACES Filmic tone mapping (matches Roblox Future/ShadowMap highlight roll-off)\n  if (uBloom.x > 0.001) { float bl = max(max(col.r, max(col.g, col.b)) - uBloom.y, 0.0); col += col * bl * uBloom.x * 0.45; }\n  vec3 mapped = clamp((col * (2.51 * col + 0.03)) / (col * (2.43 * col + 0.59) + 0.14), 0.0, 1.0); col = mix(clamp(col, 0.0, 1.0), mapped, 0.45);\n  col = clamp(col + vec3(uCCParams.x), 0.0, 1.0);\n  col = clamp((col - 0.5) * (1.0 + uCCParams.y) + 0.5, 0.0, 1.0);\n  float luma = dot(col, vec3(0.2126, 0.7152, 0.0722));\n  col = clamp(mix(vec3(luma), col, 1.0 + uCCParams.z) * uCCTint, 0.0, 1.0);\n  float dist = length(uCam - vW);\n  if (uDof.z > 0.001 || uDof.w > 0.001) {\n    float coc = max(0.0, (dist - (uDof.x + uDof.y)) / max(uDof.y + 12.0, 1.0)) * uDof.z + max(0.0, ((uDof.x - uDof.y) - dist) / max(uDof.x, 1.0)) * uDof.w;\n    col = mix(col, mix(uHorizon, uFogColor, 0.5), clamp(coc * 0.42, 0.0, 0.55));\n  }\n  float fog;\n  if (uFog.z > 1.5) fog = (1.0 - exp(-dist * uFog.x)) * uFog.y;\n  else if (uFog.z > 0.5) fog = clamp((dist - uFog.x) / max(uFog.y - uFog.x, 1.0), 0.0, 1.0);\n  else fog = smoothstep(140.0, 950.0, dist) * 0.88;\n  col = mix(col, uFogColor, fog);\n  gl_FragColor = vec4(col, alpha);\n}";
     private static final String LIT_VS = "\nuniform mat4 uVP; uniform mat4 uModel; uniform mat3 uNrm; uniform mat4 uShadowVP;\n#ifdef BATCH\n// Static batches: vertices are already in world space and carry the part's look.\nattribute vec3 aPos; attribute vec4 aNrm; attribute vec2 aUv; attribute vec4 aCol; attribute vec4 aMat;\nvarying vec3 vN; varying vec3 vW; varying vec4 vS; varying vec3 vA; varying vec4 vCol; varying vec4 vMat;\n#ifdef TEXTURED\nattribute vec3 aTan; attribute vec3 aBit;\nvarying vec3 vT; varying vec3 vB;\n#endif\nvoid main() {\n  vW = aPos; vN = aNrm.xyz;\n  vS = uShadowVP * vec4(aPos, 1.0);\n  vA = vec3(aUv, floor(aNrm.w * 127.0 + 0.5));\n  vCol = aCol;\n  vMat = vec4(aMat.x, aMat.y / 1000.0, aMat.z / 50.0, aMat.w / 120.0);\n#ifdef TEXTURED\n  vT = aTan; vB = aBit;\n#endif\n  gl_Position = uVP * vec4(aPos, 1.0);\n}\n#else\nattribute vec3 aPos; attribute vec3 aNrm;\nvarying vec3 vN; varying vec3 vW; varying vec3 vL; varying vec3 vLN; varying vec4 vS;\n#ifdef TEXTURED\nvarying vec3 vT; varying vec3 vB;\n#endif\nvoid main() {\n  vec4 w = uModel * vec4(aPos, 1.0);\n  vW = w.xyz; vN = uNrm * aNrm; vL = aPos; vLN = aNrm;\n  vS = uShadowVP * w;\n#ifdef TEXTURED\n  // World directions of the face's texture axes (same box projection the fragment shader uses).\n  vec3 an = abs(aNrm);\n  bool yF = an.y > an.x && an.y > an.z; bool xF = !yF && an.x > an.z;\n  vT = (uModel * vec4(yF ? vec3(1.0, 0.0, 0.0) : (xF ? vec3(0.0, 0.0, 1.0) : vec3(1.0, 0.0, 0.0)), 0.0)).xyz;\n  vB = (uModel * vec4(yF ? vec3(0.0, 0.0, 1.0) : vec3(0.0, 1.0, 0.0), 0.0)).xyz;\n#endif\n  gl_Position = uVP * w;\n}\n#endif";
-    private static final String MESH_FS = "\n#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\nvarying vec3 vN; varying vec3 vW; varying vec2 vUv; varying vec4 vS;\nuniform vec4 uColor; uniform vec3 uTint; uniform vec3 uLight; uniform vec3 uSun; uniform float uAmbient; uniform vec3 uCam;\nuniform sampler2D uTex; uniform float uHasTex; uniform sampler2D uShadow; uniform float uShadowOn; uniform vec2 uShadowTexel;\nuniform vec3 uFogColor; uniform vec3 uFog; uniform float uExposure; uniform float uEmissive; uniform vec3 uHorizon; uniform vec3 uZenith;\nfloat unpackDepth(vec4 c) { return dot(c, vec4(1.0, 1.0 / 255.0, 1.0 / 65025.0, 1.0 / 16581375.0)); }\nfloat sampleShadow(vec2 uv, float z) { return z > unpackDepth(texture2D(uShadow, uv)) ? 0.0 : 1.0; }\nfloat shadowAt(float ndl) {\n  if (uShadowOn < 0.5 || ndl <= 0.0) return 1.0;\n  vec3 p = vS.xyz / vS.w * 0.5 + 0.5;\n  if (p.x <= 0.001 || p.x >= 0.999 || p.y <= 0.001 || p.y >= 0.999 || p.z >= 1.0) return 1.0;\n  float z = p.z - (0.00030 + 0.00095 * (1.0 - ndl));\n  vec2 t = uShadowTexel * 1.55;\n  float s = sampleShadow(p.xy, z) * 2.0;\n  s += sampleShadow(p.xy + vec2(-t.x, -t.y), z);\n  s += sampleShadow(p.xy + vec2(0.0, -t.y), z);\n  s += sampleShadow(p.xy + vec2(t.x, -t.y), z);\n  s += sampleShadow(p.xy + vec2(-t.x, 0.0), z);\n  s += sampleShadow(p.xy + vec2(t.x, 0.0), z);\n  s += sampleShadow(p.xy + vec2(-t.x, t.y), z);\n  s += sampleShadow(p.xy + vec2(0.0, t.y), z);\n  s += sampleShadow(p.xy + vec2(t.x, t.y), z);\n  return s / 10.0;\n}\n#ifdef BATCH\nvarying vec4 vCol;\n#endif\nvoid main() {\n  vec3 n = normalize(vN);\n  if (!gl_FrontFacing) n = -n;\n#ifdef BATCH\n  vec3 c = vCol.rgb; float a = 1.0; float emis = vCol.a; vec3 tint = vec3(1.0);\n#else\n  vec3 c = uColor.rgb; float a = uColor.a; float emis = uEmissive; vec3 tint = uTint;\n#endif\n  if (uHasTex > 0.5) {\n    vec4 t = texture2D(uTex, vUv);\n    if (t.a < 0.12) discard;\n    c = t.rgb / max(t.a, 0.001);\n  }\n  c *= tint;\n  vec3 col;\n  if (emis > 0.5) col = c * 1.15;\n  else {\n    float ndl = dot(n, uLight);\n    float sh = shadowAt(ndl);\n    vec3 skyTop = mix(vec3(1.0), mix(uHorizon, uZenith, 0.5), 0.22);\n    vec3 groundBounce = mix(vec3(0.58, 0.59, 0.62), uHorizon * 0.72, 0.18);\n    float hemi = clamp(n.y * 0.5 + 0.5, 0.0, 1.0);\n    vec3 amb = uAmbient * mix(groundBounce, skyTop, hemi);\n    float wrap = max(0.0, (-ndl) * 0.18);\n    col = c * (amb + uSun * (max(ndl, 0.0) * sh + wrap * 0.32));\n    vec3 v = normalize(uCam - vW);\n    vec3 h = normalize(uLight + v);\n    col += uSun * pow(max(dot(n, h), 0.0), 32.0) * 0.16 * sh;\n  }\n  col *= uExposure;\n  vec3 mapped = clamp((col * (2.51 * col + 0.03)) / (col * (2.43 * col + 0.59) + 0.14), 0.0, 1.0); col = mix(clamp(col, 0.0, 1.0), mapped, 0.45);\n  float dist = length(uCam - vW);\n  float fog;\n  if (uFog.z > 1.5) fog = (1.0 - exp(-dist * uFog.x)) * uFog.y;\n  else if (uFog.z > 0.5) fog = clamp((dist - uFog.x) / max(uFog.y - uFog.x, 1.0), 0.0, 1.0);\n  else fog = smoothstep(140.0, 950.0, dist) * 0.88;\n  gl_FragColor = vec4(mix(col, uFogColor, fog), a);\n}";
+    private static final String MESH_FS = "\n#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\nvarying vec3 vN; varying vec3 vW; varying vec2 vUv; varying vec4 vS;\nuniform vec4 uColor; uniform vec3 uTint; uniform vec3 uLight; uniform vec3 uSun; uniform float uAmbient; uniform vec3 uCam;\nuniform sampler2D uTex; uniform float uHasTex; uniform sampler2D uShadow; uniform float uShadowOn; uniform vec2 uShadowTexel; uniform float uShadowSoft; uniform vec3 uShiftBot; uniform float uEnvSpec; uniform int uPtCount; uniform vec4 uPtPos[8]; uniform vec4 uPtCol[8]; uniform vec4 uPtDir[8]; uniform vec4 uCCParams; uniform vec3 uCCTint; uniform vec4 uBloom; uniform vec4 uDof; uniform sampler2D uPbrNrm; uniform sampler2D uPbrRough; uniform sampler2D uPbrMetal; uniform vec4 uPbrFlags; uniform vec4 uPbrEmis;\nuniform vec3 uFogColor; uniform vec3 uFog; uniform float uExposure; uniform float uEmissive; uniform vec3 uHorizon; uniform vec3 uZenith;\nfloat unpackDepth(vec4 c) { return dot(c, vec4(1.0, 1.0 / 255.0, 1.0 / 65025.0, 1.0 / 16581375.0)); }\nfloat sampleShadow(vec2 uv, float z) { return z > unpackDepth(texture2D(uShadow, uv)) ? 0.0 : 1.0; }\nfloat shadowAt(float ndl) {\n  if (uShadowOn < 0.5 || ndl <= 0.0) return 1.0;\n  vec3 p = vS.xyz / vS.w * 0.5 + 0.5;\n  if (p.x <= 0.001 || p.x >= 0.999 || p.y <= 0.001 || p.y >= 0.999 || p.z >= 1.0) return 1.0;\n  float z = p.z - (0.00030 + 0.00095 * (1.0 - ndl));\n  vec2 t = uShadowTexel * mix(0.65, 2.85, clamp(uShadowSoft, 0.0, 1.0));\n  float s = sampleShadow(p.xy, z) * 2.0;\n  s += sampleShadow(p.xy + vec2(-t.x, -t.y), z);\n  s += sampleShadow(p.xy + vec2(0.0, -t.y), z);\n  s += sampleShadow(p.xy + vec2(t.x, -t.y), z);\n  s += sampleShadow(p.xy + vec2(-t.x, 0.0), z);\n  s += sampleShadow(p.xy + vec2(t.x, 0.0), z);\n  s += sampleShadow(p.xy + vec2(-t.x, t.y), z);\n  s += sampleShadow(p.xy + vec2(0.0, t.y), z);\n  s += sampleShadow(p.xy + vec2(t.x, t.y), z);\n  return s / 10.0;\n}\n#ifdef BATCH\nvarying vec4 vCol;\n#endif\nvoid main() {\n  vec3 n = normalize(vN);\n  if (!gl_FrontFacing) n = -n;\n#ifdef BATCH\n  vec3 c = vCol.rgb; float a = 1.0; float emis = vCol.a; vec3 tint = vec3(1.0);\n#else\n  vec3 c = uColor.rgb; float a = uColor.a; float emis = uEmissive; vec3 tint = uTint;\n#endif\n  if (uHasTex > 0.5) {\n    vec4 t = texture2D(uTex, vUv);\n    float am = uPbrFlags.w;\n    if (am > 1.5) { c = mix(t.rgb, t.rgb * c, t.a); }\n    else if (am > 0.5) { if (t.a < 0.04) discard; c = t.rgb; a *= t.a; }\n    else if (uPbrFlags.x + uPbrFlags.y + uPbrFlags.z > 0.5) { c = mix(c, t.rgb, t.a); }\n    else { if (t.a < 0.12) discard; c = t.rgb / max(t.a, 0.001); }\n  }\n  c *= tint;\n  float pbrRough = uPbrFlags.y > 0.5 ? clamp(texture2D(uPbrRough, vUv).r, 0.06, 0.98) : 0.65;\n  float pbrMetal = uPbrFlags.z > 0.5 ? clamp(texture2D(uPbrMetal, vUv).r, 0.0, 1.0) : 0.0;\n  if (uPbrFlags.x > 0.5) {\n    vec3 tn = texture2D(uPbrNrm, vUv).xyz * 2.0 - 1.0;\n    vec3 upRef = abs(n.y) < 0.99 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);\n    vec3 tang = normalize(cross(upRef, n));\n    vec3 bitang = cross(n, tang);\n    n = normalize(tang * tn.x + bitang * tn.y + n * max(tn.z, 0.25));\n  }\n  vec3 col;\n  if (emis > 0.5) col = c * 1.15;\n  else {\n    float ndl = dot(n, uLight);\n    float sh = shadowAt(ndl);\n    vec3 skyTop = mix(vec3(1.0), mix(uHorizon, uZenith, 0.5), 0.22);\n    vec3 groundBounce = mix(vec3(0.58, 0.59, 0.62), uHorizon * 0.72, 0.18);\n    float hemi = clamp(n.y * 0.5 + 0.5, 0.0, 1.0);\n    vec3 amb = uAmbient * mix(groundBounce, skyTop, hemi);\n    float wrap = max(0.0, (-ndl) * 0.18);\n    float diffScale = 1.0 - pbrMetal * 0.72;\n    col = c * diffScale * (amb + uSun * (max(ndl, 0.0) * sh + wrap * 0.32) + uShiftBot * max(-ndl, 0.0) * 0.35);\n    vec3 v = normalize(uCam - vW);\n    vec3 h = normalize(uLight + v);\n    float specPow = mix(128.0, 10.0, pbrRough * pbrRough);\n    vec3 specCol = mix(uSun, c * uSun, pbrMetal);\n    float specInt = mix(0.16, 0.85, (1.0 - pbrRough) * 0.65 + pbrMetal * 0.35);\n    col += specCol * pow(max(dot(n, h), 0.0), specPow) * specInt * sh * uEnvSpec;\n    float fres = pow(1.0 - max(dot(n, v), 0.0), 4.0) * (0.04 + (1.0 - pbrRough) * 0.24 + pbrMetal * 0.38) * uEnvSpec;\n    col = mix(col, mix(uHorizon, uZenith, 0.5) * mix(vec3(1.0), c, pbrMetal), clamp(fres, 0.0, 0.75));\n    col += uPbrEmis.rgb * uPbrEmis.w;\n    for (int li = 0; li < 8; li++) {\n      if (li >= uPtCount) break;\n      vec3 L = uPtPos[li].xyz - vW;\n      float d = length(L);\n      float r = uPtPos[li].w;\n      if (d < r) {\n        vec3 ldir = L / max(d, 0.001);\n        float tt = clamp(1.0 - (d / r) * (d / r), 0.0, 1.0);\n        float att = (tt * tt) / (1.0 + 0.04 * d * d);\n        if (uPtDir[li].w > 0.5) {\n          float ca = dot(-ldir, uPtDir[li].xyz);\n          att *= smoothstep(uPtCol[li].w, min(uPtCol[li].w + 0.14, 0.999), ca);\n        }\n        float pndl = max(dot(n, ldir), 0.0);\n        vec3 ph = normalize(ldir + v);\n        float pspec = pow(max(dot(n, ph), 0.0), 32.0) * 0.16 * uEnvSpec;\n        col += (c * pndl + vec3(pspec)) * uPtCol[li].rgb * att;\n      }\n    }\n  }\n  col *= uExposure;\n  if (uBloom.x > 0.001) { float bl = max(max(col.r, max(col.g, col.b)) - uBloom.y, 0.0); col += col * bl * uBloom.x * 0.45; }\n  vec3 mapped = clamp((col * (2.51 * col + 0.03)) / (col * (2.43 * col + 0.59) + 0.14), 0.0, 1.0); col = mix(clamp(col, 0.0, 1.0), mapped, 0.45);\n  col = clamp(col + vec3(uCCParams.x), 0.0, 1.0);\n  col = clamp((col - 0.5) * (1.0 + uCCParams.y) + 0.5, 0.0, 1.0);\n  float luma = dot(col, vec3(0.2126, 0.7152, 0.0722));\n  col = clamp(mix(vec3(luma), col, 1.0 + uCCParams.z) * uCCTint, 0.0, 1.0);\n  float dist = length(uCam - vW);\n  if (uDof.z > 0.001 || uDof.w > 0.001) {\n    float coc = max(0.0, (dist - (uDof.x + uDof.y)) / max(uDof.y + 12.0, 1.0)) * uDof.z + max(0.0, ((uDof.x - uDof.y) - dist) / max(uDof.x, 1.0)) * uDof.w;\n    col = mix(col, mix(uHorizon, uFogColor, 0.5), clamp(coc * 0.42, 0.0, 0.55));\n  }\n  float fog;\n  if (uFog.z > 1.5) fog = (1.0 - exp(-dist * uFog.x)) * uFog.y;\n  else if (uFog.z > 0.5) fog = clamp((dist - uFog.x) / max(uFog.y - uFog.x, 1.0), 0.0, 1.0);\n  else fog = smoothstep(140.0, 950.0, dist) * 0.88;\n  gl_FragColor = vec4(mix(col, uFogColor, fog), a);\n}";
     private static final String MESH_VS = "\nuniform mat4 uVP; uniform mat4 uModel; uniform mat3 uNrm; uniform mat4 uShadowVP;\nvarying vec3 vN; varying vec3 vW; varying vec2 vUv; varying vec4 vS;\n#ifdef BATCH\nattribute vec3 aPos; attribute vec4 aNrm; attribute vec2 aUv; attribute vec4 aCol;\nvarying vec4 vCol;\nvoid main() {\n  vW = aPos; vN = aNrm.xyz; vUv = aUv; vS = uShadowVP * vec4(aPos, 1.0); vCol = aCol;\n  gl_Position = uVP * vec4(aPos, 1.0);\n}\n#else\nattribute vec3 aPos; attribute vec3 aNrm; attribute vec2 aUv;\nvoid main() {\n  vec4 w = uModel * vec4(aPos, 1.0);\n  vW = w.xyz; vN = uNrm * aNrm; vUv = aUv; vS = uShadowVP * w;\n  gl_Position = uVP * w;\n}\n#endif";
     private static final String PRECISION = "\n#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\n";
     private static final String SKYBOX_FS = "\nprecision mediump float;\nvarying vec2 vUv; uniform sampler2D uTex; uniform vec3 uTint;\nvoid main() { gl_FragColor = vec4(texture2D(uTex, vUv).rgb * uTint, 1.0); }";
     private static final String SKYBOX_VS = "\nuniform mat4 uVP; uniform vec3 uCam; uniform mat3 uRot;\nattribute vec3 aPos; attribute vec2 aUv; varying vec2 vUv;\nvoid main() {\n  vUv = aUv;\n  vec4 p = uVP * vec4(uCam + uRot * aPos * 400.0, 1.0);\n  gl_Position = vec4(p.xy, p.w * 0.9999, p.w);\n}";
-    private static final String SKY_FS = "\n#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\n\nvarying vec2 vNdc;\nuniform mat4 uInvVP; uniform vec3 uCam; uniform vec3 uSunDir; uniform vec3 uZenith; uniform vec3 uHorizon;\nuniform vec3 uSunColor; uniform float uTime; uniform float uDay;\nfloat hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }\nfloat noise(vec2 p) {\n  vec2 i = floor(p); vec2 f = fract(p); f = f * f * (3.0 - 2.0 * f);\n  return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);\n}\nfloat fbm(vec2 p) { float v = 0.0; float a = 0.5; for (int i = 0; i < 5; i++) { v += noise(p) * a; p = p * 2.02 + 3.7; a *= 0.5; } return v; }\nvoid main() {\n  vec4 far = uInvVP * vec4(vNdc, 1.0, 1.0);\n  vec3 dir = normalize(far.xyz / far.w - uCam);\n  float y = dir.y;\n  vec3 col = mix(uHorizon, uZenith, pow(clamp(y, 0.0, 1.0), 0.48));\n  float hBand = exp(-abs(y) * 14.0);\n  col = mix(col, mix(uHorizon, vec3(0.92, 0.96, 1.0), 0.25), hBand * 0.35 * uDay);\n  if (y < 0.0) col = mix(uHorizon, uHorizon * 0.72, clamp(-y * 4.5, 0.0, 1.0));\n  float sd = max(dot(dir, uSunDir), 0.0);\n  col += uSunColor * (smoothstep(0.9992, 0.9997, sd) * 2.6 + pow(sd, 90.0) * 0.24 + pow(sd, 8.0) * 0.10) * uDay;\n  if (y > 0.0) {\n    vec2 uv = dir.xz / (y + 0.12) * 1.6 + vec2(uTime * 0.004, uTime * 0.002);\n    float cl = smoothstep(0.52, 0.78, fbm(uv));\n    float fade = smoothstep(0.0, 0.25, y);\n    vec3 cloudCol = mix(vec3(0.55, 0.6, 0.7), vec3(1.0), 0.35 + 0.65 * uDay);\n    col = mix(col, cloudCol * (0.85 + 0.15 * sd), cl * fade * 0.85 * (0.3 + 0.7 * uDay));\n  }\n  if (uDay < 0.6 && y > 0.0) {\n    float nFade = clamp(1.0 - uDay * 1.8, 0.0, 1.0);\n    float st = step(0.9965, hash(floor(dir.xz / (y + 0.25) * 320.0)));\n    float tw = 0.65 + 0.35 * sin(uTime * 2.0 + hash(floor(dir.xz * 120.0)) * 20.0);\n    col += vec3(0.88, 0.93, 1.0) * st * tw * nFade * smoothstep(0.02, 0.28, y);\n    float md = max(dot(dir, normalize(vec3(-uSunDir.x, max(abs(uSunDir.y), 0.28), -uSunDir.z))), 0.0);\n    col += vec3(0.82, 0.88, 1.0) * (smoothstep(0.9988, 0.9994, md) * 1.15 + pow(md, 48.0) * 0.16) * nFade;\n  }\n  gl_FragColor = vec4(col, 1.0);\n}";
+    private static final String SKY_FS = "\n#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\n\nvarying vec2 vNdc;\nuniform mat4 uInvVP; uniform vec3 uCam; uniform vec3 uSunDir; uniform vec3 uZenith; uniform vec3 uHorizon;\nuniform vec3 uSunColor; uniform float uTime; uniform float uDay; uniform vec2 uSunRays; uniform vec4 uCCParams; uniform vec3 uCCTint;\nfloat hash(vec2 p) { return fract(sin(dot(p, vec2(127.1, 311.7))) * 43758.5453); }\nfloat noise(vec2 p) {\n  vec2 i = floor(p); vec2 f = fract(p); f = f * f * (3.0 - 2.0 * f);\n  return mix(mix(hash(i), hash(i + vec2(1.0, 0.0)), f.x), mix(hash(i + vec2(0.0, 1.0)), hash(i + vec2(1.0, 1.0)), f.x), f.y);\n}\nfloat fbm(vec2 p) { float v = 0.0; float a = 0.5; for (int i = 0; i < 5; i++) { v += noise(p) * a; p = p * 2.02 + 3.7; a *= 0.5; } return v; }\nvoid main() {\n  vec4 far = uInvVP * vec4(vNdc, 1.0, 1.0);\n  vec3 dir = normalize(far.xyz / far.w - uCam);\n  float y = dir.y;\n  vec3 col = mix(uHorizon, uZenith, pow(clamp(y, 0.0, 1.0), 0.48));\n  float hBand = exp(-abs(y) * 14.0);\n  col = mix(col, mix(uHorizon, vec3(0.92, 0.96, 1.0), 0.25), hBand * 0.35 * uDay);\n  if (y < 0.0) col = mix(uHorizon, uHorizon * 0.72, clamp(-y * 4.5, 0.0, 1.0));\n  float sd = max(dot(dir, uSunDir), 0.0);\n  col += uSunColor * (smoothstep(0.9992, 0.9997, sd) * 2.6 + pow(sd, 90.0) * 0.24 + pow(sd, 8.0) * 0.10) * uDay;\n  if (y > 0.0) {\n    vec2 uv = dir.xz / (y + 0.12) * 1.6 + vec2(uTime * 0.004, uTime * 0.002);\n    float cl = smoothstep(0.52, 0.78, fbm(uv));\n    float fade = smoothstep(0.0, 0.25, y);\n    vec3 cloudCol = mix(vec3(0.55, 0.6, 0.7), vec3(1.0), 0.35 + 0.65 * uDay);\n    col = mix(col, cloudCol * (0.85 + 0.15 * sd), cl * fade * 0.85 * (0.3 + 0.7 * uDay));\n  }\n  if (uDay < 0.6 && y > 0.0) {\n    float nFade = clamp(1.0 - uDay * 1.8, 0.0, 1.0);\n    float st = step(0.9965, hash(floor(dir.xz / (y + 0.25) * 320.0)));\n    float tw = 0.65 + 0.35 * sin(uTime * 2.0 + hash(floor(dir.xz * 120.0)) * 20.0);\n    col += vec3(0.88, 0.93, 1.0) * st * tw * nFade * smoothstep(0.02, 0.28, y);\n    float md = max(dot(dir, normalize(vec3(-uSunDir.x, max(abs(uSunDir.y), 0.28), -uSunDir.z))), 0.0);\n    col += vec3(0.82, 0.88, 1.0) * (smoothstep(0.9988, 0.9994, md) * 1.15 + pow(md, 48.0) * 0.16) * nFade;\n  }\n  if (uSunRays.x > 0.001 && uDay > 0.05) {\n    float srPow = mix(28.0, 2.5, clamp(uSunRays.y, 0.0, 1.0));\n    float ang = atan(dir.y - uSunDir.y, dir.x - uSunDir.x);\n    float shafts = 0.72 + 0.28 * sin(ang * 12.0 + uTime * 0.35) * cos(ang * 7.0 - uTime * 0.2);\n    col += uSunColor * pow(sd, srPow) * uSunRays.x * shafts * 1.15 * uDay;\n  }\n  col = clamp(col + vec3(uCCParams.x), 0.0, 1.0);\n  col = clamp((col - 0.5) * (1.0 + uCCParams.y) + 0.5, 0.0, 1.0);\n  float sluma = dot(col, vec3(0.2126, 0.7152, 0.0722));\n  col = clamp(mix(vec3(sluma), col, 1.0 + uCCParams.z) * uCCTint, 0.0, 1.0);\n  gl_FragColor = vec4(col, 1.0);\n}";
     private static final String SKY_VS = "\nattribute vec2 aPos; varying vec2 vNdc;\nvoid main() { vNdc = aPos; gl_Position = vec4(aPos, 0.9999, 1.0); }";
     private final Set<String> BATCH_CLASSES;
     private final float[] FLOAT4_ZERO;
@@ -295,6 +295,60 @@ public final class SceneRenderer implements GLSurfaceView.Renderer {
     private int uShadow;
     private int uShadowOn;
     private int uShadowTexel;
+    private int uShadowSoft;
+    private int uShiftBot;
+    private int uEnvSpec;
+    private int uPtCount;
+    private int uPtPos;
+    private int uPtCol;
+    private int uPtDir;
+    private int mShadowSoft;
+    private int mShiftBot;
+    private int mEnvSpec;
+    private int mPtCount;
+    private int mPtPos;
+    private int mPtCol;
+    private int mPtDir;
+    private float shadowSoftness = 0.2f;
+    private final float[] shiftBottom = new float[3];
+    private float envSpec = 1.0f;
+    private int ptCount = 0;
+    private final float[] ptPos = new float[32];
+    private final float[] ptCol = new float[32];
+    private final float[] ptDir = new float[32];
+    private int uCCParams;
+    private int uCCTint;
+    private int uBloom;
+    private int mCCParams;
+    private int mCCTint;
+    private int mBloom;
+    private int mPbrNrm;
+    private int mPbrRough;
+    private int mPbrMetal;
+    private int mPbrFlags;
+    private int mPbrEmis;
+    private int sCCParams;
+    private int sCCTint;
+    private int sSunRays;
+    private float ccBright = 0.0f;
+    private float ccContrast = 0.0f;
+    private float ccSat = 0.0f;
+    private final float[] ccTint = new float[]{1.0f, 1.0f, 1.0f};
+    private float bloomInt = 0.0f;
+    private float bloomThresh = 2.0f;
+    private float bloomSize = 24.0f;
+    private float sunRaysInt = 0.0f;
+    private float sunRaysSpread = 0.1f;
+    private float atmoGlare = 0.0f;
+    private int lightTech = 3;
+    private int uDof;
+    private int mDof;
+    private float dofFocus = 10.0f;
+    private float dofRadius = 30.0f;
+    private float dofFar = 0.0f;
+    private float dofNear = 0.0f;
+    private float blurAmt = 0.0f;
+    private final IdentityHashMap<Instance, ArrayList<float[]>> trailHist = new IdentityHashMap<>();
     private int uShadowVP;
     private int uSize;
     private int uSun;
@@ -541,7 +595,7 @@ public final class SceneRenderer implements GLSurfaceView.Renderer {
     }
 
     private final LitLocs litLocs(int prog) {
-        return new LitLocs(prog, new int[]{GLES20.glGetUniformLocation(prog, "uVP"), GLES20.glGetUniformLocation(prog, "uModel"), GLES20.glGetUniformLocation(prog, "uNrm"), GLES20.glGetUniformLocation(prog, "uColor"), GLES20.glGetUniformLocation(prog, "uLight"), GLES20.glGetUniformLocation(prog, "uCam"), GLES20.glGetUniformLocation(prog, "uEmissive"), GLES20.glGetUniformLocation(prog, "uGrid"), GLES20.glGetUniformLocation(prog, "uSize"), GLES20.glGetUniformLocation(prog, "uHorizon"), GLES20.glGetUniformLocation(prog, "uZenith"), GLES20.glGetUniformLocation(prog, "uSun"), GLES20.glGetUniformLocation(prog, "uAmbient"), GLES20.glGetUniformLocation(prog, "uFogColor"), GLES20.glGetUniformLocation(prog, "uFog"), GLES20.glGetUniformLocation(prog, "uMat"), GLES20.glGetUniformLocation(prog, "uSurfA"), GLES20.glGetUniformLocation(prog, "uSurfB"), GLES20.glGetUniformLocation(prog, "uShadow"), GLES20.glGetUniformLocation(prog, "uShadowOn"), GLES20.glGetUniformLocation(prog, "uShadowTexel"), GLES20.glGetUniformLocation(prog, "uShadowVP"), GLES20.glGetUniformLocation(prog, "uExposure"), GLES20.glGetUniformLocation(prog, "uTime"), GLES20.glGetUniformLocation(prog, "uTruss"), GLES20.glGetAttribLocation(prog, "aPos"), GLES20.glGetAttribLocation(prog, "aNrm"), GLES20.glGetUniformLocation(prog, "uMatTex"), GLES20.glGetUniformLocation(prog, "uMatNrm"), GLES20.glGetUniformLocation(prog, "uTexScale"), GLES20.glGetUniformLocation(prog, "uHasNrm"), GLES20.glGetUniformLocation(prog, "uSurfTex"), GLES20.glGetUniformLocation(prog, "uHasSurfTex"), GLES20.glGetAttribLocation(prog, "aUv"), GLES20.glGetAttribLocation(prog, "aCol"), GLES20.glGetAttribLocation(prog, "aMat"), GLES20.glGetAttribLocation(prog, "aTan"), GLES20.glGetAttribLocation(prog, "aBit")});
+        return new LitLocs(prog, new int[]{GLES20.glGetUniformLocation(prog, "uVP"), GLES20.glGetUniformLocation(prog, "uModel"), GLES20.glGetUniformLocation(prog, "uNrm"), GLES20.glGetUniformLocation(prog, "uColor"), GLES20.glGetUniformLocation(prog, "uLight"), GLES20.glGetUniformLocation(prog, "uCam"), GLES20.glGetUniformLocation(prog, "uEmissive"), GLES20.glGetUniformLocation(prog, "uGrid"), GLES20.glGetUniformLocation(prog, "uSize"), GLES20.glGetUniformLocation(prog, "uHorizon"), GLES20.glGetUniformLocation(prog, "uZenith"), GLES20.glGetUniformLocation(prog, "uSun"), GLES20.glGetUniformLocation(prog, "uAmbient"), GLES20.glGetUniformLocation(prog, "uFogColor"), GLES20.glGetUniformLocation(prog, "uFog"), GLES20.glGetUniformLocation(prog, "uMat"), GLES20.glGetUniformLocation(prog, "uSurfA"), GLES20.glGetUniformLocation(prog, "uSurfB"), GLES20.glGetUniformLocation(prog, "uShadow"), GLES20.glGetUniformLocation(prog, "uShadowOn"), GLES20.glGetUniformLocation(prog, "uShadowTexel"), GLES20.glGetUniformLocation(prog, "uShadowVP"), GLES20.glGetUniformLocation(prog, "uExposure"), GLES20.glGetUniformLocation(prog, "uTime"), GLES20.glGetUniformLocation(prog, "uTruss"), GLES20.glGetAttribLocation(prog, "aPos"), GLES20.glGetAttribLocation(prog, "aNrm"), GLES20.glGetUniformLocation(prog, "uMatTex"), GLES20.glGetUniformLocation(prog, "uMatNrm"), GLES20.glGetUniformLocation(prog, "uTexScale"), GLES20.glGetUniformLocation(prog, "uHasNrm"), GLES20.glGetUniformLocation(prog, "uSurfTex"), GLES20.glGetUniformLocation(prog, "uHasSurfTex"), GLES20.glGetAttribLocation(prog, "aUv"), GLES20.glGetAttribLocation(prog, "aCol"), GLES20.glGetAttribLocation(prog, "aMat"), GLES20.glGetAttribLocation(prog, "aTan"), GLES20.glGetAttribLocation(prog, "aBit"), GLES20.glGetUniformLocation(prog, "uShadowSoft"), GLES20.glGetUniformLocation(prog, "uShiftBot"), GLES20.glGetUniformLocation(prog, "uEnvSpec"), GLES20.glGetUniformLocation(prog, "uPtCount"), GLES20.glGetUniformLocation(prog, "uPtPos"), GLES20.glGetUniformLocation(prog, "uPtCol"), GLES20.glGetUniformLocation(prog, "uPtDir"), GLES20.glGetUniformLocation(prog, "uCCParams"), GLES20.glGetUniformLocation(prog, "uCCTint"), GLES20.glGetUniformLocation(prog, "uBloom"), GLES20.glGetUniformLocation(prog, "uDof")});
     }
 
     private final void useLit(LitLocs l) {
@@ -587,6 +641,17 @@ public final class SceneRenderer implements GLSurfaceView.Renderer {
         this.aMatB = a[35];
         this.aTan = a[36];
         this.aBit = a[37];
+        this.uShadowSoft = a[38];
+        this.uShiftBot = a[39];
+        this.uEnvSpec = a[40];
+        this.uPtCount = a[41];
+        this.uPtPos = a[42];
+        this.uPtCol = a[43];
+        this.uPtDir = a[44];
+        this.uCCParams = a[45];
+        this.uCCTint = a[46];
+        this.uBloom = a[47];
+        this.uDof = a[48];
     }
 
     private final LitLocs batchProgram(int kind) {
@@ -682,20 +747,44 @@ public final class SceneRenderer implements GLSurfaceView.Renderer {
         Code decompiled incorrectly, please refer to instructions dump.
         To view partially-correct add '--show-bad-code' argument
     */
-    public final java.util.List<com.goydevv.studrblx.render.BatchSpec> batchSpec(com.goydevv.studrblx.model.Instance r38) {
-        /*
-            Method dump skipped, instruction units count: 794
-            To view this dump add '--comments-level debug' option
-        */
-        return null;
+    public final java.util.List<com.goydevv.studrblx.render.BatchSpec> batchSpec(com.goydevv.studrblx.model.Instance p) {
+        if (p == null) {
+            return null;
+        }
+        Geo g = geometry(p);
+        if (g.getKind() == 2) {
+            // Leave textured/file MeshParts in loose list so drawFileMesh renders their textures/SurfaceAppearance
+            return null;
+        }
+        Color3 baseCol = PartData.INSTANCE.color(p);
+        List<Pair<Mesh, Color3>> subs = g.getSubs();
+        if (subs != null && !subs.isEmpty()) {
+            ArrayList<BatchSpec> list = new ArrayList<>(subs.size());
+            for (Pair<Mesh, Color3> pair : subs) {
+                Mesh sm = pair.getFirst();
+                Color3 sc = pair.getSecond() != null ? pair.getSecond() : baseCol;
+                float[] cpu = sm.getCpu();
+                if (cpu != null && cpu.length > 0) {
+                    list.add(spec(p, cpu, sm.getStride(), false, g, sc, false));
+                }
+            }
+            return list.isEmpty() ? null : list;
+        }
+        Mesh m = g.getMesh();
+        float[] cpu = m.getCpu();
+        if (cpu == null || cpu.length == 0) {
+            return null;
+        }
+        boolean isCube = (m == this.cube && g.getKind() == 0);
+        return CollectionsKt.listOf(spec(p, cpu, m.getStride(), isCube, g, baseCol, false));
     }
 
     private final int meshBatchProgram() {
         if (this.meshBatchProg != 0) {
             return this.meshBatchProg;
         }
-        int p = program("#define BATCH 1\n\nuniform mat4 uVP; uniform mat4 uModel; uniform mat3 uNrm; uniform mat4 uShadowVP;\nvarying vec3 vN; varying vec3 vW; varying vec2 vUv; varying vec4 vS;\n#ifdef BATCH\nattribute vec3 aPos; attribute vec4 aNrm; attribute vec2 aUv; attribute vec4 aCol;\nvarying vec4 vCol;\nvoid main() {\n  vW = aPos; vN = aNrm.xyz; vUv = aUv; vS = uShadowVP * vec4(aPos, 1.0); vCol = aCol;\n  gl_Position = uVP * vec4(aPos, 1.0);\n}\n#else\nattribute vec3 aPos; attribute vec3 aNrm; attribute vec2 aUv;\nvoid main() {\n  vec4 w = uModel * vec4(aPos, 1.0);\n  vW = w.xyz; vN = uNrm * aNrm; vUv = aUv; vS = uShadowVP * w;\n  gl_Position = uVP * w;\n}\n#endif", "#define BATCH 1\n\n#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\nvarying vec3 vN; varying vec3 vW; varying vec2 vUv; varying vec4 vS;\nuniform vec4 uColor; uniform vec3 uTint; uniform vec3 uLight; uniform vec3 uSun; uniform float uAmbient; uniform vec3 uCam;\nuniform sampler2D uTex; uniform float uHasTex; uniform sampler2D uShadow; uniform float uShadowOn; uniform vec2 uShadowTexel;\nuniform vec3 uFogColor; uniform vec3 uFog; uniform float uExposure; uniform float uEmissive; uniform vec3 uHorizon; uniform vec3 uZenith;\nfloat unpackDepth(vec4 c) { return dot(c, vec4(1.0, 1.0 / 255.0, 1.0 / 65025.0, 1.0 / 16581375.0)); }\nfloat sampleShadow(vec2 uv, float z) { return z > unpackDepth(texture2D(uShadow, uv)) ? 0.0 : 1.0; }\nfloat shadowAt(float ndl) {\n  if (uShadowOn < 0.5 || ndl <= 0.0) return 1.0;\n  vec3 p = vS.xyz / vS.w * 0.5 + 0.5;\n  if (p.x <= 0.001 || p.x >= 0.999 || p.y <= 0.001 || p.y >= 0.999 || p.z >= 1.0) return 1.0;\n  float z = p.z - (0.00030 + 0.00095 * (1.0 - ndl));\n  vec2 t = uShadowTexel * 1.55;\n  float s = sampleShadow(p.xy, z) * 2.0;\n  s += sampleShadow(p.xy + vec2(-t.x, -t.y), z);\n  s += sampleShadow(p.xy + vec2(0.0, -t.y), z);\n  s += sampleShadow(p.xy + vec2(t.x, -t.y), z);\n  s += sampleShadow(p.xy + vec2(-t.x, 0.0), z);\n  s += sampleShadow(p.xy + vec2(t.x, 0.0), z);\n  s += sampleShadow(p.xy + vec2(-t.x, t.y), z);\n  s += sampleShadow(p.xy + vec2(0.0, t.y), z);\n  s += sampleShadow(p.xy + vec2(t.x, t.y), z);\n  return s / 10.0;\n}\n#ifdef BATCH\nvarying vec4 vCol;\n#endif\nvoid main() {\n  vec3 n = normalize(vN);\n  if (!gl_FrontFacing) n = -n;\n#ifdef BATCH\n  vec3 c = vCol.rgb; float a = 1.0; float emis = vCol.a; vec3 tint = vec3(1.0);\n#else\n  vec3 c = uColor.rgb; float a = uColor.a; float emis = uEmissive; vec3 tint = uTint;\n#endif\n  if (uHasTex > 0.5) {\n    vec4 t = texture2D(uTex, vUv);\n    if (t.a < 0.12) discard;\n    c = t.rgb / max(t.a, 0.001);\n  }\n  c *= tint;\n  vec3 col;\n  if (emis > 0.5) col = c * 1.15;\n  else {\n    float ndl = dot(n, uLight);\n    float sh = shadowAt(ndl);\n    vec3 skyTop = mix(vec3(1.0), mix(uHorizon, uZenith, 0.5), 0.22);\n    vec3 groundBounce = mix(vec3(0.58, 0.59, 0.62), uHorizon * 0.72, 0.18);\n    float hemi = clamp(n.y * 0.5 + 0.5, 0.0, 1.0);\n    vec3 amb = uAmbient * mix(groundBounce, skyTop, hemi);\n    float wrap = max(0.0, (-ndl) * 0.18);\n    col = c * (amb + uSun * (max(ndl, 0.0) * sh + wrap * 0.32));\n    vec3 v = normalize(uCam - vW);\n    vec3 h = normalize(uLight + v);\n    col += uSun * pow(max(dot(n, h), 0.0), 32.0) * 0.16 * sh;\n  }\n  col *= uExposure;\n  vec3 mapped = clamp((col * (2.51 * col + 0.03)) / (col * (2.43 * col + 0.59) + 0.14), 0.0, 1.0); col = mix(clamp(col, 0.0, 1.0), mapped, 0.45);\n  float dist = length(uCam - vW);\n  float fog;\n  if (uFog.z > 1.5) fog = (1.0 - exp(-dist * uFog.x)) * uFog.y;\n  else if (uFog.z > 0.5) fog = clamp((dist - uFog.x) / max(uFog.y - uFog.x, 1.0), 0.0, 1.0);\n  else fog = smoothstep(140.0, 950.0, dist) * 0.88;\n  gl_FragColor = vec4(mix(col, uFogColor, fog), a);\n}");
-        for (String n : CollectionsKt.listOf(new String[]{"uVP", "uShadowVP", "uLight", "uSun", "uAmbient", "uCam", "uFogColor", "uFog", "uExposure", "uShadowOn", "uShadowTexel", "uHorizon", "uZenith", "uShadow", "uTex", "uHasTex"})) {
+        int p = program("#define BATCH 1\n\nuniform mat4 uVP; uniform mat4 uModel; uniform mat3 uNrm; uniform mat4 uShadowVP;\nvarying vec3 vN; varying vec3 vW; varying vec2 vUv; varying vec4 vS;\n#ifdef BATCH\nattribute vec3 aPos; attribute vec4 aNrm; attribute vec2 aUv; attribute vec4 aCol;\nvarying vec4 vCol;\nvoid main() {\n  vW = aPos; vN = aNrm.xyz; vUv = aUv; vS = uShadowVP * vec4(aPos, 1.0); vCol = aCol;\n  gl_Position = uVP * vec4(aPos, 1.0);\n}\n#else\nattribute vec3 aPos; attribute vec3 aNrm; attribute vec2 aUv;\nvoid main() {\n  vec4 w = uModel * vec4(aPos, 1.0);\n  vW = w.xyz; vN = uNrm * aNrm; vUv = aUv; vS = uShadowVP * w;\n  gl_Position = uVP * w;\n}\n#endif", "#define BATCH 1\n\n#ifdef GL_FRAGMENT_PRECISION_HIGH\nprecision highp float;\n#else\nprecision mediump float;\n#endif\nvarying vec3 vN; varying vec3 vW; varying vec2 vUv; varying vec4 vS;\nuniform vec4 uColor; uniform vec3 uTint; uniform vec3 uLight; uniform vec3 uSun; uniform float uAmbient; uniform vec3 uCam;\nuniform sampler2D uTex; uniform float uHasTex; uniform sampler2D uShadow; uniform float uShadowOn; uniform vec2 uShadowTexel; uniform float uShadowSoft; uniform vec3 uShiftBot; uniform float uEnvSpec; uniform int uPtCount; uniform vec4 uPtPos[8]; uniform vec4 uPtCol[8]; uniform vec4 uPtDir[8]; uniform vec4 uCCParams; uniform vec3 uCCTint; uniform vec4 uBloom; uniform vec4 uDof; uniform sampler2D uPbrNrm; uniform sampler2D uPbrRough; uniform sampler2D uPbrMetal; uniform vec4 uPbrFlags; uniform vec4 uPbrEmis;\nuniform vec3 uFogColor; uniform vec3 uFog; uniform float uExposure; uniform float uEmissive; uniform vec3 uHorizon; uniform vec3 uZenith;\nfloat unpackDepth(vec4 c) { return dot(c, vec4(1.0, 1.0 / 255.0, 1.0 / 65025.0, 1.0 / 16581375.0)); }\nfloat sampleShadow(vec2 uv, float z) { return z > unpackDepth(texture2D(uShadow, uv)) ? 0.0 : 1.0; }\nfloat shadowAt(float ndl) {\n  if (uShadowOn < 0.5 || ndl <= 0.0) return 1.0;\n  vec3 p = vS.xyz / vS.w * 0.5 + 0.5;\n  if (p.x <= 0.001 || p.x >= 0.999 || p.y <= 0.001 || p.y >= 0.999 || p.z >= 1.0) return 1.0;\n  float z = p.z - (0.00030 + 0.00095 * (1.0 - ndl));\n  vec2 t = uShadowTexel * mix(0.65, 2.85, clamp(uShadowSoft, 0.0, 1.0));\n  float s = sampleShadow(p.xy, z) * 2.0;\n  s += sampleShadow(p.xy + vec2(-t.x, -t.y), z);\n  s += sampleShadow(p.xy + vec2(0.0, -t.y), z);\n  s += sampleShadow(p.xy + vec2(t.x, -t.y), z);\n  s += sampleShadow(p.xy + vec2(-t.x, 0.0), z);\n  s += sampleShadow(p.xy + vec2(t.x, 0.0), z);\n  s += sampleShadow(p.xy + vec2(-t.x, t.y), z);\n  s += sampleShadow(p.xy + vec2(0.0, t.y), z);\n  s += sampleShadow(p.xy + vec2(t.x, t.y), z);\n  return s / 10.0;\n}\n#ifdef BATCH\nvarying vec4 vCol;\n#endif\nvoid main() {\n  vec3 n = normalize(vN);\n  if (!gl_FrontFacing) n = -n;\n#ifdef BATCH\n  vec3 c = vCol.rgb; float a = 1.0; float emis = vCol.a; vec3 tint = vec3(1.0);\n#else\n  vec3 c = uColor.rgb; float a = uColor.a; float emis = uEmissive; vec3 tint = uTint;\n#endif\n  if (uHasTex > 0.5) {\n    vec4 t = texture2D(uTex, vUv);\n    float am = uPbrFlags.w;\n    if (am > 1.5) { c = mix(t.rgb, t.rgb * c, t.a); }\n    else if (am > 0.5) { if (t.a < 0.04) discard; c = t.rgb; a *= t.a; }\n    else if (uPbrFlags.x + uPbrFlags.y + uPbrFlags.z > 0.5) { c = mix(c, t.rgb, t.a); }\n    else { if (t.a < 0.12) discard; c = t.rgb / max(t.a, 0.001); }\n  }\n  c *= tint;\n  float pbrRough = uPbrFlags.y > 0.5 ? clamp(texture2D(uPbrRough, vUv).r, 0.06, 0.98) : 0.65;\n  float pbrMetal = uPbrFlags.z > 0.5 ? clamp(texture2D(uPbrMetal, vUv).r, 0.0, 1.0) : 0.0;\n  if (uPbrFlags.x > 0.5) {\n    vec3 tn = texture2D(uPbrNrm, vUv).xyz * 2.0 - 1.0;\n    vec3 upRef = abs(n.y) < 0.99 ? vec3(0.0, 1.0, 0.0) : vec3(1.0, 0.0, 0.0);\n    vec3 tang = normalize(cross(upRef, n));\n    vec3 bitang = cross(n, tang);\n    n = normalize(tang * tn.x + bitang * tn.y + n * max(tn.z, 0.25));\n  }\n  vec3 col;\n  if (emis > 0.5) col = c * 1.15;\n  else {\n    float ndl = dot(n, uLight);\n    float sh = shadowAt(ndl);\n    vec3 skyTop = mix(vec3(1.0), mix(uHorizon, uZenith, 0.5), 0.22);\n    vec3 groundBounce = mix(vec3(0.58, 0.59, 0.62), uHorizon * 0.72, 0.18);\n    float hemi = clamp(n.y * 0.5 + 0.5, 0.0, 1.0);\n    vec3 amb = uAmbient * mix(groundBounce, skyTop, hemi);\n    float wrap = max(0.0, (-ndl) * 0.18);\n    float diffScale = 1.0 - pbrMetal * 0.72;\n    col = c * diffScale * (amb + uSun * (max(ndl, 0.0) * sh + wrap * 0.32) + uShiftBot * max(-ndl, 0.0) * 0.35);\n    vec3 v = normalize(uCam - vW);\n    vec3 h = normalize(uLight + v);\n    float specPow = mix(128.0, 10.0, pbrRough * pbrRough);\n    vec3 specCol = mix(uSun, c * uSun, pbrMetal);\n    float specInt = mix(0.16, 0.85, (1.0 - pbrRough) * 0.65 + pbrMetal * 0.35);\n    col += specCol * pow(max(dot(n, h), 0.0), specPow) * specInt * sh * uEnvSpec;\n    float fres = pow(1.0 - max(dot(n, v), 0.0), 4.0) * (0.04 + (1.0 - pbrRough) * 0.24 + pbrMetal * 0.38) * uEnvSpec;\n    col = mix(col, mix(uHorizon, uZenith, 0.5) * mix(vec3(1.0), c, pbrMetal), clamp(fres, 0.0, 0.75));\n    col += uPbrEmis.rgb * uPbrEmis.w;\n    for (int li = 0; li < 8; li++) {\n      if (li >= uPtCount) break;\n      vec3 L = uPtPos[li].xyz - vW;\n      float d = length(L);\n      float r = uPtPos[li].w;\n      if (d < r) {\n        vec3 ldir = L / max(d, 0.001);\n        float tt = clamp(1.0 - (d / r) * (d / r), 0.0, 1.0);\n        float att = (tt * tt) / (1.0 + 0.04 * d * d);\n        if (uPtDir[li].w > 0.5) {\n          float ca = dot(-ldir, uPtDir[li].xyz);\n          att *= smoothstep(uPtCol[li].w, min(uPtCol[li].w + 0.14, 0.999), ca);\n        }\n        float pndl = max(dot(n, ldir), 0.0);\n        vec3 ph = normalize(ldir + v);\n        float pspec = pow(max(dot(n, ph), 0.0), 32.0) * 0.16 * uEnvSpec;\n        col += (c * pndl + vec3(pspec)) * uPtCol[li].rgb * att;\n      }\n    }\n  }\n  col *= uExposure;\n  if (uBloom.x > 0.001) { float bl = max(max(col.r, max(col.g, col.b)) - uBloom.y, 0.0); col += col * bl * uBloom.x * 0.45; }\n  vec3 mapped = clamp((col * (2.51 * col + 0.03)) / (col * (2.43 * col + 0.59) + 0.14), 0.0, 1.0); col = mix(clamp(col, 0.0, 1.0), mapped, 0.45);\n  col = clamp(col + vec3(uCCParams.x), 0.0, 1.0);\n  col = clamp((col - 0.5) * (1.0 + uCCParams.y) + 0.5, 0.0, 1.0);\n  float luma = dot(col, vec3(0.2126, 0.7152, 0.0722));\n  col = clamp(mix(vec3(luma), col, 1.0 + uCCParams.z) * uCCTint, 0.0, 1.0);\n  float dist = length(uCam - vW);\n  if (uDof.z > 0.001 || uDof.w > 0.001) {\n    float coc = max(0.0, (dist - (uDof.x + uDof.y)) / max(uDof.y + 12.0, 1.0)) * uDof.z + max(0.0, ((uDof.x - uDof.y) - dist) / max(uDof.x, 1.0)) * uDof.w;\n    col = mix(col, mix(uHorizon, uFogColor, 0.5), clamp(coc * 0.42, 0.0, 0.55));\n  }\n  float fog;\n  if (uFog.z > 1.5) fog = (1.0 - exp(-dist * uFog.x)) * uFog.y;\n  else if (uFog.z > 0.5) fog = clamp((dist - uFog.x) / max(uFog.y - uFog.x, 1.0), 0.0, 1.0);\n  else fog = smoothstep(140.0, 950.0, dist) * 0.88;\n  gl_FragColor = vec4(mix(col, uFogColor, fog), a);\n}");
+        for (String n : CollectionsKt.listOf(new String[]{"uVP", "uShadowVP", "uLight", "uSun", "uAmbient", "uCam", "uFogColor", "uFog", "uExposure", "uShadowOn", "uShadowTexel", "uHorizon", "uZenith", "uShadow", "uTex", "uHasTex", "uShadowSoft", "uShiftBot", "uEnvSpec", "uPtCount", "uPtPos", "uPtCol", "uPtDir", "uCCParams", "uCCTint", "uBloom", "uDof", "uPbrFlags", "uPbrEmis"})) {
             this.mb.put(n, Integer.valueOf(GLES20.glGetUniformLocation(p, n)));
         }
         for (String n2 : CollectionsKt.listOf(new String[]{"aPos", "aNrm", "aUv", "aCol"})) {
@@ -720,6 +809,21 @@ public final class SceneRenderer implements GLSurfaceView.Renderer {
         GLES20.glUniform1f(useMeshBatch$u$8(this, "uExposure"), this.exposure);
         GLES20.glUniform1f(useMeshBatch$u$8(this, "uShadowOn"), this.frameShadows ? 1.0f : 0.0f);
         GLES20.glUniform2f(useMeshBatch$u$8(this, "uShadowTexel"), 1.0f / this.shadowSize, 1.0f / this.shadowSize);
+        GLES20.glUniform1f(useMeshBatch$u$8(this, "uShadowSoft"), this.shadowSoftness);
+        GLES20.glUniform3fv(useMeshBatch$u$8(this, "uShiftBot"), 1, this.shiftBottom, 0);
+        GLES20.glUniform1f(useMeshBatch$u$8(this, "uEnvSpec"), this.envSpec);
+        GLES20.glUniform4f(useMeshBatch$u$8(this, "uCCParams"), this.ccBright, this.ccContrast, this.ccSat, 0.0f);
+        GLES20.glUniform3fv(useMeshBatch$u$8(this, "uCCTint"), 1, this.ccTint, 0);
+        GLES20.glUniform4f(useMeshBatch$u$8(this, "uBloom"), this.bloomInt, this.bloomThresh, this.bloomSize, 0.0f);
+        GLES20.glUniform4f(useMeshBatch$u$8(this, "uDof"), this.dofFocus, this.dofRadius, Math.max(this.dofFar, this.blurAmt), Math.max(this.dofNear, this.blurAmt));
+        GLES20.glUniform4f(useMeshBatch$u$8(this, "uPbrFlags"), 0.0f, 0.0f, 0.0f, 0.0f);
+        GLES20.glUniform4f(useMeshBatch$u$8(this, "uPbrEmis"), 0.0f, 0.0f, 0.0f, 0.0f);
+        GLES20.glUniform1i(useMeshBatch$u$8(this, "uPtCount"), this.ptCount);
+        if (this.ptCount > 0) {
+            GLES20.glUniform4fv(useMeshBatch$u$8(this, "uPtPos"), this.ptCount, this.ptPos, 0);
+            GLES20.glUniform4fv(useMeshBatch$u$8(this, "uPtCol"), this.ptCount, this.ptCol, 0);
+            GLES20.glUniform4fv(useMeshBatch$u$8(this, "uPtDir"), this.ptCount, this.ptDir, 0);
+        }
         GLES20.glUniform3fv(useMeshBatch$u$8(this, "uHorizon"), 1, this.horizon, 0);
         GLES20.glUniform3fv(useMeshBatch$u$8(this, "uZenith"), 1, this.zenith, 0);
         GLES20.glUniform1i(useMeshBatch$u$8(this, "uShadow"), 0);
@@ -943,7 +1047,7 @@ public final class SceneRenderer implements GLSurfaceView.Renderer {
                     if (this.qualityTimer > 1.5f && this.frames > 60) {
                         this.qualityTimer = 0.0f;
                         f = this.fps;
-                        if (1.0f > f && f <= 24.0f) {
+                        if (f > 1.0f && f <= 24.0f) {
                             this.quality = RangesKt.coerceAtLeast(this.quality * 0.8f, 0.5f);
                         } else if (this.fps > 45.0f) {
                             this.quality = RangesKt.coerceAtMost(this.quality * 1.12f, 2.2f);
@@ -960,7 +1064,7 @@ public final class SceneRenderer implements GLSurfaceView.Renderer {
                     if (this.qualityTimer > 1.5f) {
                         this.qualityTimer = 0.0f;
                         f = this.fps;
-                        if (1.0f > f && f <= 24.0f) {
+                        if (f > 1.0f && f <= 24.0f) {
                             this.quality = RangesKt.coerceAtLeast(this.quality * 0.8f, 0.5f);
                         } else if (this.fps > 45.0f) {
                             this.quality = RangesKt.coerceAtMost(this.quality * 1.12f, 2.2f);
@@ -975,7 +1079,7 @@ public final class SceneRenderer implements GLSurfaceView.Renderer {
                     if (this.qualityTimer > 1.5f) {
                         this.qualityTimer = 0.0f;
                         f = this.fps;
-                        if (1.0f > f && f <= 24.0f) {
+                        if (f > 1.0f && f <= 24.0f) {
                             this.quality = RangesKt.coerceAtLeast(this.quality * 0.8f, 0.5f);
                         } else if (this.fps > 45.0f) {
                             this.quality = RangesKt.coerceAtMost(this.quality * 1.12f, 2.2f);
@@ -992,7 +1096,7 @@ public final class SceneRenderer implements GLSurfaceView.Renderer {
                     if (this.qualityTimer > 1.5f) {
                         this.qualityTimer = 0.0f;
                         f = this.fps;
-                        if (1.0f > f && f <= 24.0f) {
+                        if (f > 1.0f && f <= 24.0f) {
                             this.quality = RangesKt.coerceAtLeast(this.quality * 0.8f, 0.5f);
                         } else if (this.fps > 45.0f) {
                             this.quality = RangesKt.coerceAtMost(this.quality * 1.12f, 2.2f);
@@ -1008,7 +1112,7 @@ public final class SceneRenderer implements GLSurfaceView.Renderer {
                 if (this.qualityTimer > 1.5f) {
                     this.qualityTimer = 0.0f;
                     f = this.fps;
-                    if (1.0f > f && f <= 24.0f) {
+                    if (f > 1.0f && f <= 24.0f) {
                         this.quality = RangesKt.coerceAtLeast(this.quality * 0.8f, 0.5f);
                     } else if (this.fps > 45.0f) {
                         this.quality = RangesKt.coerceAtMost(this.quality * 1.12f, 2.2f);
@@ -1165,6 +1269,9 @@ public final class SceneRenderer implements GLSurfaceView.Renderer {
         this.sSunColor = GLES20.glGetUniformLocation(this.skyProg, "uSunColor");
         this.sTime = GLES20.glGetUniformLocation(this.skyProg, "uTime");
         this.sDay = GLES20.glGetUniformLocation(this.skyProg, "uDay");
+        this.sSunRays = GLES20.glGetUniformLocation(this.skyProg, "uSunRays");
+        this.sCCParams = GLES20.glGetUniformLocation(this.skyProg, "uCCParams");
+        this.sCCTint = GLES20.glGetUniformLocation(this.skyProg, "uCCTint");
         this.saPos = GLES20.glGetAttribLocation(this.skyProg, "aPos");
         this.cVP = GLES20.glGetUniformLocation(this.decalProg, "uVP");
         this.cModel = GLES20.glGetUniformLocation(this.decalProg, "uModel");
@@ -1501,32 +1608,131 @@ public final class SceneRenderer implements GLSurfaceView.Renderer {
         float effAmbLuma = (effAmbR * 0.299f) + (effAmbG * 0.587f) + (effAmbB * 0.114f);
         Object edsObj = l != null ? l.get("EnvironmentDiffuseScale") : null;
         float envDiff = (edsObj instanceof Number) ? RangesKt.coerceIn(((Number) edsObj).floatValue(), 0.0f, 1.0f) : 0.75f;
-        this.ambient = RangesKt.coerceIn((effAmbLuma * 0.38f) + (envDiff * 0.16f) + 0.18f, 0.18f, 0.62f) * ((this.dayFactor * 0.74f) + 0.26f);
+        this.ambient = RangesKt.coerceIn((effAmbLuma * 0.42f) + (envDiff * 0.16f) + 0.20f, 0.22f, 0.66f) * ((this.dayFactor * 0.62f) + 0.38f);
         Object obj5 = l != null ? l.get("ExposureCompensation") : null;
         Number number4 = obj5 instanceof Number ? (Number) obj5 : null;
         this.exposure = (float) Math.pow(2.0d, RangesKt.coerceIn(number4 != null ? number4.doubleValue() : 0.0d, -3.0d, 3.0d));
         this.shadowsOn = !(l != null ? Intrinsics.areEqual(l.get("GlobalShadows"), (Object) false) : false);
-        if (l == null || (children = l.getChildren()) == null) {
-            atmo = null;
+        Object ssObj = l != null ? l.get("ShadowSoftness") : null;
+        this.shadowSoftness = (ssObj instanceof Number) ? RangesKt.coerceIn(((Number) ssObj).floatValue(), 0.0f, 1.0f) : 0.2f;
+        Color3 csb = c3(l != null ? l.get("ColorShift_Bottom") : null);
+        if (csb != null) {
+            this.shiftBottom[0] = csb.getR();
+            this.shiftBottom[1] = csb.getG();
+            this.shiftBottom[2] = csb.getB();
         } else {
-            Iterable iterable = children;
-            int i2 = 0;
-            Iterator it = iterable.iterator();
-            while (true) {
-                if (!it.hasNext()) {
-                    next = null;
-                    break;
-                }
-                next = it.next();
-                Iterable iterable2 = iterable;
-                int i3 = i2;
-                if (Intrinsics.areEqual(((Instance) next).getClassName(), "Atmosphere")) {
-                    break;
-                }
-                iterable = iterable2;
-                i2 = i3;
+            this.shiftBottom[0] = 0.0f;
+            this.shiftBottom[1] = 0.0f;
+            this.shiftBottom[2] = 0.0f;
+        }
+        Object essObj = l != null ? l.get("EnvironmentSpecularScale") : null;
+        this.envSpec = (essObj instanceof Number) ? RangesKt.coerceIn(((Number) essObj).floatValue(), 0.0f, 1.0f) : 1.0f;
+        Object techObj = l != null ? l.get("Technology") : null;
+        if (techObj instanceof EnumValue) {
+            this.lightTech = ((EnumValue) techObj).getValue();
+        } else if (techObj instanceof Number) {
+            this.lightTech = ((Number) techObj).intValue();
+        } else {
+            this.lightTech = 3;
+        }
+        if (this.lightTech >= 4) {
+            this.envSpec = RangesKt.coerceIn(this.envSpec * 1.25f, 0.0f, 1.5f);
+        } else if (this.lightTech == 1 || this.lightTech == 2) {
+            this.envSpec *= 0.65f;
+        }
+        collectLocalLights();
+        this.ccBright = 0.0f;
+        this.ccContrast = 0.0f;
+        this.ccSat = 0.0f;
+        this.ccTint[0] = 1.0f;
+        this.ccTint[1] = 1.0f;
+        this.ccTint[2] = 1.0f;
+        this.bloomInt = 0.0f;
+        this.bloomThresh = 2.0f;
+        this.bloomSize = 24.0f;
+        this.sunRaysInt = 0.0f;
+        this.sunRaysSpread = 0.1f;
+        this.atmoGlare = 0.0f;
+        this.dofFocus = 10.0f;
+        this.dofRadius = 30.0f;
+        this.dofFar = 0.0f;
+        this.dofNear = 0.0f;
+        this.blurAmt = 0.0f;
+        atmo = null;
+        ArrayList<Instance> fxRoots = new ArrayList<>();
+        if (l != null) {
+            fxRoots.add(l);
+        }
+        Instance wsFx = this.studio.getModel().findService("Workspace");
+        if (wsFx != null) {
+            Instance camFx = Instance.findFirstChild$default(wsFx, "Camera", false, 2, null);
+            if (camFx != null) {
+                fxRoots.add(camFx);
             }
-            atmo = (Instance) next;
+        }
+        for (Instance fxRoot : fxRoots) {
+            for (Instance li : Instance.descendants$default(fxRoot, null, 1, null)) {
+                String lcn = li.getClassName();
+                if (atmo == null && "Atmosphere".equals(lcn)) {
+                    atmo = li;
+                } else if ("ColorCorrectionEffect".equals(lcn) && !Intrinsics.areEqual(li.get("Enabled"), (Object) false)) {
+                    Object ccB = li.get("Brightness");
+                    if (ccB instanceof Number) {
+                        this.ccBright = RangesKt.coerceIn(this.ccBright + ((Number) ccB).floatValue(), -1.0f, 1.0f);
+                    }
+                    Object ccC = li.get("Contrast");
+                    if (ccC instanceof Number) {
+                        this.ccContrast = RangesKt.coerceIn(this.ccContrast + ((Number) ccC).floatValue(), -1.0f, 2.0f);
+                    }
+                    Object ccS = li.get("Saturation");
+                    if (ccS instanceof Number) {
+                        this.ccSat = RangesKt.coerceIn(this.ccSat + ((Number) ccS).floatValue(), -1.0f, 2.0f);
+                    }
+                    Color3 tc = c3(li.get("TintColor"));
+                    if (tc != null) {
+                        this.ccTint[0] *= tc.getR();
+                        this.ccTint[1] *= tc.getG();
+                        this.ccTint[2] *= tc.getB();
+                    }
+                } else if ("BloomEffect".equals(lcn) && !Intrinsics.areEqual(li.get("Enabled"), (Object) false)) {
+                    Object bI = li.get("Intensity");
+                    float bi = (bI instanceof Number) ? RangesKt.coerceIn(((Number) bI).floatValue(), 0.0f, 4.0f) : 1.0f;
+                    Object bT = li.get("Threshold");
+                    float bt = (bT instanceof Number) ? RangesKt.coerceIn(((Number) bT).floatValue(), 0.0f, 4.0f) : 2.0f;
+                    Object bS = li.get("Size");
+                    float bs = (bS instanceof Number) ? RangesKt.coerceIn(((Number) bS).floatValue(), 0.0f, 56.0f) : 24.0f;
+                    if (bi > this.bloomInt) {
+                        this.bloomInt = bi;
+                        this.bloomThresh = bt;
+                        this.bloomSize = bs;
+                    }
+                } else if ("SunRaysEffect".equals(lcn) && !Intrinsics.areEqual(li.get("Enabled"), (Object) false)) {
+                    Object sI = li.get("Intensity");
+                    float si = (sI instanceof Number) ? RangesKt.coerceIn(((Number) sI).floatValue(), 0.0f, 1.0f) : 0.25f;
+                    Object sSp = li.get("Spread");
+                    float ssp = (sSp instanceof Number) ? RangesKt.coerceIn(((Number) sSp).floatValue(), 0.0f, 1.0f) : 0.1f;
+                    if (si > this.sunRaysInt) {
+                        this.sunRaysInt = si;
+                        this.sunRaysSpread = ssp;
+                    }
+                } else if ("DepthOfFieldEffect".equals(lcn) && !Intrinsics.areEqual(li.get("Enabled"), (Object) false)) {
+                    Object fd = li.get("FocusDistance");
+                    Object ir = li.get("InFocusRadius");
+                    Object fi = li.get("FarIntensity");
+                    Object ni = li.get("NearIntensity");
+                    this.dofFocus = (fd instanceof Number) ? Math.max(((Number) fd).floatValue(), 0.05f) : 10.0f;
+                    this.dofRadius = (ir instanceof Number) ? Math.max(((Number) ir).floatValue(), 0.0f) : 30.0f;
+                    this.dofFar = (fi instanceof Number) ? RangesKt.coerceIn(((Number) fi).floatValue(), 0.0f, 1.0f) : 0.1f;
+                    this.dofNear = (ni instanceof Number) ? RangesKt.coerceIn(((Number) ni).floatValue(), 0.0f, 1.0f) : 0.75f;
+                } else if ("BlurEffect".equals(lcn) && !Intrinsics.areEqual(li.get("Enabled"), (Object) false)) {
+                    Object bs = li.get("Size");
+                    float bsz = (bs instanceof Number) ? RangesKt.coerceIn(((Number) bs).floatValue(), 0.0f, 56.0f) : 24.0f;
+                    float normB = bsz / 56.0f;
+                    if (normB > this.blurAmt) {
+                        this.blurAmt = normB;
+                    }
+                }
+            }
         }
         Object obj6 = l != null ? l.get("FogEnd") : null;
         Number number5 = obj6 instanceof Number ? (Number) obj6 : null;
@@ -1543,6 +1749,9 @@ public final class SceneRenderer implements GLSurfaceView.Renderer {
             Color3 dc = c3(atmo.get("Decay"));
             Object obj8 = atmo.get("Haze");
             float haze2 = (obj8 instanceof Number) ? RangesKt.coerceIn(((Number) obj8).floatValue(), 0.0f, 10.0f) : 0.0f;
+            Object glareObj = atmo.get("Glare");
+            float glareVal = (glareObj instanceof Number) ? RangesKt.coerceIn(((Number) glareObj).floatValue(), 0.0f, 10.0f) : 0.0f;
+            this.atmoGlare = haze2 > 0.01f ? RangesKt.coerceIn((glareVal * 0.12f) * Math.min(haze2, 2.0f), 0.0f, 1.2f) : 0.0f;
             this.fogMode = 2.0f;
             this.fogStart = ((7.5E-4f * haze2) + 0.0038f) * density;
             this.fogEnd = RangesKt.coerceIn(0.92f - (offset * 0.45f), 0.30f, 0.92f);
@@ -1641,6 +1850,13 @@ public final class SceneRenderer implements GLSurfaceView.Renderer {
         public final Vector3 getTint() {
             return this.tint;
         }
+
+        public String saNormal;
+        public String saRough;
+        public String saMetal;
+        public int saAlphaMode;
+        public float saEmissive;
+        public Vector3 saEmissiveTint;
     }
 
     private final Mesh meshFor(int shape) {
@@ -1903,14 +2119,14 @@ public final class SceneRenderer implements GLSurfaceView.Renderer {
                 Vector3 vector3 = new Vector3(geometry$lambda$40$k$37(size.getX(), gpuMeshFileMesh.getSize().getX()), geometry$lambda$40$k$37(size.getY(), gpuMeshFileMesh.getSize().getY()), geometry$lambda$40$k$37(size.getZ(), gpuMeshFileMesh.getSize().getZ()));
                 String strContent2 = this.partTexOverride.get(p);
                 Vector3 saTint = null;
-                if (strContent2 == null) {
-                    Instance sa = null;
-                    for (Instance ch : p.getChildren()) {
-                        if (Intrinsics.areEqual(ch.getClassName(), "SurfaceAppearance")) {
-                            sa = ch;
-                            break;
-                        }
+                Instance sa = null;
+                for (Instance ch : p.getChildren()) {
+                    if (Intrinsics.areEqual(ch.getClassName(), "SurfaceAppearance")) {
+                        sa = ch;
+                        break;
                     }
+                }
+                if (strContent2 == null) {
                     if (sa != null) {
                         strContent2 = PartData.INSTANCE.content(sa, "ColorMap", "ColorMapContent");
                         Object saColObj = sa.get("Color");
@@ -1923,7 +2139,27 @@ public final class SceneRenderer implements GLSurfaceView.Renderer {
                         strContent2 = PartData.INSTANCE.textureContent(p);
                     }
                 }
-                return new Geo(gpuMeshFileMesh.getMesh(), cf.times(CFrame.INSTANCE.at(gpuMeshFileMesh.getCenter().times(vector3).unaryMinus())), vector3, 2, strContent2, null, saTint, 32, null);
+                Geo geoOut = new Geo(gpuMeshFileMesh.getMesh(), cf.times(CFrame.INSTANCE.at(gpuMeshFileMesh.getCenter().times(vector3).unaryMinus())), vector3, 2, strContent2, null, saTint, 32, null);
+                if (sa != null) {
+                    geoOut.saNormal = PartData.INSTANCE.content(sa, "NormalMap", "NormalMapContent");
+                    geoOut.saRough = PartData.INSTANCE.content(sa, "RoughnessMap", "RoughnessMapContent");
+                    geoOut.saMetal = PartData.INSTANCE.content(sa, "MetalnessMap", "MetalnessMapContent");
+                    Object amObj = sa.get("AlphaMode");
+                    if (amObj instanceof EnumValue) {
+                        geoOut.saAlphaMode = ((EnumValue) amObj).getValue();
+                    } else if (amObj instanceof Number) {
+                        geoOut.saAlphaMode = ((Number) amObj).intValue();
+                    }
+                    Object esObj = sa.get("EmissiveStrength");
+                    if (esObj instanceof Number) {
+                        geoOut.saEmissive = RangesKt.coerceIn(((Number) esObj).floatValue(), 0.0f, 10.0f);
+                    }
+                    Color3 et = c3(sa.get("EmissiveTint"));
+                    if (et != null) {
+                        geoOut.saEmissiveTint = new Vector3(et.getR(), et.getG(), et.getB());
+                    }
+                }
+                return geoOut;
             }
             i = 0;
         } else {
@@ -2159,7 +2395,7 @@ public final class SceneRenderer implements GLSurfaceView.Renderer {
         Matrix.multiplyMM(this.lightVP, 0, this.lightProj, 0, this.lightView, 0);
         long change = Instance.changeCount;
         this.shadowAge++;
-        if (this.shadowValid && this.studio.isPlaying() && this.fps < 20.0f && this.frames % 2 == 1) {
+        if (this.shadowValid && this.studio.isPlaying() && ((this.fps < 18.0f && this.frames % 3 != 0) || (this.fps < 32.0f && this.frames % 2 == 1))) {
             ArraysKt.copyInto(this.lastLightVP, this.lightVP, 0, 0, this.lastLightVP.length);
             return;
         }
@@ -2435,6 +2671,9 @@ public final class SceneRenderer implements GLSurfaceView.Renderer {
         GLES20.glUniform3f(this.sSunColor, 1.0f, 0.95f, 0.85f);
         GLES20.glUniform1f(this.sTime, this.time);
         GLES20.glUniform1f(this.sDay, this.dayFactor);
+        GLES20.glUniform2f(this.sSunRays, Math.max(this.sunRaysInt, this.atmoGlare * 0.75f), this.sunRaysInt > 0.001f ? this.sunRaysSpread : 0.55f);
+        GLES20.glUniform4f(this.sCCParams, this.ccBright, this.ccContrast, this.ccSat, 0.0f);
+        GLES20.glUniform3fv(this.sCCTint, 1, this.ccTint, 0);
         Mesh mesh = this.screen;
         Mesh mesh2 = null;
         if (mesh == null) {
@@ -2824,6 +3063,9 @@ public final class SceneRenderer implements GLSurfaceView.Renderer {
         this.tL += (m2 - m1) / 1000000.0f;
         drawDecals();
         drawConstraints();
+        drawBeams();
+        drawTrails();
+        drawParticles();
         drawAdornments();
         long m3 = System.nanoTime();
         this.tDec += (m3 - m2) / 1000000.0f;
@@ -3003,6 +3245,19 @@ public final class SceneRenderer implements GLSurfaceView.Renderer {
         GLES20.glUniform1f(this.uExposure, this.exposure);
         GLES20.glUniform1f(this.uShadowOn, shadows ? 1.0f : 0.0f);
         GLES20.glUniform2f(this.uShadowTexel, 1.0f / this.shadowSize, 1.0f / this.shadowSize);
+        GLES20.glUniform1f(this.uShadowSoft, this.shadowSoftness);
+        GLES20.glUniform3fv(this.uShiftBot, 1, this.shiftBottom, 0);
+        GLES20.glUniform1f(this.uEnvSpec, this.envSpec);
+        GLES20.glUniform4f(this.uCCParams, this.ccBright, this.ccContrast, this.ccSat, 0.0f);
+        GLES20.glUniform3fv(this.uCCTint, 1, this.ccTint, 0);
+        GLES20.glUniform4f(this.uBloom, this.bloomInt, this.bloomThresh, this.bloomSize, 0.0f);
+        GLES20.glUniform4f(this.uDof, this.dofFocus, this.dofRadius, Math.max(this.dofFar, this.blurAmt), Math.max(this.dofNear, this.blurAmt));
+        GLES20.glUniform1i(this.uPtCount, this.ptCount);
+        if (this.ptCount > 0) {
+            GLES20.glUniform4fv(this.uPtPos, this.ptCount, this.ptPos, 0);
+            GLES20.glUniform4fv(this.uPtCol, this.ptCount, this.ptCol, 0);
+            GLES20.glUniform4fv(this.uPtDir, this.ptCount, this.ptDir, 0);
+        }
         GLES20.glUniform1f(this.uTime, this.time);
         GLES20.glActiveTexture(33984);
         GLES20.glBindTexture(3553, this.shadowTex);
@@ -3139,6 +3394,22 @@ public final class SceneRenderer implements GLSurfaceView.Renderer {
         this.mShadowVP = setupMeshProgram$u$56(this, "uShadowVP");
         this.mShadowOn = setupMeshProgram$u$56(this, "uShadowOn");
         this.mShadowTexel = setupMeshProgram$u$56(this, "uShadowTexel");
+        this.mShadowSoft = setupMeshProgram$u$56(this, "uShadowSoft");
+        this.mShiftBot = setupMeshProgram$u$56(this, "uShiftBot");
+        this.mEnvSpec = setupMeshProgram$u$56(this, "uEnvSpec");
+        this.mPtCount = setupMeshProgram$u$56(this, "uPtCount");
+        this.mPtPos = setupMeshProgram$u$56(this, "uPtPos");
+        this.mPtCol = setupMeshProgram$u$56(this, "uPtCol");
+        this.mPtDir = setupMeshProgram$u$56(this, "uPtDir");
+        this.mCCParams = setupMeshProgram$u$56(this, "uCCParams");
+        this.mCCTint = setupMeshProgram$u$56(this, "uCCTint");
+        this.mBloom = setupMeshProgram$u$56(this, "uBloom");
+        this.mDof = setupMeshProgram$u$56(this, "uDof");
+        this.mPbrNrm = setupMeshProgram$u$56(this, "uPbrNrm");
+        this.mPbrRough = setupMeshProgram$u$56(this, "uPbrRough");
+        this.mPbrMetal = setupMeshProgram$u$56(this, "uPbrMetal");
+        this.mPbrFlags = setupMeshProgram$u$56(this, "uPbrFlags");
+        this.mPbrEmis = setupMeshProgram$u$56(this, "uPbrEmis");
         this.mCam = setupMeshProgram$u$56(this, "uCam");
         this.mFogColor = setupMeshProgram$u$56(this, "uFogColor");
         this.mFog = setupMeshProgram$u$56(this, "uFog");
@@ -3226,10 +3497,26 @@ public final class SceneRenderer implements GLSurfaceView.Renderer {
             GLES20.glUniform1f(this.mExposure, this.exposure);
             GLES20.glUniform1f(this.mShadowOn, this.frameShadows ? 1.0f : 0.0f);
             GLES20.glUniform2f(this.mShadowTexel, 1.0f / this.shadowSize, 1.0f / this.shadowSize);
+            GLES20.glUniform1f(this.mShadowSoft, this.shadowSoftness);
+            GLES20.glUniform3fv(this.mShiftBot, 1, this.shiftBottom, 0);
+            GLES20.glUniform1f(this.mEnvSpec, this.envSpec);
+            GLES20.glUniform1i(this.mPtCount, this.ptCount);
+            if (this.ptCount > 0) {
+                GLES20.glUniform4fv(this.mPtPos, this.ptCount, this.ptPos, 0);
+                GLES20.glUniform4fv(this.mPtCol, this.ptCount, this.ptCol, 0);
+                GLES20.glUniform4fv(this.mPtDir, this.ptCount, this.ptDir, 0);
+            }
             GLES20.glUniform3fv(this.mHorizon, 1, this.horizon, 0);
             GLES20.glUniform3fv(this.mZenith, 1, this.zenith, 0);
             GLES20.glUniform1i(this.mShadow, 0);
             GLES20.glUniform1i(this.mTex, 1);
+            GLES20.glUniform1i(this.mPbrNrm, 2);
+            GLES20.glUniform1i(this.mPbrRough, 3);
+            GLES20.glUniform1i(this.mPbrMetal, 4);
+            GLES20.glUniform4f(this.mCCParams, this.ccBright, this.ccContrast, this.ccSat, 0.0f);
+            GLES20.glUniform3fv(this.mCCTint, 1, this.ccTint, 0);
+            GLES20.glUniform4f(this.mBloom, this.bloomInt, this.bloomThresh, this.bloomSize, 0.0f);
+            GLES20.glUniform4f(this.mDof, this.dofFocus, this.dofRadius, Math.max(this.dofFar, this.blurAmt), Math.max(this.dofNear, this.blurAmt));
         }
         GLES20.glActiveTexture(33984);
         GLES20.glBindTexture(3553, this.shadowTex);
@@ -3239,6 +3526,29 @@ public final class SceneRenderer implements GLSurfaceView.Renderer {
         GLES20.glBindTexture(3553, tex2);
         GLES20.glActiveTexture(33984);
         GLES20.glUniform1f(this.mHasTex, tex2 != 0 ? 1.0f : 0.0f);
+        int nrmId = g.saNormal != null ? assetTexture(g.saNormal, true) : 0;
+        int rghId = g.saRough != null ? assetTexture(g.saRough, true) : 0;
+        int mtlId = g.saMetal != null ? assetTexture(g.saMetal, true) : 0;
+        if (nrmId != 0) {
+            GLES20.glActiveTexture(33986);
+            GLES20.glBindTexture(3553, nrmId);
+        }
+        if (rghId != 0) {
+            GLES20.glActiveTexture(33987);
+            GLES20.glBindTexture(3553, rghId);
+        }
+        if (mtlId != 0) {
+            GLES20.glActiveTexture(33988);
+            GLES20.glBindTexture(3553, mtlId);
+        }
+        GLES20.glActiveTexture(33984);
+        GLES20.glUniform4f(this.mPbrFlags, nrmId != 0 ? 1.0f : 0.0f, rghId != 0 ? 1.0f : 0.0f, mtlId != 0 ? 1.0f : 0.0f, (float) g.saAlphaMode);
+        if (g.saEmissive > 0.001f) {
+            Vector3 etv = g.saEmissiveTint != null ? g.saEmissiveTint : new Vector3(1.0f, 1.0f, 1.0f);
+            GLES20.glUniform4f(this.mPbrEmis, etv.getX(), etv.getY(), etv.getZ(), g.saEmissive);
+        } else {
+            GLES20.glUniform4f(this.mPbrEmis, 0.0f, 0.0f, 0.0f, 0.0f);
+        }
         Color3 c = PartData.INSTANCE.color(p);
         GLES20.glUniform4f(this.mColor, c.getR(), c.getG(), c.getB(), alpha);
         Vector3 t = g.getTint();
@@ -3263,6 +3573,125 @@ public final class SceneRenderer implements GLSurfaceView.Renderer {
         GLES20.glDrawArrays(m.getMode(), 0, m.getCount());
         GLES20.glEnable(2884);
         GLES20.glDisableVertexAttribArray(this.maUv);
+    }
+
+    private final void collectLocalLights() {
+        List<Instance> lights = this.studio.renderLights();
+        if (lights.isEmpty()) {
+            this.ptCount = 0;
+            return;
+        }
+        Vector3 cam = this.studio.getView().getCamPos();
+        int n = 0;
+        float[] dists = new float[8];
+        for (int i = 0; i < lights.size(); i++) {
+            Instance li = lights.get(i);
+            if (Intrinsics.areEqual(li.get("Enabled"), (Object) false)) {
+                continue;
+            }
+            Instance parent = li.getParent();
+            if (parent == null) {
+                continue;
+            }
+            Vector3 pos;
+            CFrame baseCf;
+            if (Intrinsics.areEqual(parent.getClassName(), "Attachment")) {
+                pos = attachmentWorld(parent);
+                Instance pp = parent.getParent();
+                if (pos == null || pp == null || !pp.isA("BasePart")) {
+                    continue;
+                }
+                baseCf = PartData.INSTANCE.cframe(pp);
+                Object acf = parent.get("CFrame");
+                if (acf instanceof CFrame) {
+                    baseCf = baseCf.times((CFrame) acf);
+                }
+            } else if (parent.isA("BasePart")) {
+                baseCf = PartData.INSTANCE.cframe(parent);
+                pos = baseCf.getPosition();
+            } else {
+                continue;
+            }
+            Object rObj = li.get("Range");
+            float range = (rObj instanceof Number) ? RangesKt.coerceIn(((Number) rObj).floatValue(), 0.1f, 60.0f) : 16.0f;
+            Object bObj = li.get("Brightness");
+            float br = (bObj instanceof Number) ? RangesKt.coerceIn(((Number) bObj).floatValue(), 0.0f, 40.0f) : 1.0f;
+            if (br <= 0.001f) {
+                continue;
+            }
+            Color3 col = c3(li.get("Color"));
+            float cr = (col != null ? col.getR() : 1.0f) * br;
+            float cg = (col != null ? col.getG() : 1.0f) * br;
+            float cb = (col != null ? col.getB() : 1.0f) * br;
+            float dx = pos.getX() - cam.getX();
+            float dy = pos.getY() - cam.getY();
+            float dz = pos.getZ() - cam.getZ();
+            float d2 = (dx * dx) + (dy * dy) + (dz * dz);
+            int slot;
+            if (n < 8) {
+                slot = n;
+                n++;
+            } else {
+                int worst = 0;
+                float worstD = dists[0];
+                for (int k = 1; k < 8; k++) {
+                    if (dists[k] > worstD) {
+                        worstD = dists[k];
+                        worst = k;
+                    }
+                }
+                if (d2 >= worstD) {
+                    continue;
+                }
+                slot = worst;
+            }
+            dists[slot] = d2;
+            String cn = li.getClassName();
+            boolean directional = Intrinsics.areEqual(cn, "SpotLight") || Intrinsics.areEqual(cn, "SurfaceLight");
+            float cosHalf = -2.0f;
+            float dirX = 0.0f;
+            float dirY = -1.0f;
+            float dirZ = 0.0f;
+            if (directional) {
+                Object aObj = li.get("Angle");
+                float ang = (aObj instanceof Number) ? RangesKt.coerceIn(((Number) aObj).floatValue(), 1.0f, 180.0f) : 90.0f;
+                cosHalf = (float) Math.cos(Math.toRadians(ang * 0.5d));
+                int face = 5; // Enum.NormalId.Front (-Z) default
+                Object fObj = li.get("Face");
+                if (fObj instanceof EnumValue) {
+                    face = ((EnumValue) fObj).getValue();
+                } else if (fObj instanceof Number) {
+                    face = ((Number) fObj).intValue();
+                }
+                Vector3 localDir;
+                switch (face) {
+                    case 0: localDir = new Vector3(1.0f, 0.0f, 0.0f); break;  // Right (+X)
+                    case 1: localDir = new Vector3(0.0f, 1.0f, 0.0f); break;  // Top (+Y)
+                    case 2: localDir = new Vector3(0.0f, 0.0f, 1.0f); break;  // Back (+Z)
+                    case 3: localDir = new Vector3(-1.0f, 0.0f, 0.0f); break; // Left (-X)
+                    case 4: localDir = new Vector3(0.0f, -1.0f, 0.0f); break; // Bottom (-Y)
+                    default: localDir = new Vector3(0.0f, 0.0f, -1.0f); break; // Front (-Z)
+                }
+                Vector3 wDir = baseCf.times(localDir).minus(baseCf.getPosition()).getUnit();
+                dirX = wDir.getX();
+                dirY = wDir.getY();
+                dirZ = wDir.getZ();
+            }
+            int o = slot * 4;
+            this.ptPos[o] = pos.getX();
+            this.ptPos[o + 1] = pos.getY();
+            this.ptPos[o + 2] = pos.getZ();
+            this.ptPos[o + 3] = range;
+            this.ptCol[o] = cr;
+            this.ptCol[o + 1] = cg;
+            this.ptCol[o + 2] = cb;
+            this.ptCol[o + 3] = cosHalf;
+            this.ptDir[o] = dirX;
+            this.ptDir[o + 1] = dirY;
+            this.ptDir[o + 2] = dirZ;
+            this.ptDir[o + 3] = directional ? 1.0f : 0.0f;
+        }
+        this.ptCount = n;
     }
 
     private final Vector3 attachmentWorld(Instance a) {
@@ -3301,6 +3730,351 @@ public final class SceneRenderer implements GLSurfaceView.Renderer {
             mesh = null;
         }
         GLES20.glDrawArrays(4, 0, mesh.getCount());
+    }
+
+    private final CFrame attachmentWorldCf(Instance a) {
+        if (a == null) {
+            return null;
+        }
+        Instance part = a.getParent();
+        if (part == null || !part.isA("BasePart")) {
+            return null;
+        }
+        CFrame pcf = PartData.INSTANCE.cframe(part);
+        Object obj = a.get("CFrame");
+        if (obj instanceof CFrame) {
+            return pcf.times((CFrame) obj);
+        }
+        return pcf;
+    }
+
+    private final void drawBeams() {
+        List<Instance> beams = this.studio.renderBeams();
+        if (beams.isEmpty() || this.litBasic == null) {
+            return;
+        }
+        useLit(this.litBasic);
+        setLitFrameUniforms(false);
+        Mesh mesh = this.cube;
+        if (mesh == null) {
+            return;
+        }
+        bind(mesh, this.aPos, this.aNrm);
+        GLES20.glUniform1f(this.uEmissive, 1.0f);
+        GLES20.glUniform1f(this.uGrid, 0.0f);
+        GLES20.glUniform1f(this.uTruss, 0.0f);
+        GLES20.glUniform4f(this.uMat, 0.0f, 0.0f, 1.0f, 0.0f);
+        GLES20.glUniform3f(this.uSurfA, 0.0f, 0.0f, 0.0f);
+        GLES20.glUniform3f(this.uSurfB, 0.0f, 0.0f, 0.0f);
+        GLES20.glUniform3f(this.uSize, 1.0f, 1.0f, 1.0f);
+        GLES20.glEnable(3042);
+        GLES20.glDepthMask(false);
+        for (int i = 0; i < beams.size(); i++) {
+            Instance b = beams.get(i);
+            if (b.getParent() == null || Intrinsics.areEqual(b.get("Enabled"), (Object) false)) {
+                continue;
+            }
+            Object a0Obj = b.get("Attachment0");
+            Object a1Obj = b.get("Attachment1");
+            CFrame cf0 = attachmentWorldCf(a0Obj instanceof Instance ? (Instance) a0Obj : null);
+            CFrame cf1 = attachmentWorldCf(a1Obj instanceof Instance ? (Instance) a1Obj : null);
+            if (cf0 == null || cf1 == null) {
+                continue;
+            }
+            Vector3 p0 = cf0.getPosition();
+            Vector3 p3 = cf1.getPosition();
+            float cs0 = (b.get("CurveSize0") instanceof Number) ? ((Number) b.get("CurveSize0")).floatValue() : 0.0f;
+            float cs1 = (b.get("CurveSize1") instanceof Number) ? ((Number) b.get("CurveSize1")).floatValue() : 0.0f;
+            Vector3 p1 = cf0.times(new Vector3(cs0, 0.0f, 0.0f));
+            Vector3 p2 = cf1.times(new Vector3(-cs1, 0.0f, 0.0f));
+            float w0 = (b.get("Width0") instanceof Number) ? RangesKt.coerceIn(((Number) b.get("Width0")).floatValue(), 0.02f, 20.0f) : 1.0f;
+            float w1 = (b.get("Width1") instanceof Number) ? RangesKt.coerceIn(((Number) b.get("Width1")).floatValue(), 0.02f, 20.0f) : 1.0f;
+            int segs = (b.get("Segments") instanceof Number) ? RangesKt.coerceIn(((Number) b.get("Segments")).intValue(), 1, 32) : 10;
+            float cr = 1.0f, cg = 1.0f, cb = 1.0f;
+            Object colObj = b.get("Color");
+            if (colObj instanceof Color3) {
+                cr = ((Color3) colObj).getR();
+                cg = ((Color3) colObj).getG();
+                cb = ((Color3) colObj).getB();
+            } else if (colObj instanceof com.goydevv.studrblx.model.ColorSequence) {
+                List<com.goydevv.studrblx.model.ColorKey> ks = ((com.goydevv.studrblx.model.ColorSequence) colObj).getKeys();
+                if (!ks.isEmpty()) {
+                    Color3 k0 = ks.get(0).getColor();
+                    cr = k0.getR();
+                    cg = k0.getG();
+                    cb = k0.getB();
+                }
+            }
+            float alpha = 0.85f;
+            Object trObj = b.get("Transparency");
+            if (trObj instanceof Number) {
+                alpha = 1.0f - RangesKt.coerceIn(((Number) trObj).floatValue(), 0.0f, 1.0f);
+            } else if (trObj instanceof com.goydevv.studrblx.model.NumberSequence) {
+                List<com.goydevv.studrblx.model.NumberKey> nks = ((com.goydevv.studrblx.model.NumberSequence) trObj).getKeys();
+                if (!nks.isEmpty()) {
+                    alpha = 1.0f - RangesKt.coerceIn(nks.get(0).getValue(), 0.0f, 1.0f);
+                }
+            }
+            if (alpha <= 0.01f) {
+                continue;
+            }
+            float le = (b.get("LightEmission") instanceof Number) ? ((Number) b.get("LightEmission")).floatValue() : 0.0f;
+            if (le > 0.5f) {
+                GLES20.glBlendFunc(770, 1);
+            } else {
+                GLES20.glBlendFunc(770, 771);
+            }
+            GLES20.glUniform4f(this.uColor, cr, cg, cb, alpha);
+            Vector3 prev = p0;
+            for (int s = 1; s <= segs; s++) {
+                float t = ((float) s) / ((float) segs);
+                float u = 1.0f - t;
+                float u2 = u * u;
+                float t2 = t * t;
+                Vector3 cur = p0.times(u2 * u).plus(p1.times(3.0f * u2 * t)).plus(p2.times(3.0f * u * t2)).plus(p3.times(t2 * t));
+                float wt = (w0 + ((w1 - w0) * (t - (0.5f / ((float) segs))))) * 0.35f;
+                segment(prev, cur, Math.max(wt, 0.04f));
+                prev = cur;
+            }
+        }
+        GLES20.glBlendFunc(770, 771);
+        GLES20.glDepthMask(true);
+        GLES20.glDisable(3042);
+    }
+
+    private final void drawTrails() {
+        List<Instance> trails = this.studio.renderTrails();
+        if (trails.isEmpty() || this.litBasic == null) {
+            return;
+        }
+        useLit(this.litBasic);
+        setLitFrameUniforms(false);
+        Mesh mesh = this.cube;
+        if (mesh == null) {
+            return;
+        }
+        bind(mesh, this.aPos, this.aNrm);
+        GLES20.glUniform1f(this.uEmissive, 1.0f);
+        GLES20.glUniform1f(this.uGrid, 0.0f);
+        GLES20.glUniform1f(this.uTruss, 0.0f);
+        GLES20.glUniform4f(this.uMat, 0.0f, 0.0f, 1.0f, 0.0f);
+        GLES20.glUniform3f(this.uSurfA, 0.0f, 0.0f, 0.0f);
+        GLES20.glUniform3f(this.uSurfB, 0.0f, 0.0f, 0.0f);
+        GLES20.glUniform3f(this.uSize, 1.0f, 1.0f, 1.0f);
+        GLES20.glEnable(3042);
+        GLES20.glDepthMask(false);
+        float now = this.time;
+        for (int i = 0; i < trails.size(); i++) {
+            Instance tr = trails.get(i);
+            if (tr.getParent() == null) {
+                continue;
+            }
+            boolean enabled = !Intrinsics.areEqual(tr.get("Enabled"), (Object) false);
+            float lifetime = (tr.get("Lifetime") instanceof Number) ? RangesKt.coerceIn(((Number) tr.get("Lifetime")).floatValue(), 0.05f, 20.0f) : 2.0f;
+            float minLen = (tr.get("MinLength") instanceof Number) ? Math.max(((Number) tr.get("MinLength")).floatValue(), 0.02f) : 0.1f;
+            ArrayList<float[]> hist = this.trailHist.get(tr);
+            if (hist == null) {
+                hist = new ArrayList<>();
+                this.trailHist.put(tr, hist);
+            }
+            while (!hist.isEmpty() && (now - hist.get(0)[4]) > lifetime) {
+                hist.remove(0);
+            }
+            if (enabled) {
+                Object a0Obj = tr.get("Attachment0");
+                Object a1Obj = tr.get("Attachment1");
+                Vector3 p0 = attachmentWorld(a0Obj instanceof Instance ? (Instance) a0Obj : null);
+                Vector3 p1 = attachmentWorld(a1Obj instanceof Instance ? (Instance) a1Obj : null);
+                if (p0 != null && p1 != null) {
+                    Vector3 mid = p0.plus(p1).div(2.0f);
+                    float w = Math.max(p1.minus(p0).getMagnitude() * 0.35f, 0.05f);
+                    boolean addPt = hist.isEmpty();
+                    if (!addPt) {
+                        float[] last = hist.get(hist.size() - 1);
+                        float dx = mid.getX() - last[0];
+                        float dy = mid.getY() - last[1];
+                        float dz = mid.getZ() - last[2];
+                        if ((dx * dx) + (dy * dy) + (dz * dz) >= minLen * minLen) {
+                            addPt = true;
+                        }
+                    }
+                    if (addPt) {
+                        hist.add(new float[]{mid.getX(), mid.getY(), mid.getZ(), w, now});
+                        if (hist.size() > 48) {
+                            hist.remove(0);
+                        }
+                    }
+                }
+            }
+            if (hist.size() < 2) {
+                continue;
+            }
+            float cr = 1.0f, cg = 1.0f, cb = 1.0f;
+            Object colObj = tr.get("Color");
+            if (colObj instanceof Color3) {
+                cr = ((Color3) colObj).getR();
+                cg = ((Color3) colObj).getG();
+                cb = ((Color3) colObj).getB();
+            } else if (colObj instanceof com.goydevv.studrblx.model.ColorSequence) {
+                List<com.goydevv.studrblx.model.ColorKey> ks = ((com.goydevv.studrblx.model.ColorSequence) colObj).getKeys();
+                if (!ks.isEmpty()) {
+                    Color3 k0 = ks.get(0).getColor();
+                    cr = k0.getR();
+                    cg = k0.getG();
+                    cb = k0.getB();
+                }
+            }
+            float baseAlpha = 0.85f;
+            Object trObj = tr.get("Transparency");
+            if (trObj instanceof Number) {
+                baseAlpha = 1.0f - RangesKt.coerceIn(((Number) trObj).floatValue(), 0.0f, 1.0f);
+            } else if (trObj instanceof com.goydevv.studrblx.model.NumberSequence) {
+                List<com.goydevv.studrblx.model.NumberKey> nks = ((com.goydevv.studrblx.model.NumberSequence) trObj).getKeys();
+                if (!nks.isEmpty()) {
+                    baseAlpha = 1.0f - RangesKt.coerceIn(nks.get(0).getValue(), 0.0f, 1.0f);
+                }
+            }
+            float le = (tr.get("LightEmission") instanceof Number) ? ((Number) tr.get("LightEmission")).floatValue() : 0.0f;
+            GLES20.glBlendFunc(770, le > 0.5f ? 1 : 771);
+            for (int k = 1; k < hist.size(); k++) {
+                float[] prev = hist.get(k - 1);
+                float[] cur = hist.get(k);
+                float age = RangesKt.coerceIn((now - cur[4]) / lifetime, 0.0f, 1.0f);
+                float a = baseAlpha * (1.0f - age);
+                if (a <= 0.01f) continue;
+                GLES20.glUniform4f(this.uColor, cr, cg, cb, a);
+                segment(new Vector3(prev[0], prev[1], prev[2]), new Vector3(cur[0], cur[1], cur[2]), cur[3] * (1.0f - age * 0.5f));
+            }
+        }
+        GLES20.glBlendFunc(770, 771);
+        GLES20.glDepthMask(true);
+        GLES20.glDisable(3042);
+    }
+
+    private final void drawParticles() {
+        List<Instance> list = this.studio.renderParticles();
+        if (list.isEmpty() || this.litBasic == null) {
+            return;
+        }
+        useLit(this.litBasic);
+        setLitFrameUniforms(false);
+        Mesh mesh = this.cube;
+        if (mesh == null) {
+            return;
+        }
+        bind(mesh, this.aPos, this.aNrm);
+        GLES20.glUniform1f(this.uEmissive, 1.0f);
+        GLES20.glUniform1f(this.uGrid, 0.0f);
+        GLES20.glUniform1f(this.uTruss, 0.0f);
+        GLES20.glUniform4f(this.uMat, 0.0f, 0.0f, 1.0f, 0.0f);
+        GLES20.glUniform3f(this.uSurfA, 0.0f, 0.0f, 0.0f);
+        GLES20.glUniform3f(this.uSurfB, 0.0f, 0.0f, 0.0f);
+        GLES20.glUniform3f(this.uSize, 1.0f, 1.0f, 1.0f);
+        GLES20.glEnable(3042);
+        GLES20.glDepthMask(false);
+        Vector3 cam = this.studio.getView().getCamPos();
+        float tNow = this.time;
+        for (int i = 0; i < list.size(); i++) {
+            Instance fx = list.get(i);
+            if (Intrinsics.areEqual(fx.get("Enabled"), (Object) false)) {
+                continue;
+            }
+            Instance parent = fx.getParent();
+            if (parent == null) {
+                continue;
+            }
+            Vector3 origin;
+            Vector3 emitExt = new Vector3(0.5f, 0.5f, 0.5f);
+            if (Intrinsics.areEqual(parent.getClassName(), "Attachment")) {
+                origin = attachmentWorld(parent);
+            } else if (parent.isA("BasePart")) {
+                origin = PartData.INSTANCE.cframe(parent).getPosition();
+                emitExt = PartData.INSTANCE.size(parent).div(2.0f);
+            } else {
+                continue;
+            }
+            if (origin == null || origin.minus(cam).getMagnitude() > 260.0f) {
+                continue;
+            }
+            String cn = fx.getClassName();
+            int count = 8;
+            float cr = 1.0f, cg = 1.0f, cb = 1.0f, alpha = 0.75f, pSize = 0.5f, rise = 4.0f, life = 1.2f;
+            boolean additive = false;
+            if ("Fire".equals(cn)) {
+                additive = true;
+                Color3 c1 = c3(fx.get("Color"));
+                cr = c1 != null ? c1.getR() : 0.95f;
+                cg = c1 != null ? c1.getG() : 0.45f;
+                cb = c1 != null ? c1.getB() : 0.12f;
+                float sz = (fx.get("Size") instanceof Number) ? RangesKt.coerceIn(((Number) fx.get("Size")).floatValue(), 1.0f, 30.0f) : 5.0f;
+                float heat = (fx.get("Heat") instanceof Number) ? RangesKt.coerceIn(((Number) fx.get("Heat")).floatValue(), -25.0f, 25.0f) : 9.0f;
+                pSize = sz * 0.18f;
+                rise = heat * 0.45f;
+                life = 0.9f;
+                count = 10;
+            } else if ("Smoke".equals(cn)) {
+                Color3 c1 = c3(fx.get("Color"));
+                cr = c1 != null ? c1.getR() : 0.85f;
+                cg = c1 != null ? c1.getG() : 0.85f;
+                cb = c1 != null ? c1.getB() : 0.85f;
+                alpha = (fx.get("Opacity") instanceof Number) ? RangesKt.coerceIn(((Number) fx.get("Opacity")).floatValue(), 0.0f, 1.0f) : 0.5f;
+                float sz = (fx.get("Size") instanceof Number) ? RangesKt.coerceIn(((Number) fx.get("Size")).floatValue(), 0.1f, 30.0f) : 1.0f;
+                rise = (fx.get("RiseVelocity") instanceof Number) ? ((Number) fx.get("RiseVelocity")).floatValue() * 0.6f : 1.0f;
+                pSize = sz * 0.35f;
+                life = 2.4f;
+                count = 8;
+            } else if ("Sparkles".equals(cn)) {
+                additive = true;
+                Color3 c1 = c3(fx.get("SparkleColor"));
+                cr = c1 != null ? c1.getR() : 0.56f;
+                cg = c1 != null ? c1.getG() : 0.35f;
+                cb = c1 != null ? c1.getB() : 1.0f;
+                pSize = 0.22f;
+                rise = 1.4f;
+                life = 1.1f;
+                count = 10;
+            } else {
+                // ParticleEmitter
+                float rate = (fx.get("Rate") instanceof Number) ? ((Number) fx.get("Rate")).floatValue() : 20.0f;
+                if (rate <= 0.01f) continue;
+                count = RangesKt.coerceIn((int) (rate * 0.35f), 2, 12);
+                Object cObj = fx.get("Color");
+                if (cObj instanceof com.goydevv.studrblx.model.ColorSequence) {
+                    List<com.goydevv.studrblx.model.ColorKey> ks = ((com.goydevv.studrblx.model.ColorSequence) cObj).getKeys();
+                    if (!ks.isEmpty()) {
+                        Color3 k0 = ks.get(0).getColor();
+                        cr = k0.getR(); cg = k0.getG(); cb = k0.getB();
+                    }
+                }
+                float le = (fx.get("LightEmission") instanceof Number) ? ((Number) fx.get("LightEmission")).floatValue() : 0.0f;
+                additive = le > 0.5f;
+                pSize = 0.45f;
+                rise = 3.0f;
+                life = 1.5f;
+            }
+            GLES20.glBlendFunc(770, additive ? 1 : 771);
+            int seed = System.identityHashCode(fx);
+            for (int k = 0; k < count; k++) {
+                float phase = ((tNow / life) + (((float) k) / ((float) count)) + ((seed & 255) * 0.0039f)) % 1.0f;
+                float a = alpha * (float) Math.sin(phase * Math.PI);
+                if (a <= 0.02f) continue;
+                float h1 = (float) Math.sin((k * 12.9898d) + (seed * 0.013d));
+                float h2 = (float) Math.cos((k * 78.233d) + (seed * 0.029d));
+                float ox = h1 * Math.min(emitExt.getX(), 2.5f) * (0.4f + phase * 0.8f);
+                float oz = h2 * Math.min(emitExt.getZ(), 2.5f) * (0.4f + phase * 0.8f);
+                float oy = phase * rise * life;
+                float sc = pSize * (additive ? (1.0f - phase * 0.65f) : (0.6f + phase * 0.9f));
+                Vector3 pos = new Vector3(origin.getX() + ox, origin.getY() + oy, origin.getZ() + oz);
+                GLES20.glUniform4f(this.uColor, cr, cg, cb, a);
+                setModel(CFrame.INSTANCE.at(pos), new Vector3(sc, sc, sc));
+                GLES20.glUniformMatrix4fv(this.uModel, 1, false, this.model, 0);
+                GLES20.glUniformMatrix3fv(this.uNrm, 1, false, this.normal, 0);
+                GLES20.glDrawArrays(mesh.getMode(), 0, mesh.getCount());
+            }
+        }
+        GLES20.glBlendFunc(770, 771);
+        GLES20.glDepthMask(true);
+        GLES20.glDisable(3042);
     }
 
     private final void drawConstraints() {
