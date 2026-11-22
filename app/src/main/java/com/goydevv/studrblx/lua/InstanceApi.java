@@ -2426,7 +2426,14 @@ public final class InstanceApi {
                 Object o = args.arg(2).isuserdata() ? args.arg(2).touserdata() : null;
                 String tag = args.checkjstring(3);
                 if (o instanceof Instance) {
-                    ((Instance) o).getAttributes().put("__tag:" + tag, Boolean.TRUE);
+                    Instance target = (Instance) o;
+                    if (!Boolean.TRUE.equals(target.getAttributes().get("__tag:" + tag))) {
+                        target.getAttributes().put("__tag:" + tag, Boolean.TRUE);
+                        Instance cs = this.rt.getStudio().getModel().findService("CollectionService");
+                        if (cs != null) {
+                            this.rt.fire(cs, "TagAdded:" + tag, this.rt.wrap(target));
+                        }
+                    }
                 }
                 return LuaValue.NIL;
             }
@@ -2434,9 +2441,37 @@ public final class InstanceApi {
                 Object o = args.arg(2).isuserdata() ? args.arg(2).touserdata() : null;
                 String tag = args.checkjstring(3);
                 if (o instanceof Instance) {
-                    ((Instance) o).getAttributes().remove("__tag:" + tag);
+                    Instance target = (Instance) o;
+                    if (target.getAttributes().remove("__tag:" + tag) != null) {
+                        Instance cs = this.rt.getStudio().getModel().findService("CollectionService");
+                        if (cs != null) {
+                            this.rt.fire(cs, "TagRemoved:" + tag, this.rt.wrap(target));
+                        }
+                    }
                 }
                 return LuaValue.NIL;
+            }
+            case "GetInstanceAddedSignal": {
+                String tag = args.checkjstring(2);
+                Instance cs = this.rt.getStudio().getModel().getService("CollectionService");
+                return signal(cs, "TagAdded:" + tag);
+            }
+            case "GetInstanceRemovedSignal": {
+                String tag = args.checkjstring(2);
+                Instance cs = this.rt.getStudio().getModel().getService("CollectionService");
+                return signal(cs, "TagRemoved:" + tag);
+            }
+            case "GetAllTags": {
+                java.util.LinkedHashSet<String> all = new java.util.LinkedHashSet<>();
+                for (Instance d : Instance.descendants$default(this.rt.getStudio().getModel(), null, 1, null)) {
+                    for (String k : d.getAttributes().keySet()) {
+                        if (k.startsWith("__tag:")) all.add(k.substring(6));
+                    }
+                }
+                LuaTable tbl = new LuaTable();
+                int idx = 1;
+                for (String t : all) tbl.set(idx++, LuaValue.valueOf(t));
+                return tbl;
             }
             case "HasTag": {
                 Object o = args.arg(2).isuserdata() ? args.arg(2).touserdata() : null;

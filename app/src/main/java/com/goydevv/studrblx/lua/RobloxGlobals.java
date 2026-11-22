@@ -892,6 +892,9 @@ public final class RobloxGlobals {
                 return r;
             }
         }));
+        LuaTable dtMt = new LuaTable();
+        dtMt.set("__type", "DateTime");
+        t.setmetatable(dtMt);
         return t;
     }
 

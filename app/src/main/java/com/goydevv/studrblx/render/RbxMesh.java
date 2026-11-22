@@ -175,51 +175,58 @@ public final class RbxMesh {
     public final float[] smoothNormals(float[] pos, int[] faces) {
         Intrinsics.checkNotNullParameter(pos, "pos");
         Intrinsics.checkNotNullParameter(faces, "faces");
-        float[] n = new float[pos.length];
         int nv = pos.length / 3;
+        float[] n = new float[pos.length];
+        java.util.HashMap<Long, float[]> welded = new java.util.HashMap<>(nv);
+        long[] keys = new long[nv];
+        for (int v = 0; v < nv; v++) {
+            long qx = ((long) Math.round(pos[v * 3] * 250.0f)) & 0x1FFFFFL;
+            long qy = ((long) Math.round(pos[(v * 3) + 1] * 250.0f)) & 0x1FFFFFL;
+            long qz = ((long) Math.round(pos[(v * 3) + 2] * 250.0f)) & 0x1FFFFFL;
+            long key = (qx << 42) | (qy << 21) | qz;
+            keys[v] = key;
+            if (!welded.containsKey(key)) {
+                welded.put(key, new float[3]);
+            }
+        }
         int f = 0;
         while (f + 2 < faces.length) {
             int a = faces[f];
             int b = faces[f + 1];
             int c = faces[f + 2];
             f += 3;
-            if (a >= 0 && a < nv) {
-                if (b >= 0 && b < nv) {
-                    if (c >= 0 && c < nv) {
-                        float ux = pos[b * 3] - pos[a * 3];
-                        float uy = pos[(b * 3) + 1] - pos[(a * 3) + 1];
-                        float uz = pos[(b * 3) + 2] - pos[(a * 3) + 2];
-                        float vx = pos[c * 3] - pos[a * 3];
-                        float vy = pos[(c * 3) + 1] - pos[(a * 3) + 1];
-                        float vz = pos[(c * 3) + 2] - pos[(a * 3) + 2];
-                        float nx = (uy * vz) - (uz * vy);
-                        float ny = (uz * vx) - (ux * vz);
-                        float nz = (ux * vy) - (uy * vx);
-                        int[] iArr = {a, b, c};
-                        for (int i = 0; i < 3; i++) {
-                            int v = iArr[i];
-                            int i2 = v * 3;
-                            n[i2] = n[i2] + nx;
-                            int i3 = (v * 3) + 1;
-                            n[i3] = n[i3] + ny;
-                            int i4 = (v * 3) + 2;
-                            n[i4] = n[i4] + nz;
-                        }
-                    }
-                }
+            if (a >= 0 && a < nv && b >= 0 && b < nv && c >= 0 && c < nv) {
+                float ux = pos[b * 3] - pos[a * 3];
+                float uy = pos[(b * 3) + 1] - pos[(a * 3) + 1];
+                float uz = pos[(b * 3) + 2] - pos[(a * 3) + 2];
+                float vx = pos[c * 3] - pos[a * 3];
+                float vy = pos[(c * 3) + 1] - pos[(a * 3) + 1];
+                float vz = pos[(c * 3) + 2] - pos[(a * 3) + 2];
+                float nx = (uy * vz) - (uz * vy);
+                float ny = (uz * vx) - (ux * vz);
+                float nz = (ux * vy) - (uy * vx);
+                float[] wa = welded.get(keys[a]);
+                if (wa != null) { wa[0] += nx; wa[1] += ny; wa[2] += nz; }
+                float[] wb = welded.get(keys[b]);
+                if (wb != null) { wb[0] += nx; wb[1] += ny; wb[2] += nz; }
+                float[] wc = welded.get(keys[c]);
+                if (wc != null) { wc[0] += nx; wc[1] += ny; wc[2] += nz; }
             }
         }
         for (int v2 = 0; v2 < nv; v2++) {
-            float l = (float) Math.sqrt((n[v2 * 3] * n[v2 * 3]) + (n[(v2 * 3) + 1] * n[(v2 * 3) + 1]) + (n[(v2 * 3) + 2] * n[(v2 * 3) + 2]));
+            float[] acc = welded.get(keys[v2]);
+            float ax = acc != null ? acc[0] : 0.0f;
+            float ay = acc != null ? acc[1] : 1.0f;
+            float az = acc != null ? acc[2] : 0.0f;
+            float l = (float) Math.sqrt((ax * ax) + (ay * ay) + (az * az));
             if (l > 1.0E-12f) {
-                int i5 = v2 * 3;
-                n[i5] = n[i5] / l;
-                int i6 = (v2 * 3) + 1;
-                n[i6] = n[i6] / l;
-                int i7 = (v2 * 3) + 2;
-                n[i7] = n[i7] / l;
+                n[v2 * 3] = ax / l;
+                n[(v2 * 3) + 1] = ay / l;
+                n[(v2 * 3) + 2] = az / l;
             } else {
+                n[v2 * 3] = 0.0f;
                 n[(v2 * 3) + 1] = 1.0f;
+                n[(v2 * 3) + 2] = 0.0f;
             }
         }
         return n;
@@ -401,6 +408,17 @@ public final class RbxMesh {
                         }
                         if (nrm == null) {
                             nrm = smoothNormals(pos, m.getFaces());
+                        } else {
+                            // Check if decoded normals are degenerate/zero or flat-quantized; if so, compute smooth welded normals
+                            int bad = 0;
+                            for (int ni = 0; ni < n; ni++) {
+                                float nx = nrm[ni * 3], ny = nrm[(ni * 3) + 1], nz = nrm[(ni * 3) + 2];
+                                float l2 = (nx * nx) + (ny * ny) + (nz * nz);
+                                if (l2 < 0.01f) bad++;
+                            }
+                            if (bad > n / 4) {
+                                nrm = smoothNormals(pos, m.getFaces());
+                            }
                         }
                         float[] uv;
                         Draco.Attribute uvAtt = m.attribute(3);

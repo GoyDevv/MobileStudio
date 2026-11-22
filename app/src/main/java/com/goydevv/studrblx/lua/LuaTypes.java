@@ -237,6 +237,9 @@ public final class LuaTypes {
     public final String typeOf(LuaValue v) {
         Intrinsics.checkNotNullParameter(v, "v");
         if (v.isuserdata()) {
+            if (v.touserdata() instanceof java.nio.ByteBuffer) {
+                return "buffer";
+            }
             LuaValue mt = v.getmetatable();
             LuaValue t = mt != null ? mt.get("__type") : null;
             if (t == null || !t.isstring()) {
@@ -245,6 +248,14 @@ public final class LuaTypes {
             String str = t.tojstring();
             Intrinsics.checkNotNullExpressionValue(str, "tojstring(...)");
             return str;
+        }
+        if (v.istable()) {
+            LuaValue mt2 = v.getmetatable();
+            LuaValue t2 = mt2 != null ? mt2.get("__type") : null;
+            if (t2 != null && t2.isstring()) {
+                String st2 = t2.tojstring();
+                if (st2 != null) return st2;
+            }
         }
         String strTypename = v.typename();
         Intrinsics.checkNotNullExpressionValue(strTypename, "typename(...)");

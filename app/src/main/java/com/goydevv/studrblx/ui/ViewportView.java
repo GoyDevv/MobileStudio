@@ -211,7 +211,7 @@ public final class ViewportView extends FrameLayout {
         public EGLConfig chooseConfig(EGL10 egl, EGLDisplay display) {
             Intrinsics.checkNotNullParameter(egl, "egl");
             Intrinsics.checkNotNullParameter(display, "display");
-            EGLConfig c = chooseConfig$pick(egl, display, 4, 24);
+            EGLConfig c = chooseConfig$pick(egl, display, 0, 24);
             if (c == null) {
                 EGLConfig eGLConfigChooseConfig$pick = chooseConfig$pick(egl, display, 2, 24);
                 if (eGLConfigChooseConfig$pick == null) {
