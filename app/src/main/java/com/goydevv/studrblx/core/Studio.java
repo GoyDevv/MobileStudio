@@ -1184,10 +1184,8 @@ public final class Studio {
         Instance cam = obj instanceof Instance ? (Instance) obj : null;
         Object obj2 = cam != null ? cam.get("CFrame") : null;
         CFrame cf = obj2 instanceof CFrame ? (CFrame) obj2 : null;
-        if (cf != null && cf.getPosition().getMagnitude() > 0.01f) {
-            this.camera.setFromCFrame(cf);
-            return;
-        }
+        // Only trust saved CurrentCamera if it is reasonably close to actual Workspace geometry
+        boolean savedCamValid = false;
         // Auto-frame SpawnLocation or Workspace BaseParts so imported maps never open looking at empty void
         Instance spawn = null;
         float minX = Float.POSITIVE_INFINITY, minY = Float.POSITIVE_INFINITY, minZ = Float.POSITIVE_INFINITY;
@@ -1211,6 +1209,34 @@ public final class Studio {
                     partCount++;
                 }
             }
+        }
+        if (partCount == 0) {
+            // Fallback: include large parts too if map only has huge parts
+            for (Instance inst : Instance.descendants$default(ws, null, 1, null)) {
+                if (inst.isA("BasePart") && !"Terrain".equals(inst.getClassName())) {
+                    Vector3 pos = PartData.INSTANCE.cframe(inst).getPosition();
+                    minX = Math.min(minX, pos.getX());
+                    minY = Math.min(minY, pos.getY());
+                    minZ = Math.min(minZ, pos.getZ());
+                    maxX = Math.max(maxX, pos.getX());
+                    maxY = Math.max(maxY, pos.getY());
+                    maxZ = Math.max(maxZ, pos.getZ());
+                    partCount++;
+                }
+            }
+        }
+        if (cf != null && cf.getPosition().getMagnitude() > 0.01f && partCount > 0) {
+            float cx0 = (minX + maxX) * 0.5f, cy0 = (minY + maxY) * 0.5f, cz0 = (minZ + maxZ) * 0.5f;
+            Vector3 cp0 = cf.getPosition();
+            float distToMap = (float) Math.sqrt((cp0.getX()-cx0)*(cp0.getX()-cx0) + (cp0.getY()-cy0)*(cp0.getY()-cy0) + (cp0.getZ()-cz0)*(cp0.getZ()-cz0));
+            float mapRadius = Math.max(300.0f, Math.max(maxX - minX, maxZ - minZ));
+            if (distToMap < mapRadius * 1.5f) {
+                savedCamValid = true;
+            }
+        }
+        if (savedCamValid) {
+            this.camera.setFromCFrame(cf);
+            return;
         }
         if (spawn != null) {
             Vector3 sp = PartData.INSTANCE.cframe(spawn).getPosition();

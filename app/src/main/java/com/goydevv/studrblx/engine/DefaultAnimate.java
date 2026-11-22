@@ -297,19 +297,19 @@ public final class DefaultAnimate {
                 this.current = "";
             }
         } else if ("Jumping".equals(state) || jumpAnimTime > 0.0f) {
-            playCore("jump", 0.1f);
+            playCore("jump", 0.03f);
         } else if ("FreeFall".equals(state) || "Freefall".equals(state)) {
-            playCore("fall", 0.2f);
+            playCore("fall", 0.08f);
         } else if ("Climbing".equals(state)) {
-            playCore("climb", 0.1f);
+            playCore("climb", 0.06f);
             float cSpd = speed < 0.1f ? 0.0f : (speed / 5.0f);
             for (AnimPlayer.Track t : this.currentTracks) {
                 t.setSpeed(cSpd);
             }
         } else if ("Seated".equals(state)) {
-            playCore("sit", 0.2f);
-        } else if ("Running".equals(state) && speed > 0.75f) {
-            playCore("walk", 0.2f);
+            playCore("sit", 0.08f);
+        } else if ("Running".equals(state) && speed > 0.20f) {
+            playCore("walk", 0.06f);
             float scale = Math.max(0.15f, speed / 14.5f);
             if (this.r15) {
                 // Official Roblox R15 walk/run blend formula
@@ -329,7 +329,7 @@ public final class DefaultAnimate {
                 }
             }
         } else {
-            playCore("idle", 0.2f);
+            playCore("idle", 0.08f);
         }
         this.player.step(dt);
     }

@@ -6,6 +6,7 @@ import android.content.ClipboardManager;
 import android.content.Context;
 import android.content.Intent;
 import android.graphics.Typeface;
+import android.net.Uri;
 import android.os.Bundle;
 import android.view.Gravity;
 import android.view.View;
@@ -15,21 +16,39 @@ import android.widget.LinearLayout;
 import android.widget.ScrollView;
 import android.widget.TextView;
 import android.widget.Toast;
+import java.io.File;
+import java.io.OutputStream;
+import java.nio.charset.StandardCharsets;
+import java.text.SimpleDateFormat;
+import java.util.Date;
+import java.util.Locale;
 
 public final class CrashActivity extends Activity {
     public static final String EXTRA_TRACE = "crash_trace";
+    public static final String EXTRA_SAVED_PATH = "crash_saved_path";
+    private static final int REQ_EXPORT_TXT = 9042;
+    private String fullTrace = "Unknown crash";
 
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
-        final String trace = getIntent() != null && getIntent().hasExtra(EXTRA_TRACE)
-                ? getIntent().getStringExtra(EXTRA_TRACE)
-                : "Unknown crash";
+        // Clear pending last_crash.txt so restarting does not loop
+        try {
+            File f = new File(getFilesDir(), StudioApp.LAST_CRASH_FILE);
+            if (f.exists()) f.delete();
+        } catch (Throwable ignored) {
+        }
+
+        if (getIntent() != null && getIntent().hasExtra(EXTRA_TRACE)) {
+            String s = getIntent().getStringExtra(EXTRA_TRACE);
+            if (s != null && s.length() > 0) fullTrace = s;
+        }
+        String savedPath = getIntent() != null ? getIntent().getStringExtra(EXTRA_SAVED_PATH) : null;
 
         float d = getResources().getDisplayMetrics().density;
         LinearLayout root = new LinearLayout(this);
         root.setOrientation(LinearLayout.VERTICAL);
-        root.setBackgroundColor(0xFF1B1B1D);
+        root.setBackgroundColor(0xFF17191E);
         int pad = (int) (14 * d);
         root.setPadding(pad, pad, pad, pad);
 
@@ -45,6 +64,29 @@ public final class CrashActivity extends Activity {
         LinearLayout.LayoutParams tlp = new LinearLayout.LayoutParams(0, LinearLayout.LayoutParams.WRAP_CONTENT, 1.0f);
         top.addView(title, tlp);
 
+        Button exportBtn = new Button(this);
+        exportBtn.setText("Export .txt");
+        exportBtn.setTextColor(0xFFFFFFFF);
+        exportBtn.setBackgroundColor(0xFF1A8F4C);
+        exportBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                String stamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
+                Intent intent = new Intent(Intent.ACTION_CREATE_DOCUMENT);
+                intent.addCategory(Intent.CATEGORY_OPENABLE);
+                intent.setType("text/plain");
+                intent.putExtra(Intent.EXTRA_TITLE, "StudioRblx_crash_" + stamp + ".txt");
+                try {
+                    startActivityForResult(intent, REQ_EXPORT_TXT);
+                } catch (Exception ex) {
+                    Toast.makeText(CrashActivity.this, "Export failed: " + ex.getMessage(), Toast.LENGTH_LONG).show();
+                }
+            }
+        });
+        LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        blp.rightMargin = (int) (8 * d);
+        top.addView(exportBtn, blp);
+
         Button copyBtn = new Button(this);
         copyBtn.setText("Copy Log");
         copyBtn.setTextColor(0xFFFFFFFF);
@@ -54,19 +96,19 @@ public final class CrashActivity extends Activity {
             public void onClick(View v) {
                 ClipboardManager cm = (ClipboardManager) getSystemService(Context.CLIPBOARD_SERVICE);
                 if (cm != null) {
-                    cm.setPrimaryClip(ClipData.newPlainText("Crash Log", trace));
-                    Toast.makeText(CrashActivity.this, "Copied stack trace", Toast.LENGTH_SHORT).show();
+                    cm.setPrimaryClip(ClipData.newPlainText("StudioRblx Crash Log", fullTrace));
+                    Toast.makeText(CrashActivity.this, "Copied full crash log", Toast.LENGTH_SHORT).show();
                 }
             }
         });
-        LinearLayout.LayoutParams blp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
-        blp.rightMargin = (int) (8 * d);
-        top.addView(copyBtn, blp);
+        LinearLayout.LayoutParams blp2 = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.WRAP_CONTENT, LinearLayout.LayoutParams.WRAP_CONTENT);
+        blp2.rightMargin = (int) (8 * d);
+        top.addView(copyBtn, blp2);
 
         Button restartBtn = new Button(this);
         restartBtn.setText("Restart");
         restartBtn.setTextColor(0xFFFFFFFF);
-        restartBtn.setBackgroundColor(0xFF333337);
+        restartBtn.setBackgroundColor(0xFF333844);
         restartBtn.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View v) {
@@ -79,15 +121,24 @@ public final class CrashActivity extends Activity {
         top.addView(restartBtn);
         root.addView(top);
 
+        if (savedPath != null && savedPath.length() > 0) {
+            TextView sub = new TextView(this);
+            sub.setText("Auto-saved: " + savedPath);
+            sub.setTextColor(0xFF9AA3B2);
+            sub.setTextSize(11.0f);
+            sub.setPadding(0, (int) (4 * d), 0, 0);
+            root.addView(sub);
+        }
+
         ScrollView sv = new ScrollView(this);
-        sv.setBackgroundColor(0xFF141416);
+        sv.setBackgroundColor(0xFF111318);
         LinearLayout.LayoutParams slp = new LinearLayout.LayoutParams(LinearLayout.LayoutParams.MATCH_PARENT, 0, 1.0f);
-        slp.topMargin = (int) (10 * d);
+        slp.topMargin = (int) (8 * d);
 
         HorizontalScrollView hsv = new HorizontalScrollView(this);
         TextView logView = new TextView(this);
-        logView.setText(trace);
-        logView.setTextColor(0xFFE0E0E0);
+        logView.setText(fullTrace);
+        logView.setTextColor(0xFFE6EAF2);
         logView.setTextSize(11.5f);
         logView.setTypeface(Typeface.MONOSPACE);
         logView.setTextIsSelectable(true);
@@ -98,5 +149,22 @@ public final class CrashActivity extends Activity {
         root.addView(sv, slp);
 
         setContentView(root);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        super.onActivityResult(requestCode, resultCode, data);
+        if (requestCode == REQ_EXPORT_TXT && resultCode == RESULT_OK && data != null && data.getData() != null) {
+            Uri uri = data.getData();
+            try (OutputStream os = getContentResolver().openOutputStream(uri)) {
+                if (os != null) {
+                    os.write(fullTrace.getBytes(StandardCharsets.UTF_8));
+                    os.flush();
+                    Toast.makeText(this, "Exported crash log .txt!", Toast.LENGTH_SHORT).show();
+                }
+            } catch (Exception ex) {
+                Toast.makeText(this, "Could not write file: " + ex.getMessage(), Toast.LENGTH_LONG).show();
+            }
+        }
     }
 }

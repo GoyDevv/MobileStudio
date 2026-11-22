@@ -287,6 +287,25 @@ public final class MainActivity extends AppCompatActivity implements MainActions
     protected void onCreate(Bundle savedInstanceState) {
         Studio studio;
         super.onCreate(savedInstanceState);
+        try {
+            File pendingCrash = new File(getFilesDir(), StudioApp.LAST_CRASH_FILE);
+            if (pendingCrash.isFile() && pendingCrash.length() > 0) {
+                String savedReport = new String(kotlin.io.FilesKt.readBytes(pendingCrash), java.nio.charset.StandardCharsets.UTF_8);
+                pendingCrash.delete();
+                android.content.Intent ci = new android.content.Intent(this, CrashActivity.class);
+                ci.putExtra(CrashActivity.EXTRA_TRACE, savedReport);
+                startActivity(ci);
+            }
+        } catch (Throwable ignored) {
+        }
+        try {
+            com.goydevv.studrblx.net.AssetFetcher.INSTANCE.init(getApplicationContext());
+            long[] warmAnims = new long[]{507766666L, 507766951L, 913402848L, 913376220L, 507765000L, 507767968L, 507765644L};
+            for (long aid : warmAnims) {
+                com.goydevv.studrblx.engine.AnimLibrary.INSTANCE.get(aid);
+            }
+        } catch (Throwable ignored) {
+        }
         Settings.INSTANCE.init(this);
         Ui.INSTANCE.applyTheme(Settings.INSTANCE.getTheme());
         getWindow().addFlags(128);
