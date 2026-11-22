@@ -2406,7 +2406,7 @@ public final class PlaySession implements TreeListener {
                 snd.set("SoundId", soundId, false);
                 snd.set("Volume", Double.valueOf(volume), false);
                 snd.set("RollOffMaxDistance", Double.valueOf(150.0d), false);
-                snd.setParent(hrp, false);
+                Instance.setParent$default(snd, hrp, 0, 2, null);
             }
             Object seqObj = snd.getAttributes().get("__playSeq");
             int seq = (seqObj instanceof Integer) ? ((Integer) seqObj).intValue() + 1 : 1;
