@@ -445,8 +445,12 @@ public final class RbxMesh {
         }
         int[] f = faces != null ? faces : new int[0];
         int nf = f.length / 3;
-        int end = (lods != null && lods.length >= 2) ? RangesKt.coerceIn(lods[1], 1, nf) : nf;
-        int startFace = (lods != null && lods.length >= 2) ? RangesKt.coerceIn(lods[0], 0, end) : 0;
+        int startFace = 0;
+        int end = nf;
+        if (lods != null && lods.length >= 2 && lods[1] > lods[0] && lods[1] <= nf) {
+            startFace = RangesKt.coerceIn(lods[0], 0, nf);
+            end = RangesKt.coerceIn(lods[1], startFace + 1, nf);
+        }
         return build(core.getPos(), core.getNrm(), core.getUv(), f, startFace, end);
     }
 }

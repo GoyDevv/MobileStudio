@@ -83,7 +83,7 @@ public final class ViewState {
         this.near = near;
         Vector3 up = Math.abs(target.minus(eye).getUnit().getY()) > 0.999f ? Vector3.INSTANCE.getZ() : Vector3.INSTANCE.getY();
         Matrix.setLookAtM(this.view, 0, eye.getX(), eye.getY(), eye.getZ(), target.getX(), target.getY(), target.getZ(), up.getX(), up.getY(), up.getZ());
-        Matrix.perspectiveM(this.proj, 0, fov, this.width / this.height, near, 10000.0f);
+        Matrix.perspectiveM(this.proj, 0, fov, ((float) this.width) / ((float) Math.max(this.height, 1)), near, 10000.0f);
         Matrix.multiplyMM(this.vp, 0, this.proj, 0, this.view, 0);
         Matrix.invertM(this.invVp, 0, this.vp, 0);
     }

@@ -251,13 +251,6 @@ public final class LuauTranspiler {
     /* JADX WARN: Code duplicated, block: B:32:0x008c  */
     /* JADX WARN: Code duplicated, block: B:66:0x0158  */
     private final ArrayList<Tok> lex(String s) {
-        String tr;
-        char c;
-        String w;
-        K k;
-        String op;
-        int i;
-        int e;
         ArrayList<Tok> arrayList = new ArrayList<>();
         int lvl = 0;
         int n = s.length();
@@ -266,186 +259,128 @@ public final class LuauTranspiler {
             int i2 = lvl;
             while (i2 < n) {
                 char c2 = s.charAt(i2);
-                switch (c2) {
-                    case '\t':
-                    case '\n':
-                    case '\f':
-                    case '\r':
-                    case ' ':
-                        triv.append(c2);
-                        i2++;
-                        break;
-                    default:
-                        if (c2 == '-' && i2 + 1 < n && s.charAt(i2 + 1) == '-') {
-                            int lvl2 = lex$longBracketLevel(n, s, i2 + 2);
-                            if (lvl2 >= 0) {
-                                e = lex$skipLong(s, n, i2 + 2, lvl2);
-                                i = i2;
-                            } else {
-                                i = i2;
-                                int iIndexOf$default = StringsKt.indexOf((CharSequence) s, '\n', i, false);
-                                e = iIndexOf$default < 0 ? n : iIndexOf$default;
-                            }
-                            String comment = s.substring(i, e);
-                            Intrinsics.checkNotNullExpressionValue(comment, "substring(...)");
-                            triv.append(lvl2 == 0 ? relevel(comment, "--") : comment);
-                            i2 = e;
-                        }
-                        break;
-                }
-                if (i2 >= n) {
-                    K k2 = K.EOF;
-                    String string = triv.toString();
-                    Intrinsics.checkNotNullExpressionValue(string, "toString(...)");
-                    arrayList.add(new Tok(k2, "", string));
-                    return arrayList;
-                }
-                tr = triv.toString();
-                Intrinsics.checkNotNullExpressionValue(tr, "toString(...)");
-                triv.setLength(0);
-                c = s.charAt(i2);
-                if (!Character.isLetter(c) || c == '_') {
-                    lvl = i2;
-                    while (lvl < n && (Character.isLetterOrDigit(s.charAt(lvl)) || s.charAt(lvl) == '_')) {
-                        lvl++;
-                    }
-                    w = s.substring(i2, lvl);
-                    Intrinsics.checkNotNullExpressionValue(w, "substring(...)");
-                    if (keywords.contains(w)) {
-                        k = K.KEYWORD;
+                if (c2 == '\t' || c2 == '\n' || c2 == '\f' || c2 == '\r' || c2 == ' ') {
+                    triv.append(c2);
+                    i2++;
+                } else if (c2 == '-' && i2 + 1 < n && s.charAt(i2 + 1) == '-') {
+                    int lvl2 = lex$longBracketLevel(n, s, i2 + 2);
+                    int e;
+                    if (lvl2 >= 0) {
+                        e = lex$skipLong(s, n, i2 + 2, lvl2);
                     } else {
-                        k = K.NAME;
+                        int idx = StringsKt.indexOf((CharSequence) s, '\n', i2, false);
+                        e = idx < 0 ? n : idx;
                     }
-                    arrayList.add(new Tok(k, w, tr));
+                    String comment = s.substring(i2, e);
+                    Intrinsics.checkNotNullExpressionValue(comment, "substring(...)");
+                    triv.append(lvl2 == 0 ? relevel(comment, "--") : comment);
+                    i2 = e;
                 } else {
-                    Object obj = null;
-                    if (Character.isDigit(c) || (c == '.' && i2 + 1 < n && Character.isDigit(s.charAt(i2 + 1)))) {
-                        int j = i2;
-                        if (c == '0' && i2 + 1 < n && (s.charAt(i2 + 1) == 'x' || s.charAt(i2 + 1) == 'X' || s.charAt(i2 + 1) == 'b' || s.charAt(i2 + 1) == 'B')) {
-                            j += 2;
-                            while (j < n && (Character.isLetterOrDigit(s.charAt(j)) || s.charAt(j) == '_')) {
-                                j++;
-                            }
-                        } else {
-                            while (j < n && (Character.isDigit(s.charAt(j)) || s.charAt(j) == '.' || s.charAt(j) == '_')) {
-                                j++;
-                            }
-                            if (j < n && (s.charAt(j) == 'e' || s.charAt(j) == 'E')) {
-                                j++;
-                                if (j < n && (s.charAt(j) == '+' || s.charAt(j) == '-')) {
-                                    j++;
-                                }
-                                while (j < n && Character.isDigit(s.charAt(j))) {
-                                    j++;
-                                }
-                            }
-                        }
-                        String strSubstring = s.substring(i2, j);
-                        Intrinsics.checkNotNullExpressionValue(strSubstring, "substring(...)");
-                        String num = StringsKt.replace(strSubstring, "_", "", false);
-                        if (StringsKt.startsWith(num, "0b", false) || StringsKt.startsWith(num, "0B", false)) {
-                            String strSubstring2 = num.substring(2);
-                            Intrinsics.checkNotNullExpressionValue(strSubstring2, "substring(...)");
-                            Long longOrNull = StringsKt.toLongOrNull(strSubstring2, 2);
-                            num = String.valueOf(longOrNull != null ? longOrNull.longValue() : 0L);
-                        }
-                        K k3 = K.NUMBER;
-                        String strSubstring3 = s.substring(i2, j);
-                        Intrinsics.checkNotNullExpressionValue(strSubstring3, "substring(...)");
-                        Tok t = new Tok(k3, strSubstring3, tr);
-                        t.setOut(num);
-                        arrayList.add(t);
-                        lvl = j;
-                    } else if (c == '\"' || c == '\'') {
-                        int j2 = i2 + 1;
-                        while (j2 < n && s.charAt(j2) != c) {
-                            if (s.charAt(j2) == '\\') {
-                                j2++;
-                            }
-                            if (j2 >= n || s.charAt(j2) != '\n' || s.charAt(j2 - 1) == '\\') {
-                                j2++;
-                            } else {
-                                lvl = Math.min(j2 + 1, n);
-                                K k4 = K.STRING;
-                                String strSubstring4 = s.substring(i2, lvl);
-                                Intrinsics.checkNotNullExpressionValue(strSubstring4, "substring(...)");
-                                arrayList.add(new Tok(k4, strSubstring4, tr));
-                            }
-                        }
-                        lvl = Math.min(j2 + 1, n);
-                        K k5 = K.STRING;
-                        String strSubstring5 = s.substring(i2, lvl);
-                        Intrinsics.checkNotNullExpressionValue(strSubstring5, "substring(...)");
-                        arrayList.add(new Tok(k5, strSubstring5, tr));
-                    } else if (c == '[' && lex$longBracketLevel(n, s, i2) >= 0) {
-                        int lvl3 = lex$longBracketLevel(n, s, i2);
-                        int e2 = lex$skipLong(s, n, i2, lvl3);
-                        K k6 = K.STRING;
-                        String strSubstring6 = s.substring(i2, e2);
-                        Intrinsics.checkNotNullExpressionValue(strSubstring6, "substring(...)");
-                        Tok t2 = new Tok(k6, strSubstring6, tr);
-                        if (lvl3 == 0) {
-                            t2.setOut(relevel(t2.getText(), ""));
-                        }
-                        arrayList.add(t2);
-                        lvl = e2;
-                    } else if (c == '`') {
-                        Pair<Integer, String> pairInterpolated = interpolated(s, i2);
-                        int e3 = pairInterpolated.component1().intValue();
-                        String converted = pairInterpolated.component2();
-                        K k7 = K.STRING;
-                        String strSubstring7 = s.substring(i2, e3);
-                        Intrinsics.checkNotNullExpressionValue(strSubstring7, "substring(...)");
-                        Tok t3 = new Tok(k7, strSubstring7, tr);
-                        t3.setOut(converted);
-                        arrayList.add(t3);
-                        lvl = e3;
-                    } else {
-                        for (Object obj2 : ops) {
-                            if (StringsKt.startsWith(s, (String) obj2, i2, false)) {
-                                obj = obj2;
-                                op = (String) obj;
-                                if (op == null) {
-                                    op = String.valueOf(c);
-                                }
-                                arrayList.add(new Tok(K.OP, op, tr));
-                                lvl = op.length() + i2;
-                            }
-                        }
-                        op = (String) obj;
-                        if (op == null) {
-                            op = String.valueOf(c);
-                        }
-                        arrayList.add(new Tok(K.OP, op, tr));
-                        lvl = op.length() + i2;
-                    }
+                    break;
                 }
             }
             if (i2 >= n) {
-                K k8 = K.EOF;
-                String string2 = triv.toString();
-                Intrinsics.checkNotNullExpressionValue(string2, "toString(...)");
-                arrayList.add(new Tok(k8, "", string2));
+                String trailing = triv.toString();
+                Intrinsics.checkNotNullExpressionValue(trailing, "toString(...)");
+                arrayList.add(new Tok(K.EOF, "", trailing));
                 return arrayList;
             }
-            tr = triv.toString();
+            String tr = triv.toString();
             Intrinsics.checkNotNullExpressionValue(tr, "toString(...)");
             triv.setLength(0);
-            c = s.charAt(i2);
-            if (!Character.isLetter(c)) {
-            }
-            lvl = i2;
-            while (lvl < n) {
-                lvl++;
-            }
-            w = s.substring(i2, lvl);
-            Intrinsics.checkNotNullExpressionValue(w, "substring(...)");
-            if (keywords.contains(w)) {
-                k = K.KEYWORD;
+            char c = s.charAt(i2);
+            if (Character.isLetter(c) || c == '_') {
+                lvl = i2;
+                while (lvl < n && (Character.isLetterOrDigit(s.charAt(lvl)) || s.charAt(lvl) == '_')) {
+                    lvl++;
+                }
+                String w = s.substring(i2, lvl);
+                Intrinsics.checkNotNullExpressionValue(w, "substring(...)");
+                arrayList.add(new Tok(keywords.contains(w) ? K.KEYWORD : K.NAME, w, tr));
+            } else if (Character.isDigit(c) || (c == '.' && i2 + 1 < n && Character.isDigit(s.charAt(i2 + 1)))) {
+                int j = i2;
+                if (c == '0' && i2 + 1 < n && (s.charAt(i2 + 1) == 'x' || s.charAt(i2 + 1) == 'X' || s.charAt(i2 + 1) == 'b' || s.charAt(i2 + 1) == 'B')) {
+                    j += 2;
+                    while (j < n && (Character.isLetterOrDigit(s.charAt(j)) || s.charAt(j) == '_')) {
+                        j++;
+                    }
+                } else {
+                    while (j < n && (Character.isDigit(s.charAt(j)) || s.charAt(j) == '.' || s.charAt(j) == '_')) {
+                        j++;
+                    }
+                    if (j < n && (s.charAt(j) == 'e' || s.charAt(j) == 'E')) {
+                        j++;
+                        if (j < n && (s.charAt(j) == '+' || s.charAt(j) == '-')) {
+                            j++;
+                        }
+                        while (j < n && Character.isDigit(s.charAt(j))) {
+                            j++;
+                        }
+                    }
+                }
+                String rawNum = s.substring(i2, j);
+                Intrinsics.checkNotNullExpressionValue(rawNum, "substring(...)");
+                String num = StringsKt.replace(rawNum, "_", "", false);
+                if (StringsKt.startsWith(num, "0b", false) || StringsKt.startsWith(num, "0B", false)) {
+                    String binPart = num.substring(2);
+                    Intrinsics.checkNotNullExpressionValue(binPart, "substring(...)");
+                    Long longOrNull = StringsKt.toLongOrNull(binPart, 2);
+                    num = String.valueOf(longOrNull != null ? longOrNull.longValue() : 0L);
+                }
+                Tok t = new Tok(K.NUMBER, rawNum, tr);
+                t.setOut(num);
+                arrayList.add(t);
+                lvl = j;
+            } else if (c == '"' || c == '\'') {
+                int j2 = i2 + 1;
+                while (j2 < n && s.charAt(j2) != c) {
+                    if (s.charAt(j2) == '\\') {
+                        j2 += 2;
+                    } else if (s.charAt(j2) == '\n') {
+                        break;
+                    } else {
+                        j2++;
+                    }
+                }
+                lvl = Math.min(j2 + 1, n);
+                String strLit = s.substring(i2, lvl);
+                Intrinsics.checkNotNullExpressionValue(strLit, "substring(...)");
+                arrayList.add(new Tok(K.STRING, strLit, tr));
+            } else if (c == '[' && lex$longBracketLevel(n, s, i2) >= 0) {
+                int lvl3 = lex$longBracketLevel(n, s, i2);
+                int e2 = lex$skipLong(s, n, i2, lvl3);
+                String longStr = s.substring(i2, e2);
+                Intrinsics.checkNotNullExpressionValue(longStr, "substring(...)");
+                Tok t2 = new Tok(K.STRING, longStr, tr);
+                if (lvl3 == 0) {
+                    t2.setOut(relevel(t2.getText(), ""));
+                }
+                arrayList.add(t2);
+                lvl = e2;
+            } else if (c == '`') {
+                Pair<Integer, String> pairInterpolated = interpolated(s, i2);
+                int e3 = pairInterpolated.component1().intValue();
+                String converted = pairInterpolated.component2();
+                String interpStr = s.substring(i2, e3);
+                Intrinsics.checkNotNullExpressionValue(interpStr, "substring(...)");
+                Tok t3 = new Tok(K.STRING, interpStr, tr);
+                t3.setOut(converted);
+                arrayList.add(t3);
+                lvl = e3;
             } else {
-                k = K.NAME;
+                String op = null;
+                for (Object obj2 : ops) {
+                    if (StringsKt.startsWith(s, (String) obj2, i2, false)) {
+                        op = (String) obj2;
+                        break;
+                    }
+                }
+                if (op == null) {
+                    op = String.valueOf(c);
+                }
+                arrayList.add(new Tok(K.OP, op, tr));
+                lvl = i2 + Math.max(op.length(), 1);
             }
-            arrayList.add(new Tok(k, w, tr));
         }
     }
 

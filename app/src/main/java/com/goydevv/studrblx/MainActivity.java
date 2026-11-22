@@ -171,7 +171,7 @@ public final class MainActivity extends AppCompatActivity implements MainActions
             return MainActivity.accountListener$lambda$4(MainActivity.this);
         }
     };
-    private final List<String> ribbonTabs = CollectionsKt.listOf(new String[]{StartScreen.HOME, "Model", "Avatar", "UI", "Test", "View", "Plugins"});
+    private final List<String> ribbonTabs = CollectionsKt.listOf(new String[]{StartScreen.HOME, "Model", "Avatar", "UI", "Test", "View", "Plugins", "Script"});
     private String ribbonTab = StartScreen.HOME;
     private final IdentityHashMap<Instance, ScriptEditor> openEditors = new IdentityHashMap<>();
     private final ArrayList<Instance> editorOrder = new ArrayList<>();
@@ -2182,6 +2182,11 @@ public final class MainActivity extends AppCompatActivity implements MainActions
                             return MainActivity.buildRibbon$lambda$160(MainActivity.this);
                         }
                     });
+                }
+                break;
+            case -1823818517:
+                if (str.equals("Script")) {
+                    buildScriptRibbon();
                 }
                 break;
             case 1189023616:
@@ -5076,6 +5081,178 @@ public final class MainActivity extends AppCompatActivity implements MainActions
     }
 
     /* JADX INFO: Access modifiers changed from: private */
+
+    private final void buildScriptRibbon() {
+        final MainActivity self = this;
+        group("Scripts", new Function0() {
+            @Override
+            public final Object invoke() {
+                tool$default(self, self.inst("Script"), "All Scripts", false, new Function0() {
+                    @Override
+                    public final Object invoke() {
+                        self.showScriptManagerDialog();
+                        return Unit.INSTANCE;
+                    }
+                }, 4, null);
+                tool$default(self, g$default(self, "Open", null, 2, null), "Open Selected", false, new Function0() {
+                    @Override
+                    public final Object invoke() {
+                        Studio st = self.studio;
+                        if (st == null) {
+                            Intrinsics.throwUninitializedPropertyAccessException("studio");
+                            st = null;
+                        }
+                        Instance sel = (Instance) CollectionsKt.firstOrNull(st.getSelection());
+                        if (sel != null && sel.isA("LuaSourceContainer")) {
+                            self.openScript(sel);
+                        } else {
+                            self.showScriptManagerDialog();
+                        }
+                        return Unit.INSTANCE;
+                    }
+                }, 4, null);
+                return Unit.INSTANCE;
+            }
+        });
+        group("Create", new Function0() {
+            @Override
+            public final Object invoke() {
+                tool$default(self, self.inst("Script"), "New Script", false, new Function0() {
+                    @Override
+                    public final Object invoke() {
+                        self.createAndOpenScript("Script", "ServerScriptService");
+                        return Unit.INSTANCE;
+                    }
+                }, 4, null);
+                tool$default(self, self.inst("LocalScript"), "LocalScript", false, new Function0() {
+                    @Override
+                    public final Object invoke() {
+                        self.createAndOpenScript("LocalScript", "StarterPlayer");
+                        return Unit.INSTANCE;
+                    }
+                }, 4, null);
+                tool$default(self, self.inst("ModuleScript"), "Module", false, new Function0() {
+                    @Override
+                    public final Object invoke() {
+                        self.createAndOpenScript("ModuleScript", "ReplicatedStorage");
+                        return Unit.INSTANCE;
+                    }
+                }, 4, null);
+                return Unit.INSTANCE;
+            }
+        });
+        group("Debug", new Function0() {
+            @Override
+            public final Object invoke() {
+                DockLayout dl = self.dock;
+                if (dl == null) {
+                    Intrinsics.throwUninitializedPropertyAccessException("dock");
+                    dl = null;
+                }
+                self.tool(g$default(self, "Output", null, 2, null), "Output", dl.isShown("output"), new Function0() {
+                    @Override
+                    public final Object invoke() {
+                        return MainActivity.buildRibbon$lambda$206$lambda$203(self);
+                    }
+                });
+                return Unit.INSTANCE;
+            }
+        });
+    }
+
+    private final void createAndOpenScript(String className, String defaultService) {
+        Studio st = this.studio;
+        if (st == null) {
+            Intrinsics.throwUninitializedPropertyAccessException("studio");
+            st = null;
+        }
+        Instance parent = (Instance) CollectionsKt.firstOrNull(st.getSelection());
+        if (parent == null || parent.isA("LuaSourceContainer")) {
+            Instance svc = st.getModel().getService(defaultService);
+            if ("LocalScript".equals(className) && svc != null) {
+                Instance sps = Instance.findFirstChild$default(svc, "StarterPlayerScripts", false, 2, null);
+                parent = sps != null ? sps : svc;
+            } else {
+                parent = svc;
+            }
+        }
+        Instance created = st.insertObject(className, parent);
+        if (created != null && created.isA("LuaSourceContainer")) {
+            openScript(created);
+        }
+    }
+
+    private final void showScriptManagerDialog() {
+        Studio st = this.studio;
+        if (st == null) {
+            Intrinsics.throwUninitializedPropertyAccessException("studio");
+            st = null;
+        }
+        final ArrayList<Instance> scripts = new ArrayList<>();
+        for (Instance inst : Instance.descendants$default(st.getModel(), null, 1, null)) {
+            if (inst.isA("LuaSourceContainer")) {
+                scripts.add(inst);
+            }
+        }
+        if (scripts.isEmpty()) {
+            new android.app.AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+                .setTitle("Script Manager")
+                .setMessage("No scripts in this place yet. Create a Script, LocalScript, or ModuleScript?")
+                .setPositiveButton("New Script", new android.content.DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(android.content.DialogInterface d, int w) {
+                        createAndOpenScript("Script", "ServerScriptService");
+                    }
+                })
+                .setNeutralButton("New LocalScript", new android.content.DialogInterface.OnClickListener() {
+                    @Override
+                    public void onClick(android.content.DialogInterface d, int w) {
+                        createAndOpenScript("LocalScript", "StarterPlayer");
+                    }
+                })
+                .setNegativeButton("Cancel", null)
+                .show();
+            return;
+        }
+        CharSequence[] labels = new CharSequence[scripts.size()];
+        for (int i = 0; i < scripts.size(); i++) {
+            Instance sc = scripts.get(i);
+            StringBuilder path = new StringBuilder(sc.getName());
+            Instance par = sc.getParent();
+            int depth = 0;
+            while (par != null && depth < 3 && !"DataModel".equals(par.getClassName())) {
+                path.insert(0, par.getName() + "/");
+                par = par.getParent();
+                depth++;
+            }
+            labels[i] = "[" + sc.getClassName() + "] " + path.toString();
+        }
+        new android.app.AlertDialog.Builder(this, android.R.style.Theme_DeviceDefault_Dialog_Alert)
+            .setTitle("Scripts (" + scripts.size() + ") — Tap to Edit")
+            .setItems(labels, new android.content.DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(android.content.DialogInterface d, int which) {
+                    if (which >= 0 && which < scripts.size()) {
+                        openScript(scripts.get(which));
+                    }
+                }
+            })
+            .setPositiveButton("New Script", new android.content.DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(android.content.DialogInterface d, int w) {
+                    createAndOpenScript("Script", "ServerScriptService");
+                }
+            })
+            .setNeutralButton("New LocalScript", new android.content.DialogInterface.OnClickListener() {
+                @Override
+                public void onClick(android.content.DialogInterface d, int w) {
+                    createAndOpenScript("LocalScript", "StarterPlayer");
+                }
+            })
+            .setNegativeButton("Close", null)
+            .show();
+    }
+
     public final void openScript(Instance s) {
         ScriptEditor scriptEditor;
         if (s.isA("LuaSourceContainer")) {

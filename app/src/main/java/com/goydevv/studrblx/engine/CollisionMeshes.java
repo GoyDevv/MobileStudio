@@ -364,6 +364,13 @@ public final class CollisionMeshes {
         return collisionMeshes.forPart(instance, z);
     }
 
+    public final Mesh getCached(Instance p) {
+        Intrinsics.checkNotNullParameter(p, "p");
+        synchronized (cache) {
+            return cache.get(p);
+        }
+    }
+
     public final Mesh forPart(Instance p, boolean forRays) {
         UnionMeshes.Data d;
         long id;

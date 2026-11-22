@@ -54,7 +54,7 @@ public final class Geometry {
         Intrinsics.checkNotNullParameter(o, "o");
         Intrinsics.checkNotNullParameter(d, "d");
         Intrinsics.checkNotNullParameter(part, "part");
-        if (CollisionMeshes.INSTANCE.hasGeometry(part) && (meshForPart$default = CollisionMeshes.forPart$default(CollisionMeshes.INSTANCE, part, false, 2, null)) != null) {
+        if (CollisionMeshes.INSTANCE.hasGeometry(part) && (meshForPart$default = (android.os.Looper.getMainLooper().isCurrentThread() ? CollisionMeshes.INSTANCE.getCached(part) : CollisionMeshes.forPart$default(CollisionMeshes.INSTANCE, part, false, 2, null))) != null) {
             return CollisionMeshes.INSTANCE.ray(meshForPart$default, o, d, 1000000.0f);
         }
         CFrame cf = PartData.INSTANCE.cframe(part);
