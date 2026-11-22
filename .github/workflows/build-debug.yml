@@ -31,6 +31,9 @@ jobs:
       - name: Ensure gradlew is executable
         run: chmod +x ./gradlew
 
+        - name: Remove local AAPT2 override
+  run: sed -i '/android\.aapt2FromMavenOverride/d' gradle.properties
+
       - name: Build Debug APK
         run: ./gradlew assembleDebug --build-cache --stacktrace
 
