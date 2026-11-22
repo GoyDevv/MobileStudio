@@ -1866,75 +1866,26 @@ public final class LuaTypes {
         To view partially-correct add '--show-bad-code' argument
     */
     static final org.luaj.vm2.LuaValue _init_$lambda$62(java.lang.Object r5, java.lang.String r6) {
-        /*
-            java.lang.String r0 = "o"
-            kotlin.jvm.internal.Intrinsics.checkNotNullParameter(r5, r0)
-            java.lang.String r0 = "k"
-            kotlin.jvm.internal.Intrinsics.checkNotNullParameter(r6, r0)
-            r0 = r5
-            com.goydevv.studrblx.model.UDim2 r0 = (com.goydevv.studrblx.model.UDim2) r0
-            int r1 = r6.hashCode()
-            switch(r1) {
-                case -2137162425: goto L57;
-                case 88: goto L3b;
-                case 89: goto L32;
-                case 2364823: goto L1e;
-                case 83574182: goto L15;
-                default: goto L14;
-            }
-        L14:
-            goto L5f
-        L15:
-            java.lang.String r1 = "Width"
-            boolean r1 = r6.equals(r1)
-            if (r1 == 0) goto L5f
-            goto L43
-        L1e:
-            java.lang.String r1 = "Lerp"
-            boolean r1 = r6.equals(r1)
-            if (r1 == 0) goto L5f
-            com.goydevv.studrblx.lua.LuaTypes r1 = com.goydevv.studrblx.lua.LuaTypes.INSTANCE
-            com.goydevv.studrblx.lua.LuaTypes$$ExternalSyntheticLambda106 r2 = new com.goydevv.studrblx.lua.LuaTypes$$ExternalSyntheticLambda106
-            r2.<init>()
-            org.luaj.vm2.LuaValue r1 = r1.method(r2)
-            goto L75
-        L32:
-            java.lang.String r1 = "Y"
-            boolean r1 = r6.equals(r1)
-            if (r1 != 0) goto L60
-            goto L5f
-        L3b:
-            java.lang.String r1 = "X"
-            boolean r1 = r6.equals(r1)
-            if (r1 == 0) goto L5f
-        L43:
-            com.goydevv.studrblx.lua.LuaTypes r1 = com.goydevv.studrblx.lua.LuaTypes.INSTANCE
-            com.goydevv.studrblx.model.UDim r2 = new com.goydevv.studrblx.model.UDim
-            float r3 = r0.getXs()
-            int r4 = r0.getXo()
-            r2.<init>(r3, r4)
-            org.luaj.vm2.LuaValue r1 = r1.wrap(r2)
-            goto L75
-        L57:
-            java.lang.String r1 = "Height"
-            boolean r1 = r6.equals(r1)
-            if (r1 != 0) goto L60
-        L5f:
-            goto L74
-        L60:
-            com.goydevv.studrblx.lua.LuaTypes r1 = com.goydevv.studrblx.lua.LuaTypes.INSTANCE
-            com.goydevv.studrblx.model.UDim r2 = new com.goydevv.studrblx.model.UDim
-            float r3 = r0.getYs()
-            int r4 = r0.getYo()
-            r2.<init>(r3, r4)
-            org.luaj.vm2.LuaValue r1 = r1.wrap(r2)
-            goto L75
-        L74:
-            r1 = 0
-        L75:
-            return r1
-        */
-        return org.luaj.vm2.LuaValue.NIL;
+        Intrinsics.checkNotNullParameter(r5, "o");
+        Intrinsics.checkNotNullParameter(r6, "k");
+        UDim2 u = (UDim2) r5;
+        switch (r6) {
+            case "X":
+            case "Width":
+                return INSTANCE.wrap(new UDim(u.getXs(), u.getXo()));
+            case "Y":
+            case "Height":
+                return INSTANCE.wrap(new UDim(u.getYs(), u.getYo()));
+            case "Lerp":
+                return INSTANCE.method(new Function1() {
+                    @Override
+                    public final Object invoke(Object a) {
+                        return LuaTypes.lambda$62$lambda$61((Varargs) a);
+                    }
+                });
+            default:
+                return null;
+        }
     }
 
     static final Varargs lambda$62$lambda$61(Varargs a) {

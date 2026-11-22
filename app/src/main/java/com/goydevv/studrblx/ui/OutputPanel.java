@@ -77,6 +77,30 @@ public final class OutputPanel extends LinearLayout {
             }
         });
         h.addView(filterBtn, Ui.INSTANCE.lp(-2, -2, 0.0f));
+        final TextView copyBtn = new TextView(ctx);
+        copyBtn.setText("Copy");
+        copyBtn.setTextSize(11.0f);
+        copyBtn.setTextColor(Ui.INSTANCE.getTEXT());
+        copyBtn.setPadding(Ui.INSTANCE.dp(ctx, 8.0f), Ui.INSTANCE.dp(ctx, 2.0f), Ui.INSTANCE.dp(ctx, 8.0f), Ui.INSTANCE.dp(ctx, 2.0f));
+        copyBtn.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                android.widget.PopupMenu pm = new android.widget.PopupMenu(v.getContext(), v);
+                pm.getMenu().add(0, 1, 0, "Copy Unique Errors (No Loop)");
+                pm.getMenu().add(0, 2, 1, "Copy All Errors");
+                pm.getMenu().add(0, 3, 2, "Copy Unique Warn + Errors");
+                pm.getMenu().add(0, 4, 3, "Copy Full Output");
+                pm.setOnMenuItemClickListener(new android.widget.PopupMenu.OnMenuItemClickListener() {
+                    @Override
+                    public boolean onMenuItemClick(android.view.MenuItem item) {
+                        OutputPanel.this.copyOutput(item.getItemId());
+                        return true;
+                    }
+                });
+                pm.show();
+            }
+        });
+        h.addView(copyBtn, Ui.INSTANCE.lp(-2, -2, 0.0f));
         addView(h, Ui.lp$default(Ui.INSTANCE, -1, -2, 0.0f, 4, null));
         RecyclerView recyclerView = this.list;
         LinearLayoutManager linearLayoutManager = new LinearLayoutManager(ctx);
@@ -192,6 +216,49 @@ public final class OutputPanel extends LinearLayout {
     static final void schedule$lambda$7(OutputPanel this$0) {
         this$0.pending = false;
         this$0.reload();
+    }
+
+    private final void copyOutput(int mode) {
+        java.util.List<OutputLog.Entry> snap = OutputLog.INSTANCE.snapshot();
+        StringBuilder sb = new StringBuilder();
+        int count = 0;
+        if (mode == 1 || mode == 3) {
+            java.util.LinkedHashMap<String, Integer> dedup = new java.util.LinkedHashMap<>();
+            for (OutputLog.Entry e : snap) {
+                OutputLog.Level lv = e.getLevel();
+                if (mode == 1 && lv != OutputLog.Level.ERROR) continue;
+                if (mode == 3 && lv != OutputLog.Level.ERROR && lv != OutputLog.Level.WARN) continue;
+                String msg = e.getText().trim();
+                String key = (mode == 3 ? "[" + lv.name() + "] " : "") + msg;
+                Integer prev = dedup.get(key);
+                dedup.put(key, prev == null ? 1 : prev + 1);
+            }
+            for (java.util.Map.Entry<String, Integer> it : dedup.entrySet()) {
+                if (sb.length() > 0) sb.append("\n");
+                sb.append(it.getKey());
+                if (it.getValue() > 1) {
+                    sb.append(" (x").append(it.getValue()).append(")");
+                }
+                count++;
+            }
+        } else {
+            for (OutputLog.Entry e : snap) {
+                if (mode == 2 && e.getLevel() != OutputLog.Level.ERROR) continue;
+                if (sb.length() > 0) sb.append("\n");
+                sb.append(this.fmt.format(new Date(e.getTime()))).append("  [").append(e.getLevel().name()).append("] ").append(e.getText());
+                count++;
+            }
+        }
+        if (count == 0) {
+            android.widget.Toast.makeText(getContext(), "Nothing matching to copy", android.widget.Toast.LENGTH_SHORT).show();
+            return;
+        }
+        android.content.ClipboardManager cm = (android.content.ClipboardManager) getContext().getSystemService(Context.CLIPBOARD_SERVICE);
+        if (cm != null) {
+            cm.setPrimaryClip(android.content.ClipData.newPlainText("StudioRblx Output", sb.toString()));
+        }
+        String label = mode == 1 ? " unique error(s)" : (mode == 2 ? " error(s)" : (mode == 3 ? " unique warn/error(s)" : " output line(s)"));
+        android.widget.Toast.makeText(getContext(), "Copied " + count + label, android.widget.Toast.LENGTH_SHORT).show();
     }
 
     private final void reload() {

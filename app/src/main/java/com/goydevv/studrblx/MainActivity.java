@@ -135,6 +135,7 @@ public final class MainActivity extends AppCompatActivity implements MainActions
     private Boolean hiddenBeforePlay;
     private ImageView hideBtn;
     private OutputPanel output;
+    private Function1<OutputLog.Entry, Unit> outTabLogListener;
     private Function0<byte[]> pendingSave;
     private boolean pendingSaveIsPlace;
     private TextView playButton;
@@ -960,6 +961,10 @@ public final class MainActivity extends AppCompatActivity implements MainActions
 
     @Override // androidx.appcompat.app.AppCompatActivity, androidx.fragment.app.FragmentActivity, android.app.Activity
     protected void onDestroy() {
+        if (this.outTabLogListener != null) {
+            OutputLog.INSTANCE.getListeners().remove(this.outTabLogListener);
+            this.outTabLogListener = null;
+        }
         if (WebPermissions.INSTANCE.getAsker() == this.webAsker) {
             WebPermissions.INSTANCE.setAsker(null);
         }
@@ -1315,13 +1320,85 @@ public final class MainActivity extends AppCompatActivity implements MainActions
         outTabBtn.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
         outTabBtn.setTextColor(Ui.INSTANCE.getTEXT());
         outTabBtn.setPadding(Ui.INSTANCE.dp(this, 10.0f), Ui.INSTANCE.dp(this, 4.0f), Ui.INSTANCE.dp(this, 10.0f), Ui.INSTANCE.dp(this, 4.0f));
+        final int[] outAlertState = new int[]{0, 0, 0}; // [0]=level (0=none,1=warn,2=error), [1]=errCount, [2]=warnCount
+        final int[] pulseStep = new int[]{0};
+        final Runnable[] pulseRef = new Runnable[1];
+        pulseRef[0] = new Runnable() {
+            @Override
+            public void run() {
+                int lv = outAlertState[0];
+                if (lv == 0) {
+                    outTabBtn.setAlpha(1.0f);
+                    outTabBtn.setBackgroundColor(0);
+                    return;
+                }
+                int alertColor = (lv == 2) ? Ui.ERROR : Ui.WARN;
+                int flashBg = (lv == 2) ? 0x55FF4444 : 0x55FFA500;
+                if (pulseStep[0] > 0) {
+                    boolean hi = (pulseStep[0] % 2 == 1);
+                    outTabBtn.setTextColor(hi ? 0xFFFFFFFF : alertColor);
+                    outTabBtn.setBackgroundColor(hi ? flashBg : 0);
+                    pulseStep[0]--;
+                    outTabBtn.postDelayed(this, 180L);
+                } else {
+                    outTabBtn.setTextColor(alertColor);
+                    outTabBtn.setBackgroundColor(0);
+                }
+            }
+        };
+        this.outTabLogListener = new Function1<OutputLog.Entry, Unit>() {
+            @Override
+            public Unit invoke(final OutputLog.Entry entry) {
+                outTabBtn.post(new Runnable() {
+                    @Override
+                    public void run() {
+                        if (entry == null) {
+                            outAlertState[0] = 0;
+                            outAlertState[1] = 0;
+                            outAlertState[2] = 0;
+                            pulseStep[0] = 0;
+                            outTabBtn.removeCallbacks(pulseRef[0]);
+                            outTabBtn.setText("Output");
+                            outTabBtn.setBackgroundColor(0);
+                            boolean shown = MainActivity.this.dock != null && MainActivity.this.dock.isShown("output");
+                            outTabBtn.setTextColor(shown ? Ui.INSTANCE.getACCENT() : Ui.INSTANCE.getTEXT());
+                            return;
+                        }
+                        OutputLog.Level lv = entry.getLevel();
+                        if (lv == OutputLog.Level.ERROR || lv == OutputLog.Level.WARN) {
+                            if (lv == OutputLog.Level.ERROR) {
+                                outAlertState[0] = 2;
+                                outAlertState[1]++;
+                            } else {
+                                if (outAlertState[0] < 1) outAlertState[0] = 1;
+                                outAlertState[2]++;
+                            }
+                            int total = outAlertState[1] + outAlertState[2];
+                            outTabBtn.setText("Output (" + total + ")");
+                            outTabBtn.removeCallbacks(pulseRef[0]);
+                            pulseStep[0] = 6;
+                            outTabBtn.post(pulseRef[0]);
+                        }
+                    }
+                });
+                return Unit.INSTANCE;
+            }
+        };
+        OutputLog.INSTANCE.getListeners().add(this.outTabLogListener);
         outTabBtn.setOnClickListener(new android.view.View.OnClickListener() {
             @Override
             public void onClick(android.view.View v) {
                 if (MainActivity.this.dock != null) {
                     MainActivity.this.dock.toggle("output");
                     boolean shown = MainActivity.this.dock.isShown("output");
-                    outTabBtn.setTextColor(shown ? Ui.INSTANCE.getACCENT() : Ui.INSTANCE.getTEXT());
+                    if (shown) {
+                        outAlertState[0] = 0;
+                        pulseStep[0] = 0;
+                        outTabBtn.removeCallbacks(pulseRef[0]);
+                        outTabBtn.setBackgroundColor(0);
+                    }
+                    int color = shown ? Ui.INSTANCE.getACCENT() : (outAlertState[0] == 2 ? Ui.ERROR : (outAlertState[0] == 1 ? Ui.WARN : Ui.INSTANCE.getTEXT()));
+                    outTabBtn.setTextColor(color);
                 }
             }
         });

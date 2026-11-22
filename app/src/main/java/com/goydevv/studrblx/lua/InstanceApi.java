@@ -320,87 +320,42 @@ public final class InstanceApi {
         To view partially-correct add '--show-bad-code' argument
     */
     static final org.luaj.vm2.LuaValue _init_$lambda$5(final com.goydevv.studrblx.lua.InstanceApi r4, org.luaj.vm2.LuaValue r5, org.luaj.vm2.LuaValue r6) {
-        /*
-            java.lang.String r0 = "self"
-            kotlin.jvm.internal.Intrinsics.checkNotNullParameter(r5, r0)
-            java.lang.String r0 = "key"
-            kotlin.jvm.internal.Intrinsics.checkNotNullParameter(r6, r0)
-            java.lang.Object r0 = r5.touserdata()
-            java.lang.String r1 = "null cannot be cast to non-null type com.goydevv.studrblx.lua.SignalRef"
-            kotlin.jvm.internal.Intrinsics.checkNotNull(r0, r1)
-            com.goydevv.studrblx.lua.SignalRef r0 = (com.goydevv.studrblx.lua.SignalRef) r0
-            java.lang.String r1 = r6.tojstring()
-            if (r1 == 0) goto L7a
-            int r2 = r1.hashCode()
-            switch(r2) {
-                case -1678962486: goto L66;
-                case -309774095: goto L5d;
-                case 2462369: goto L49;
-                case 2688405: goto L35;
-                case 3641717: goto L2c;
-                case 951351530: goto L23;
-                default: goto L22;
+        Intrinsics.checkNotNullParameter(r5, "self");
+        Intrinsics.checkNotNullParameter(r6, "key");
+        Object obj = r5.touserdata();
+        Intrinsics.checkNotNull(obj, "null cannot be cast to non-null type com.goydevv.studrblx.lua.SignalRef");
+        final SignalRef s = (SignalRef) obj;
+        String k = r6.tojstring();
+        if (k != null) {
+            switch (k) {
+                case "Connect":
+                case "connect":
+                case "ConnectParallel":
+                    return LuaTypesKt.fnv(new Function1() {
+                        @Override
+                        public final Object invoke(Object a) {
+                            return InstanceApi.lambda$5$lambda$2(r4, s, (Varargs) a);
+                        }
+                    });
+                case "Once":
+                case "once":
+                    return LuaTypesKt.fnv(new Function1() {
+                        @Override
+                        public final Object invoke(Object a) {
+                            return InstanceApi.lambda$5$lambda$3(r4, s, (Varargs) a);
+                        }
+                    });
+                case "Wait":
+                case "wait":
+                    return LuaTypesKt.fnv(new Function1() {
+                        @Override
+                        public final Object invoke(Object a) {
+                            return InstanceApi.lambda$5$lambda$4(r4, s, (Varargs) a);
+                        }
+                    });
             }
-        L22:
-            goto L7a
-        L23:
-            java.lang.String r2 = "connect"
-            boolean r1 = r1.equals(r2)
-            if (r1 == 0) goto L7a
-            goto L6e
-        L2c:
-            java.lang.String r2 = "wait"
-            boolean r1 = r1.equals(r2)
-            if (r1 == 0) goto L7a
-            goto L3d
-        L35:
-            java.lang.String r2 = "Wait"
-            boolean r1 = r1.equals(r2)
-            if (r1 == 0) goto L7a
-        L3d:
-            com.goydevv.studrblx.lua.InstanceApi$$ExternalSyntheticLambda13 r1 = new com.goydevv.studrblx.lua.InstanceApi$$ExternalSyntheticLambda13
-            r1.<init>()
-            org.luaj.vm2.lib.VarArgFunction r1 = com.goydevv.studrblx.lua.LuaTypesKt.fnv(r1)
-            org.luaj.vm2.LuaValue r1 = (org.luaj.vm2.LuaValue) r1
-            goto L79
-        L49:
-            java.lang.String r2 = "Once"
-            boolean r1 = r1.equals(r2)
-            if (r1 == 0) goto L7a
-            com.goydevv.studrblx.lua.InstanceApi$$ExternalSyntheticLambda12 r1 = new com.goydevv.studrblx.lua.InstanceApi$$ExternalSyntheticLambda12
-            r1.<init>()
-            org.luaj.vm2.lib.VarArgFunction r1 = com.goydevv.studrblx.lua.LuaTypesKt.fnv(r1)
-            org.luaj.vm2.LuaValue r1 = (org.luaj.vm2.LuaValue) r1
-            goto L79
-        L5d:
-            java.lang.String r2 = "ConnectParallel"
-            boolean r1 = r1.equals(r2)
-            if (r1 == 0) goto L7a
-            goto L6e
-        L66:
-            java.lang.String r2 = "Connect"
-            boolean r1 = r1.equals(r2)
-            if (r1 == 0) goto L7a
-        L6e:
-            com.goydevv.studrblx.lua.InstanceApi$$ExternalSyntheticLambda11 r1 = new com.goydevv.studrblx.lua.InstanceApi$$ExternalSyntheticLambda11
-            r1.<init>()
-            org.luaj.vm2.lib.VarArgFunction r1 = com.goydevv.studrblx.lua.LuaTypesKt.fnv(r1)
-            org.luaj.vm2.LuaValue r1 = (org.luaj.vm2.LuaValue) r1
-        L79:
-            return r1
-        L7a:
-            org.luaj.vm2.LuaError r1 = new org.luaj.vm2.LuaError
-            java.lang.String r2 = r6.tojstring()
-            java.lang.StringBuilder r3 = new java.lang.StringBuilder
-            r3.<init>()
-            java.lang.StringBuilder r2 = r3.append(r2)
-            java.lang.String r3 = " is not a valid member of RBXScriptSignal"
-            java.lang.StringBuilder r2 = r2.append(r3)
-            java.lang.String r2 = r2.toString()
-            r1.<init>(r2)
-            throw r1
-        */
-        return org.luaj.vm2.LuaValue.NIL;
+        }
+        throw new LuaError(r6.tojstring() + " is not a valid member of RBXScriptSignal");
     }
 
     static final Varargs lambda$5$lambda$2(InstanceApi this$0, SignalRef $s, Varargs a) {
@@ -452,59 +407,26 @@ public final class InstanceApi {
         To view partially-correct add '--show-bad-code' argument
     */
     static final org.luaj.vm2.LuaValue _init_$lambda$8(final com.goydevv.studrblx.lua.InstanceApi r3, org.luaj.vm2.LuaValue r4, org.luaj.vm2.LuaValue r5) {
-        /*
-            java.lang.String r0 = "self"
-            kotlin.jvm.internal.Intrinsics.checkNotNullParameter(r4, r0)
-            java.lang.String r0 = "key"
-            kotlin.jvm.internal.Intrinsics.checkNotNullParameter(r5, r0)
-            java.lang.Object r0 = r4.touserdata()
-            java.lang.String r1 = "null cannot be cast to non-null type com.goydevv.studrblx.lua.Connection"
-            kotlin.jvm.internal.Intrinsics.checkNotNull(r0, r1)
-            com.goydevv.studrblx.lua.Connection r0 = (com.goydevv.studrblx.lua.Connection) r0
-            java.lang.String r1 = r5.tojstring()
-            if (r1 == 0) goto L58
-            int r2 = r1.hashCode()
-            switch(r2) {
-                case -1771096900: goto L44;
-                case 530405532: goto L3b;
-                case 1424757481: goto L23;
-                default: goto L22;
-            }
-        L22:
-            goto L58
-        L23:
-            java.lang.String r2 = "Connected"
-            boolean r1 = r1.equals(r2)
-            if (r1 == 0) goto L58
-            boolean r1 = r0.getConnected()
-            org.luaj.vm2.LuaBoolean r1 = org.luaj.vm2.LuaValue.valueOf(r1)
-            java.lang.String r2 = "valueOf(...)"
-            kotlin.jvm.internal.Intrinsics.checkNotNullExpressionValue(r1, r2)
-            org.luaj.vm2.LuaValue r1 = (org.luaj.vm2.LuaValue) r1
-            goto L5f
-        L3b:
-            java.lang.String r2 = "disconnect"
-            boolean r1 = r1.equals(r2)
-            if (r1 != 0) goto L4c
-            goto L58
-        L44:
-            java.lang.String r2 = "Disconnect"
-            boolean r1 = r1.equals(r2)
-            if (r1 == 0) goto L58
-        L4c:
-            com.goydevv.studrblx.lua.InstanceApi$$ExternalSyntheticLambda2 r1 = new com.goydevv.studrblx.lua.InstanceApi$$ExternalSyntheticLambda2
-            r1.<init>()
-            org.luaj.vm2.lib.VarArgFunction r1 = com.goydevv.studrblx.lua.LuaTypesKt.fnv(r1)
-            org.luaj.vm2.LuaValue r1 = (org.luaj.vm2.LuaValue) r1
-            goto L5f
-        L58:
-            org.luaj.vm2.LuaValue r1 = org.luaj.vm2.LuaValue.NIL
-            java.lang.String r2 = "NIL"
-            kotlin.jvm.internal.Intrinsics.checkNotNullExpressionValue(r1, r2)
-        L5f:
-            return r1
-        */
-        return org.luaj.vm2.LuaValue.NIL;
+        Intrinsics.checkNotNullParameter(r4, "self");
+        Intrinsics.checkNotNullParameter(r5, "key");
+        Object obj = r4.touserdata();
+        Intrinsics.checkNotNull(obj, "null cannot be cast to non-null type com.goydevv.studrblx.lua.Connection");
+        final Connection c = (Connection) obj;
+        String k = r5.tojstring();
+        if ("Connected".equals(k) || "connected".equals(k)) {
+            LuaValue val = LuaValue.valueOf(c.getConnected());
+            Intrinsics.checkNotNullExpressionValue(val, "valueOf(...)");
+            return val;
+        }
+        if ("Disconnect".equals(k) || "disconnect".equals(k)) {
+            return LuaTypesKt.fnv(new Function1() {
+                @Override
+                public final Object invoke(Object a) {
+                    return InstanceApi.lambda$8$lambda$7(r3, c, (Varargs) a);
+                }
+            });
+        }
+        return LuaValue.NIL;
     }
 
     static final Varargs lambda$8$lambda$7(InstanceApi this$0, Connection $c, Varargs varargs) {

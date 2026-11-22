@@ -1390,84 +1390,27 @@ public final class RobloxGlobals {
         To view partially-correct add '--show-bad-code' argument
     */
     static final org.luaj.vm2.Varargs install$lambda$15(org.luaj.vm2.Globals r7, org.luaj.vm2.Varargs r8) {
-        /*
-            java.lang.String r0 = "a"
-            kotlin.jvm.internal.Intrinsics.checkNotNullParameter(r8, r0)
-            org.luaj.vm2.LuaValue r0 = r8.arg1()
-            boolean r1 = r0.isfunction()
-            if (r1 == 0) goto L11
-            goto L71
-        L11:
-            boolean r1 = r0.istable()
-            r2 = 1
-            r3 = 0
-            if (r1 == 0) goto L51
-            org.luaj.vm2.LuaValue r1 = r0.getmetatable()
-            if (r1 == 0) goto L26
-            java.lang.String r4 = "__iter"
-            org.luaj.vm2.LuaValue r4 = r1.get(r4)
-            goto L27
-        L26:
-            r4 = 0
-        L27:
-            if (r4 == 0) goto L37
-            boolean r5 = r4.isfunction()
-            if (r5 == 0) goto L37
-            r2 = r0
-            org.luaj.vm2.Varargs r2 = (org.luaj.vm2.Varargs) r2
-            org.luaj.vm2.Varargs r2 = r4.invoke(r2)
-            goto L4d
-        L37:
-            r5 = 3
-            org.luaj.vm2.LuaValue[] r5 = new org.luaj.vm2.LuaValue[r5]
-            java.lang.String r6 = "next"
-            org.luaj.vm2.LuaValue r6 = r7.get(r6)
-            r5[r3] = r6
-            r5[r2] = r0
-            r2 = 2
-            org.luaj.vm2.LuaValue r3 = org.luaj.vm2.LuaValue.NIL
-            r5[r2] = r3
-            org.luaj.vm2.Varargs r2 = org.luaj.vm2.LuaValue.varargsOf(r5)
-        L4d:
-            kotlin.jvm.internal.Intrinsics.checkNotNull(r2)
-            goto L72
-        L51:
-            boolean r1 = r0.isuserdata()
-            if (r1 == 0) goto L73
-            org.luaj.vm2.LuaValue r1 = r0.getmetatable()
-            if (r1 == 0) goto L6e
-            org.luaj.vm2.LuaString r4 = org.luaj.vm2.LuaValue.CALL
-            org.luaj.vm2.LuaValue r4 = (org.luaj.vm2.LuaValue) r4
-            org.luaj.vm2.LuaValue r1 = r1.get(r4)
-            if (r1 == 0) goto L6e
-            boolean r1 = r1.isfunction()
-            if (r1 != r2) goto L6e
-            goto L6f
-        L6e:
-            r2 = r3
-        L6f:
-            if (r2 == 0) goto L73
-        L71:
-            r2 = r8
-        L72:
-            return r2
-        L73:
-            org.luaj.vm2.LuaError r1 = new org.luaj.vm2.LuaError
-            com.goydevv.studrblx.lua.LuaTypes r2 = com.goydevv.studrblx.lua.LuaTypes.INSTANCE
-            kotlin.jvm.internal.Intrinsics.checkNotNull(r0)
-            java.lang.String r2 = r2.typeOf(r0)
-            java.lang.StringBuilder r3 = new java.lang.StringBuilder
-            r3.<init>()
-            java.lang.String r4 = "attempt to iterate over a "
-            java.lang.StringBuilder r3 = r3.append(r4)
-            java.lang.StringBuilder r2 = r3.append(r2)
-            java.lang.String r3 = " value"
-            java.lang.StringBuilder r2 = r2.append(r3)
-            java.lang.String r2 = r2.toString()
-            r1.<init>(r2)
-            throw r1
-        */
-        return org.luaj.vm2.LuaValue.NIL;
+        Intrinsics.checkNotNullParameter(r8, "a");
+        LuaValue v = r8.arg1();
+        if (v.isfunction()) {
+            return r8;
+        }
+        if (v.istable()) {
+            LuaValue mt = v.getmetatable();
+            LuaValue iter = mt != null ? mt.get("__iter") : null;
+            if (iter != null && iter.isfunction()) {
+                return iter.invoke(v);
+            }
+            return LuaValue.varargsOf(new LuaValue[]{r7.get("next"), v, LuaValue.NIL});
+        }
+        if (v.isuserdata()) {
+            LuaValue mt = v.getmetatable();
+            LuaValue call = mt != null ? mt.get(LuaValue.CALL) : null;
+            if (call != null && call.isfunction()) {
+                return r8;
+            }
+        }
+        throw new LuaError("attempt to iterate over a " + LuaTypes.INSTANCE.typeOf(v) + " value");
     }
 
     private static final UpValue install$envSlot(LuaValue f) {

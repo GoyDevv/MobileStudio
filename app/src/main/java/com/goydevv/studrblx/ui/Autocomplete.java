@@ -636,94 +636,29 @@ public final class Autocomplete {
         To view partially-correct add '--show-bad-code' argument
     */
     private final com.goydevv.studrblx.ui.Autocomplete.T resolveRoot(java.lang.String r4, com.goydevv.studrblx.core.Studio r5, com.goydevv.studrblx.model.Instance r6, java.lang.String r7, int r8, int r9) {
-        /*
-            r3 = this;
-            com.goydevv.studrblx.model.DataModel r0 = r5.getModel()
-            int r1 = r4.hashCode()
-            switch(r1) {
-                case -1182135179: goto L58;
-                case -985174221: goto L46;
-                case -907685685: goto L36;
-                case 2165025: goto L29;
-                case 3165170: goto L15;
-                case 1108864149: goto Lc;
-                default: goto Lb;
-            }
-        Lb:
-            goto L60
-        Lc:
-            java.lang.String r1 = "workspace"
-            boolean r1 = r4.equals(r1)
-            if (r1 != 0) goto L61
-            goto L60
-        L15:
-            java.lang.String r1 = "game"
-            boolean r1 = r4.equals(r1)
-            if (r1 == 0) goto L60
-            com.goydevv.studrblx.ui.Autocomplete$T$Inst r1 = new com.goydevv.studrblx.ui.Autocomplete$T$Inst
-            r2 = r0
-            com.goydevv.studrblx.model.Instance r2 = (com.goydevv.studrblx.model.Instance) r2
-            r1.<init>(r2)
-            com.goydevv.studrblx.ui.Autocomplete$T r1 = (com.goydevv.studrblx.ui.Autocomplete.T) r1
-            goto L92
-        L29:
-            java.lang.String r1 = "Enum"
-            boolean r1 = r4.equals(r1)
-            if (r1 == 0) goto L60
-            com.goydevv.studrblx.ui.Autocomplete$T$EnumRoot r1 = com.goydevv.studrblx.ui.Autocomplete.T.EnumRoot.INSTANCE
-            com.goydevv.studrblx.ui.Autocomplete$T r1 = (com.goydevv.studrblx.ui.Autocomplete.T) r1
-            goto L92
-        L36:
-            java.lang.String r1 = "script"
-            boolean r1 = r4.equals(r1)
-            if (r1 == 0) goto L60
-            com.goydevv.studrblx.ui.Autocomplete$T$Inst r1 = new com.goydevv.studrblx.ui.Autocomplete$T$Inst
-            r1.<init>(r6)
-            com.goydevv.studrblx.ui.Autocomplete$T r1 = (com.goydevv.studrblx.ui.Autocomplete.T) r1
-            goto L92
-        L46:
-            java.lang.String r1 = "plugin"
-            boolean r1 = r4.equals(r1)
-            if (r1 == 0) goto L60
-            com.goydevv.studrblx.ui.Autocomplete$T$Cls r1 = new com.goydevv.studrblx.ui.Autocomplete$T$Cls
-            java.lang.String r2 = "Plugin"
-            r1.<init>(r2)
-            com.goydevv.studrblx.ui.Autocomplete$T r1 = (com.goydevv.studrblx.ui.Autocomplete.T) r1
-            goto L92
-        L58:
-            java.lang.String r1 = "Workspace"
-            boolean r1 = r4.equals(r1)
-            if (r1 != 0) goto L61
-        L60:
-            goto L6d
-        L61:
-            com.goydevv.studrblx.ui.Autocomplete$T$Inst r1 = new com.goydevv.studrblx.ui.Autocomplete$T$Inst
-            com.goydevv.studrblx.model.Instance r2 = r0.getWorkspace()
-            r1.<init>(r2)
-            com.goydevv.studrblx.ui.Autocomplete$T r1 = (com.goydevv.studrblx.ui.Autocomplete.T) r1
-            goto L92
-        L6d:
-            java.util.Map<java.lang.String, java.util.List<java.lang.String>> r1 = com.goydevv.studrblx.ui.Autocomplete.libs
-            boolean r1 = r1.containsKey(r4)
-            if (r1 == 0) goto L7e
-            com.goydevv.studrblx.ui.Autocomplete$T$Lib r1 = new com.goydevv.studrblx.ui.Autocomplete$T$Lib
-            r1.<init>(r4)
-            com.goydevv.studrblx.ui.Autocomplete$T r1 = (com.goydevv.studrblx.ui.Autocomplete.T) r1
-            goto L92
-        L7e:
-            java.util.Map<java.lang.String, java.util.List<java.lang.String>> r1 = com.goydevv.studrblx.ui.Autocomplete.dataStatics
-            boolean r1 = r1.containsKey(r4)
-            if (r1 == 0) goto L8e
-            com.goydevv.studrblx.ui.Autocomplete$T$DataStatic r1 = new com.goydevv.studrblx.ui.Autocomplete$T$DataStatic
-            r1.<init>(r4)
-            com.goydevv.studrblx.ui.Autocomplete$T r1 = (com.goydevv.studrblx.ui.Autocomplete.T) r1
-            goto L92
-        L8e:
-            com.goydevv.studrblx.ui.Autocomplete$T r1 = r3.resolveLocal(r4, r5, r6, r7, r8, r9)
-        L92:
-            return r1
-        */
-        return null;
+        DataModel dm = r5.getModel();
+        switch (r4) {
+            case "game":
+            case "Game":
+                return new T.Inst(dm);
+            case "workspace":
+            case "Workspace":
+                return new T.Inst(dm.getWorkspace());
+            case "script":
+                return new T.Inst(r6);
+            case "Enum":
+                return T.EnumRoot.INSTANCE;
+            case "plugin":
+                return new T.Cls("Plugin");
+            default:
+                if (libs.containsKey(r4)) {
+                    return new T.Lib(r4);
+                }
+                if (dataStatics.containsKey(r4)) {
+                    return new T.DataStatic(r4);
+                }
+                return resolveLocal(r4, r5, r6, r7, r8, r9);
+        }
     }
 
     private final T resolveLocal(String name, Studio studio, Instance script, String text, int before, int depth) {
