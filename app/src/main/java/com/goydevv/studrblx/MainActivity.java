@@ -1303,6 +1303,42 @@ public final class MainActivity extends AppCompatActivity implements MainActions
             dockLayout11 = null;
         }
         root.addView(dockLayout11, Ui.INSTANCE.lp(-1, 0, 1.0f));
+        android.widget.LinearLayout bottomTabBar = new android.widget.LinearLayout(this);
+        bottomTabBar.setOrientation(0);
+        bottomTabBar.setGravity(16);
+        bottomTabBar.setBackgroundColor(Ui.INSTANCE.getHEADER());
+        int bPad = Ui.INSTANCE.dp(this, 8.0f);
+        bottomTabBar.setPadding(bPad, 0, bPad, 0);
+        final android.widget.TextView outTabBtn = new android.widget.TextView(this);
+        outTabBtn.setText("Output");
+        outTabBtn.setTextSize(11.5f);
+        outTabBtn.setTypeface(android.graphics.Typeface.DEFAULT_BOLD);
+        outTabBtn.setTextColor(Ui.INSTANCE.getTEXT());
+        outTabBtn.setPadding(Ui.INSTANCE.dp(this, 10.0f), Ui.INSTANCE.dp(this, 4.0f), Ui.INSTANCE.dp(this, 10.0f), Ui.INSTANCE.dp(this, 4.0f));
+        outTabBtn.setOnClickListener(new android.view.View.OnClickListener() {
+            @Override
+            public void onClick(android.view.View v) {
+                if (MainActivity.this.dock != null) {
+                    MainActivity.this.dock.toggle("output");
+                    boolean shown = MainActivity.this.dock.isShown("output");
+                    outTabBtn.setTextColor(shown ? Ui.INSTANCE.getACCENT() : Ui.INSTANCE.getTEXT());
+                }
+            }
+        });
+        bottomTabBar.addView(outTabBtn, Ui.INSTANCE.lp(-2, -2, 0.0f));
+        android.widget.TextView clrTabBtn = new android.widget.TextView(this);
+        clrTabBtn.setText("Clear");
+        clrTabBtn.setTextSize(11.0f);
+        clrTabBtn.setTextColor(0xFF9AA0A6);
+        clrTabBtn.setPadding(Ui.INSTANCE.dp(this, 8.0f), Ui.INSTANCE.dp(this, 4.0f), Ui.INSTANCE.dp(this, 8.0f), Ui.INSTANCE.dp(this, 4.0f));
+        clrTabBtn.setOnClickListener(new android.view.View.OnClickListener() {
+            @Override
+            public void onClick(android.view.View v) {
+                OutputLog.INSTANCE.clear();
+            }
+        });
+        bottomTabBar.addView(clrTabBtn, Ui.INSTANCE.lp(-2, -2, 0.0f));
+        root.addView(bottomTabBar, Ui.INSTANCE.lp(-1, Ui.INSTANCE.dp(this, 28.0f), 0.0f));
         DockLayout dockLayout12 = this.dock;
         if (dockLayout12 == null) {
             Intrinsics.throwUninitializedPropertyAccessException("dock");

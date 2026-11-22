@@ -1042,6 +1042,54 @@ public final class RobloxGlobals {
         }));
         g.set("os", osTbl);
 
+        final LuaValue origFmt = string.get("format");
+        final LuaValue tostringFn = g.get("tostring");
+        if (origFmt.isfunction()) {
+            string.set("format", LuaTypesKt.fnv(new Function1() {
+                @Override
+                public final Object invoke(Object obj) {
+                    Varargs a = (Varargs) obj;
+                    String fmt = a.arg(1).checkjstring();
+                    if (!fmt.contains("%*")) {
+                        return origFmt.invoke(a);
+                    }
+                    StringBuilder sb = new StringBuilder();
+                    ArrayList<LuaValue> newArgs = new ArrayList<>();
+                    newArgs.add(LuaValue.NIL);
+                    int argIdx = 2;
+                    for (int i = 0; i < fmt.length(); i++) {
+                        char c = fmt.charAt(i);
+                        if (c == '%' && i + 1 < fmt.length()) {
+                            char nc = fmt.charAt(i + 1);
+                            if (nc == '%') {
+                                sb.append("%%");
+                                i++;
+                            } else if (nc == '*') {
+                                sb.append("%s");
+                                LuaValue v = a.arg(argIdx++);
+                                newArgs.add(tostringFn.isfunction() ? tostringFn.call(v) : LuaValue.valueOf(v.tojstring()));
+                                i++;
+                            } else {
+                                sb.append(c);
+                                int j = i + 1;
+                                while (j < fmt.length() && " -+#0123456789.".indexOf(fmt.charAt(j)) >= 0) {
+                                    sb.append(fmt.charAt(j++));
+                                }
+                                if (j < fmt.length()) {
+                                    sb.append(fmt.charAt(j));
+                                    newArgs.add(a.arg(argIdx++));
+                                    i = j;
+                                }
+                            }
+                        } else {
+                            sb.append(c);
+                        }
+                    }
+                    newArgs.set(0, LuaValue.valueOf(sb.toString()));
+                    return origFmt.invoke(LuaValue.varargsOf(newArgs.toArray(new LuaValue[0])));
+                }
+            }));
+        }
         string.set("packsize", LuaTypesKt.fn1(new Function1() {
             @Override
             public final Object invoke(Object obj) {
