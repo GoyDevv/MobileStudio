@@ -6,6 +6,8 @@ import com.goydevv.studrblx.engine.PlaySession;
 import com.goydevv.studrblx.engine.RayHit;
 import com.goydevv.studrblx.model.BinaryString;
 import com.goydevv.studrblx.model.CFrame;
+import com.goydevv.studrblx.model.Color3;
+import com.goydevv.studrblx.model.EnumValue;
 import com.goydevv.studrblx.model.Enums;
 import com.goydevv.studrblx.model.Instance;
 import com.goydevv.studrblx.model.OptionalCFrame;
@@ -2322,25 +2324,6 @@ public final class InstanceApi {
                 }
                 return LuaValue.NIL;
             }
-            case "Stop": {
-                if ("Sound".equals(cn)) {
-                    inst.set("Playing", Boolean.FALSE, true);
-                    inst.set("TimePosition", Float.valueOf(0.0f), false);
-                }
-                return LuaValue.NIL;
-            }
-            case "Pause": {
-                if ("Sound".equals(cn)) {
-                    inst.set("Playing", Boolean.FALSE, true);
-                }
-                return LuaValue.NIL;
-            }
-            case "Resume": {
-                if ("Sound".equals(cn)) {
-                    inst.set("Playing", Boolean.TRUE, true);
-                }
-                return LuaValue.NIL;
-            }
             case "FireServer": case "FireClient": case "FireAllClients": {
                 if ("RemoteEvent".equals(cn) || "UnreliableRemoteEvent".equals(cn)) {
                     int start = "FireClient".equals(name) ? 3 : 2;
@@ -3097,7 +3080,7 @@ public final class InstanceApi {
                 }
             );
             if (hit == null) return LuaValue.NIL;
-            return LuaTypes.INSTANCE.wrap(new RaycastResultV(new RayHitInfo(hit.getPart(), hit.getPoint(), hit.getNormal(), hit.getDist(), PartData.INSTANCE.material(hit.getPart()))));
+            return LuaTypes.INSTANCE.wrap(new RaycastResultV(new RayHitInfo(hit.getPart(), hit.getPosition(), hit.getNormal(), hit.getT(), PartData.INSTANCE.material(hit.getPart()))));
         }
         if ("GetPartBoundsInRadius".equals(name)) {
             Object pObj = args.arg(2).isuserdata() ? args.arg(2).touserdata() : null;
@@ -3192,7 +3175,7 @@ public final class InstanceApi {
                 }
             );
             if (hit == null) return LuaValue.NIL;
-            return LuaTypes.INSTANCE.wrap(new RaycastResultV(new RayHitInfo(hit.getPart(), hit.getPoint(), hit.getNormal(), hit.getDist(), PartData.INSTANCE.material(hit.getPart()))));
+            return LuaTypes.INSTANCE.wrap(new RaycastResultV(new RayHitInfo(hit.getPart(), hit.getPosition(), hit.getNormal(), hit.getT(), PartData.INSTANCE.material(hit.getPart()))));
         }
         if ("BulkMoveTo".equals(name)) {
             if (args.arg(2).istable() && args.arg(3).istable()) {
@@ -3500,7 +3483,7 @@ public final class InstanceApi {
                 Object vObj = args.arg(2).isuserdata() ? args.arg(2).touserdata() : null;
                 PlaySession pl = this.rt.getPlay();
                 if (pl != null && vObj instanceof Vector3) {
-                    pl.moveTo((Vector3) vObj);
+                    pl.moveTo(h, (Vector3) vObj);
                 }
                 return LuaValue.NIL;
             }

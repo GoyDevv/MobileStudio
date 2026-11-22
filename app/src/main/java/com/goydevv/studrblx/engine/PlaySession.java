@@ -6039,8 +6039,8 @@ public final class PlaySession implements TreeListener {
             Vector3 dir = delta.div(dist);
             Body b0 = this.bodyOf.get(p0);
             Body b1 = this.bodyOf.get(p1);
-            boolean m0 = b0 != null && !PartData.INSTANCE.anchored(p0);
-            boolean m1 = b1 != null && !PartData.INSTANCE.anchored(p1);
+            boolean m0 = b0 != null && !Intrinsics.areEqual(p0.get("Anchored"), Boolean.TRUE);
+            boolean m1 = b1 != null && !Intrinsics.areEqual(p1.get("Anchored"), Boolean.TRUE);
             if (!m0 && !m1) {
                 continue;
             }
