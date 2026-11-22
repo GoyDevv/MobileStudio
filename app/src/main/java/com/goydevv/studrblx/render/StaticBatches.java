@@ -484,15 +484,14 @@ public final class StaticBatches {
                 if (!c3.getDirty()) {
                     Iterator<Instance> it = c3.getParts().iterator();
                     Intrinsics.checkNotNullExpressionValue(it, "iterator(...)");
-                    while (true) {
-                        if (it.hasNext()) {
-                            Instance p2 = it.next();
-                            Intrinsics.checkNotNullExpressionValue(p2, "next(...)");
-                            Object obj2 = p2.renderRec;
-                            PartRec r = obj2 instanceof PartRec ? (PartRec) obj2 : null;
-                            if (r == null || r.getSeen() != frame || r.getChunk() != c3) {
-                                c3.setDirty(true);
-                            }
+                    while (it.hasNext()) {
+                        Instance p2 = it.next();
+                        Intrinsics.checkNotNullExpressionValue(p2, "next(...)");
+                        Object obj2 = p2.renderRec;
+                        PartRec r = obj2 instanceof PartRec ? (PartRec) obj2 : null;
+                        if (r == null || r.getSeen() != frame || r.getChunk() != c3) {
+                            c3.setDirty(true);
+                            break;
                         }
                     }
                 }
@@ -792,7 +791,7 @@ public final class StaticBatches {
         Iterator<Instance> it2 = arrayList.iterator();
         Intrinsics.checkNotNullExpressionValue(it2, "iterator(...)");
         boolean pending = false;
-        while (pending) {
+        while (it2.hasNext()) {
             Instance next2 = it2.next();
             Intrinsics.checkNotNullExpressionValue(next2, "next(...)");
             Instance p2 = next2;

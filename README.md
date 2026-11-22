@@ -13,8 +13,6 @@ Build, inspect, script, import `.rbxl` / `.rbxlx` / `.rbxm` worlds, and playtest
 
 </div>
 
-join discord: https://discord.gg/zvcBFhGfy3
-
 ## Overview
 
 **StudioRblx** (`com.goydevv.studrblx`) is an Android-native 3D world editor and playtest runtime engineered around Roblox's place format, Studio ribbon/dock workflow, and live playtesting loop. Open existing `.rbxl`, `.rbxlx`, and `.rbxm` files, inspect and edit instances in real time, write Luau scripts with autocomplete, and jump straight into playtesting with your Roblox avatar.

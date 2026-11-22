@@ -217,23 +217,8 @@ public final class MaterialTextures {
                 try {
                     InputStream inputStreamOpen2 = $ctx.getAssets().open("materials/" + $key + "_n.jpg");
                     try {
-                        Bitmap bitmapDecodeStream = BitmapFactory.decodeStream(inputStreamOpen2, null, opts);
+                        normal = BitmapFactory.decodeStream(inputStreamOpen2, null, opts);
                         CloseableKt.closeFinally(inputStreamOpen2, null);
-                        normal = bitmapDecodeStream;
-                        if (color == null && normal == null) {
-                            throw new IllegalStateException("no maps");
-                        }
-                        if (Intrinsics.areEqual($n, "plastic")) {
-                            spt = 4.0f;
-                        } else {
-                            spt = (Intrinsics.areEqual($set, "pre2022") && doubleTile.contains($n)) ? 16.0f : 8.0f;
-                        }
-                        ready.put($key, new MatTex(color, normal, spt));
-                        pending.remove($key);
-                        MaterialTextures materialTextures = INSTANCE;
-                        int i = epoch;
-                        MaterialTextures materialTextures2 = INSTANCE;
-                        epoch = i + 1;
                     } catch (Throwable th3) {
                         try {
                             throw th3;
@@ -244,6 +229,17 @@ public final class MaterialTextures {
                     }
                 } catch (Exception e) {
                 }
+                if (color == null && normal == null) {
+                    throw new IllegalStateException("no maps");
+                }
+                if (Intrinsics.areEqual($n, "plastic")) {
+                    spt = 4.0f;
+                } else {
+                    spt = (Intrinsics.areEqual($set, "pre2022") && doubleTile.contains($n)) ? 16.0f : 8.0f;
+                }
+                ready.put($key, new MatTex(color, normal, spt));
+                pending.remove($key);
+                epoch++;
             } catch (Exception e2) {
                 failed.add($key);
             }

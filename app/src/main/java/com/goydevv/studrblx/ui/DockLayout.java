@@ -105,8 +105,8 @@ public final class DockLayout extends FrameLayout {
         this.floatLayer = new FrameLayout(ctx);
         this.overlay = new DropOverlay(this, ctx);
         this.phone = getResources().getConfiguration().smallestScreenWidthDp < 600;
-        this.leftW = dp(this.phone ? 220.0f : 270.0f);
-        this.rightW = dp(this.phone ? 250.0f : 320.0f);
+        this.leftW = dp(this.phone ? 162.0f : 215.0f);
+        this.rightW = dp(this.phone ? 178.0f : 240.0f);
         this.bottomH = dp(this.phone ? 140.0f : 190.0f);
         setBackgroundColor(Ui.INSTANCE.getBORDER());
         this.leftSplit = new Splitter(ctx, true, new Function1() { // from class: com.goydevv.studrblx.ui.DockLayout$$ExternalSyntheticLambda1
@@ -392,7 +392,7 @@ public final class DockLayout extends FrameLayout {
     }
 
     private final int clampW(int w) {
-        return RangesKt.coerceIn(w, dp(140.0f), (int) (getResources().getDisplayMetrics().widthPixels * 0.6f));
+        return RangesKt.coerceIn(w, dp(115.0f), (int) (getResources().getDisplayMetrics().widthPixels * 0.6f));
     }
 
     private final int clampH(int h) {
@@ -583,8 +583,8 @@ public final class DockLayout extends FrameLayout {
 
     public final void reset() {
         this.prefs.edit().remove("dock_v1").apply();
-        this.leftW = dp(this.phone ? 220.0f : 270.0f);
-        this.rightW = dp(this.phone ? 250.0f : 320.0f);
+        this.leftW = dp(this.phone ? 162.0f : 215.0f);
+        this.rightW = dp(this.phone ? 178.0f : 240.0f);
         this.bottomH = dp(this.phone ? 140.0f : 190.0f);
         Iterator<Panel> it = this.panels.iterator();
         Intrinsics.checkNotNullExpressionValue(it, "iterator(...)");

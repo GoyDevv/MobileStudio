@@ -1033,9 +1033,6 @@ public final class SceneRenderer implements GLSurfaceView.Renderer {
         if (litLocs != null) {
             return litLocs;
         }
-        if (this.frames < 30) {
-            return null;
-        }
         int p = program("#define TEXTURED 1\n" + LIT_VS, "#define TEXTURED 1\n" + LIT_FS);
         LitLocs litLocs2 = litLocs(p);
         this.litTex = litLocs2;
@@ -1126,9 +1123,6 @@ public final class SceneRenderer implements GLSurfaceView.Renderer {
         LitLocs litLocs = this.litAdv;
         if (litLocs != null) {
             return litLocs;
-        }
-        if (this.frames < 30) {
-            return null;
         }
         int p = program(LIT_VS, "#define ADVANCED 1\n" + LIT_FS);
         LitLocs litLocs2 = litLocs(p);
@@ -2731,7 +2725,12 @@ public final class SceneRenderer implements GLSurfaceView.Renderer {
                                         meshDrawPart$default2 = drawPart$default(this, p, 1.0f, mesh4, g2, null, 16, null);
                                         str5 = str2;
                                         play2 = play;
+                                        continue;
                                     }
+                                    str5 = str2;
+                                    play2 = play;
+                                    meshDrawPart$default2 = mesh4;
+                                    continue;
                                 }
                             }
                         } else {
@@ -2793,22 +2792,12 @@ public final class SceneRenderer implements GLSurfaceView.Renderer {
                 Instance p3 = (Instance) triple.component1();
                 Geo g3 = (Geo) triple.component2();
                 TexBind tb2 = (TexBind) triple.component3();
-                if (bound2 != null) {
-                    mesh3 = meshDrawPart$default3;
-                    if (bound2.getColor() == tb2.getColor() && bound2.getNormal() == tb2.getNormal()) {
-                        if (bound2.getScale() == tb2.getScale()) {
-                            bound = bound2;
-                        }
-                    }
-                    meshDrawPart$default3 = drawPart$default(this, p3, 1.0f, mesh3, g3, null, 16, null);
-                    bound2 = bound;
-                } else {
-                    mesh3 = meshDrawPart$default3;
+                mesh3 = meshDrawPart$default3;
+                if (bound2 == null || bound2.getColor() != tb2.getColor() || bound2.getNormal() != tb2.getNormal() || bound2.getScale() != tb2.getScale()) {
+                    bindTextures(tb2);
+                    bound2 = tb2;
                 }
-                bindTextures(tb2);
-                bound = tb2;
                 meshDrawPart$default3 = drawPart$default(this, p3, 1.0f, mesh3, g3, null, 16, null);
-                bound2 = bound;
             }
         }
         float f2 = 1.0f;

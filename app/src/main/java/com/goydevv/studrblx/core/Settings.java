@@ -74,7 +74,7 @@ public final class Settings {
     }
 
     public final String getThemeName() {
-        return s("theme", "Dark");
+        return s("theme", "High Contrast");
     }
 
     public final void setThemeName(String v) {
@@ -131,7 +131,7 @@ public final class Settings {
             next = it.next();
         } while (!Intrinsics.areEqual(((Theme) next).getName(), INSTANCE.getThemeName()));
         Theme theme = (Theme) next;
-        return theme == null ? Theme.INSTANCE.getDARK() : theme;
+        return theme == null ? Theme.INSTANCE.getHIGH_CONTRAST() : theme;
     }
 
     public final float getFlySpeed() {

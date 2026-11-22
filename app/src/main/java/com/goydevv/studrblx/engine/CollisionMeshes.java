@@ -149,14 +149,15 @@ public final class CollisionMeshes {
                             z0 = z2;
                             z1 = z3;
                         }
-                        if (i2 != iCi) {
-                            i2++;
-                            x1 = x2;
-                            y0 = y3;
-                            y2 = y1;
-                            z2 = z0;
-                            z3 = z1;
+                        if (i2 == iCi) {
+                            break;
                         }
+                        i2++;
+                        x1 = x2;
+                        y0 = y3;
+                        y2 = y1;
+                        z2 = z0;
+                        z3 = z1;
                     }
                 }
             }
@@ -221,27 +222,21 @@ public final class CollisionMeshes {
         }
 
         private final int ci(float v, int axis) {
-            Float fValueOf;
-            int i;
-            Vector3 vector3 = this.min;
-            switch (axis) {
-                case 0:
-                    fValueOf = Float.valueOf(vector3.getX());
-                    i = this.nx;
-                    break;
-                case 1:
-                    fValueOf = Float.valueOf(vector3.getY());
-                    i = this.ny;
-                    break;
-                default:
-                    fValueOf = Float.valueOf(vector3.getZ());
-                    i = this.nz;
-                    break;
+            float o;
+            int n;
+            if (axis == 0) {
+                o = this.min.getX();
+                n = this.nx;
+            } else if (axis == 1) {
+                o = this.min.getY();
+                n = this.ny;
+            } else {
+                o = this.min.getZ();
+                n = this.nz;
             }
-            Pair pair = TuplesKt.to(fValueOf, Integer.valueOf(i));
-            float o = ((Number) pair.component1()).floatValue();
-            int n = ((Number) pair.component2()).intValue();
-            return RangesKt.coerceIn((int) ((v - o) / this.cell), 0, n - 1);
+            int idx = (int) ((v - o) / this.cell);
+            if (idx < 0) return 0;
+            return idx >= n ? n - 1 : idx;
         }
 
         private final int idx(int i, int j, int k) {

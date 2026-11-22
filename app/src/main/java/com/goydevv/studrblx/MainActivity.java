@@ -1629,7 +1629,22 @@ public final class MainActivity extends AppCompatActivity implements MainActions
         } else {
             linearLayout = linearLayout2;
         }
-        linearLayout.addView(b);
+        LinearLayout pairCol = null;
+        int cc = linearLayout.getChildCount();
+        if (cc > 0) {
+            View last = linearLayout.getChildAt(cc - 1);
+            if ((last instanceof LinearLayout) && "tool_pair_col".equals(last.getTag()) && ((LinearLayout) last).getChildCount() < 2) {
+                pairCol = (LinearLayout) last;
+            }
+        }
+        if (pairCol == null) {
+            pairCol = new LinearLayout(this);
+            pairCol.setTag("tool_pair_col");
+            pairCol.setOrientation(1);
+            pairCol.setGravity(16);
+            linearLayout.addView(pairCol);
+        }
+        pairCol.addView(b);
     }
 
     static final Unit tool$lambda$70(Function0 $fn, View it) {

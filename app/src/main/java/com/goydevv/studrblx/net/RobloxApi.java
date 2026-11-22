@@ -1305,6 +1305,7 @@ public final class RobloxApi {
             Map<String, String> headers = new java.util.LinkedHashMap<>();
             headers.put("Cookie", ".ROBLOSECURITY=" + cookie);
             headers.put("Roblox-Browser-Asset-Request", "true");
+            headers.put("User-Agent", "Roblox/WinInet");
             try {
                 JSONObject j2 = Http.INSTANCE.json("https://assetdelivery.roblox.com/v2/assetId/" + id + vPath, headers);
                 JSONArray locs = j2.optJSONArray("locations");
@@ -1327,7 +1328,7 @@ public final class RobloxApi {
 
         // 3. Public / unauthenticated Roblox AssetDelivery v2 -> v1 fallback (for public textures, baseplate, animations, meshes)
         try {
-            Map<String, String> pubHeaders = MapsKt.mapOf(TuplesKt.to("Roblox-Browser-Asset-Request", "true"));
+            Map<String, String> pubHeaders = MapsKt.mapOf(TuplesKt.to("Roblox-Browser-Asset-Request", "true"), TuplesKt.to("User-Agent", "Roblox/WinInet"));
             JSONObject jPub = Http.INSTANCE.json("https://assetdelivery.roblox.com/v2/assetId/" + id + vPath, pubHeaders);
             JSONArray locsPub = jPub.optJSONArray("locations");
             if (locsPub != null && locsPub.length() > 0) {

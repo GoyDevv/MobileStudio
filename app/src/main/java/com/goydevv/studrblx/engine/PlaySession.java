@@ -2392,6 +2392,30 @@ public final class PlaySession implements TreeListener {
     }
 
     /* JADX WARN: Code duplicated, block: B:19:0x004c  */
+
+    private final void playCharSound(String name, String soundId, float volume) {
+        try {
+            Instance hrp = this.hrp;
+            if (hrp == null) {
+                return;
+            }
+            Instance snd = Instance.findFirstChild$default(hrp, name, false, 2, null);
+            if (snd == null || !"Sound".equals(snd.getClassName())) {
+                snd = com.goydevv.studrblx.model.InstanceFactory.INSTANCE.create("Sound");
+                snd.setName(name);
+                snd.set("SoundId", soundId, false);
+                snd.set("Volume", Double.valueOf(volume), false);
+                snd.set("RollOffMaxDistance", Double.valueOf(150.0d), false);
+                snd.setParent(hrp, false);
+            }
+            Object seqObj = snd.getAttributes().get("__playSeq");
+            int seq = (seqObj instanceof Integer) ? ((Integer) seqObj).intValue() + 1 : 1;
+            snd.getAttributes().put("__playSeq", Integer.valueOf(seq));
+            snd.set("Playing", Boolean.TRUE, false);
+        } catch (Exception ignored) {
+        }
+    }
+
     public final ScriptTrack loadTrack(Instance owner, Instance anim, LuaTable table) {
         AnimClip inline;
         Iterable iterableDescendants$default;
@@ -2607,7 +2631,7 @@ public final class PlaySession implements TreeListener {
                 }
                 AnimPlayer.Track t = st.getTrack();
                 if (t != null) {
-                    if (st.getRig() == this.character && t.getPriority() <= 1 && st.getWantPlay()) {
+                    if (st.getRig() == this.character && st.getWantPlay()) {
                         this.customAnimateAt = this.time;
                     }
                     if (t.getLoops() > st.getLoopsSeen()) {
@@ -3753,6 +3777,7 @@ public final class PlaySession implements TreeListener {
                 this.jumpAnimTime = 0.3f;
                 if (this.animator != null) {
                     this.animator.triggerJump();
+                playCharSound("Jumping", "rbxassetid://9114222045", 0.55f);
                 }
                 this.emote = null;
                 setState("Jumping", 3);
