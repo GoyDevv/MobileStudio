@@ -2,7 +2,6 @@ package com.goydevv.studrblx.engine;
 
 import com.goydevv.studrblx.model.CFrame;
 import java.util.ArrayList;
-import java.util.Collection;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
@@ -21,6 +20,7 @@ public final class DefaultAnimate {
     private String emoteName;
     private AnimPlayer.Track emoteTrack;
     private int idleLoops;
+    private boolean pendingJump;
     private final AnimPlayer player = new AnimPlayer();
     private final boolean r15;
     private boolean reported;
@@ -34,6 +34,15 @@ public final class DefaultAnimate {
         this.rnd = new Random();
         this.current = "";
         this.currentTracks = new ArrayList<>();
+        // Warm core locomotion clips first (jump/fall/walk/idle) before emotes
+        for (String priorityKey : new String[]{"jump", "fall", "walk", "idle", "climb", "sit"}) {
+            List<Entry> list = this.sets.get(priorityKey);
+            if (list != null) {
+                for (Entry e : list) {
+                    AnimLibrary.INSTANCE.get(e.getId());
+                }
+            }
+        }
         Iterator<List<Entry>> it = this.sets.values().iterator();
         while (it.hasNext()) {
             for (Entry e : it.next()) {
@@ -42,53 +51,14 @@ public final class DefaultAnimate {
         }
     }
 
+    public final void triggerJump() {
+        this.pendingJump = true;
+    }
+
     /* JADX INFO: compiled from: KeyframeAnim.kt */
     private static final /* data */ class Entry {
         private final long id;
         private final int weight;
-
-        public static /* synthetic */ Entry copy$default(Entry entry, long j, int i, int i2, Object obj) {
-            if ((i2 & 1) != 0) {
-                j = entry.id;
-            }
-            if ((i2 & 2) != 0) {
-                i = entry.weight;
-            }
-            return entry.copy(j, i);
-        }
-
-        /* JADX INFO: renamed from: component1, reason: from getter */
-        public final long component1() {
-            return this.id;
-        }
-
-        /* JADX INFO: renamed from: component2, reason: from getter */
-        public final int component2() {
-            return this.weight;
-        }
-
-        public final Entry copy(long id, int weight) {
-            return new Entry(id, weight);
-        }
-
-        public boolean equals(Object other) {
-            if (this == other) {
-                return true;
-            }
-            if (!(other instanceof Entry)) {
-                return false;
-            }
-            Entry entry = (Entry) other;
-            return this.id == entry.id && this.weight == entry.weight;
-        }
-
-        public int hashCode() {
-            return (Long.hashCode(this.id) * 31) + Integer.hashCode(this.weight);
-        }
-
-        public String toString() {
-            return "Entry(id=" + this.id + ", weight=" + this.weight + ")";
-        }
 
         public Entry(long id, int weight) {
             this.id = id;
@@ -115,37 +85,6 @@ public final class DefaultAnimate {
                 }
             }
         }
-        if (false) {
-        boolean z = true;
-        Iterable iterableListOf = CollectionsKt.listOf(new String[]{"idle", "walk", "jump", "fall"});
-        if ((iterableListOf instanceof Collection) && ((Collection) iterableListOf).isEmpty()) {
-            return true;
-        }
-        Iterator it = iterableListOf.iterator();
-        while (it.hasNext()) {
-            Iterable iterable = this.sets.get((String) it.next());
-            Intrinsics.checkNotNull(iterable);
-            Iterable iterable2 = iterable;
-            if (!(iterable2 instanceof Collection) || !((Collection) iterable2).isEmpty()) {
-                Iterator it2 = iterable2.iterator();
-                while (true) {
-                    if (!it2.hasNext()) {
-                        z = true;
-                        break;
-                    }
-                    if (!(AnimLibrary.INSTANCE.get(((Entry) it2.next()).getId()) != null)) {
-                        z = false;
-                        break;
-                    }
-                }
-            }
-            if (!z) {
-                return false;
-            }
-            z = true;
-        }
-        return true;
-        }
         return false;
     }
 
@@ -169,8 +108,6 @@ public final class DefaultAnimate {
         return AnimLibrary.INSTANCE.get(((Entry) CollectionsKt.first((List) list)).getId());
     }
 
-    /* JADX WARN: Code duplicated, block: B:34:0x00b7  */
-    /* JADX WARN: Failed to restore switch over string. Please report as a decompilation issue */
     private final void playCore(String name, float fade) {
         if (Intrinsics.areEqual(name, this.current)) {
             return;
@@ -180,8 +117,7 @@ public final class DefaultAnimate {
         while (it.hasNext()) {
             AnimPlayer.Track next = it.next();
             Intrinsics.checkNotNullExpressionValue(next, "next(...)");
-            AnimPlayer.Track t = next;
-            this.player.stop(t, fade);
+            this.player.stop(next, fade);
         }
         this.currentTracks = new ArrayList<>();
         this.current = name;
@@ -198,57 +134,28 @@ public final class DefaultAnimate {
             return;
         }
         AnimClip clip = pick(name);
+        if (clip == null && "jump".equals(name)) {
+            clip = pick("fall");
+        }
         if (clip == null) {
             return;
         }
-        ArrayList<AnimPlayer.Track> arrayList = this.currentTracks;
-        AnimPlayer.Track trackPlay$default = AnimPlayer.play$default(this.player, clip, name, fade, 0.0f, 0.0f, 0, 24, null);
-        switch (name.hashCode()) {
-            case 113886:
-                if (name.equals("sit")) {
-                    trackPlay$default.setLooped(!Intrinsics.areEqual(name, "jump"));
+        AnimPlayer.Track track = AnimPlayer.play$default(this.player, clip, name, fade, 0.0f, 0.0f, 0, 24, null);
+        if ("jump".equals(name)) {
+            track.setLooped(false);
+            if (!this.r15) {
+                // R6 jump clip (125750702) starts at a neutral pose at t=0; skip the dead lead-in so arms raise on frame 1
+                track.setSpeed(1.35f);
+                if (clip.getLength() > 0.08f) {
+                    track.setTime(0.05f);
                 }
-                break;
-            case 3135355:
-                if (name.equals("fall")) {
-                    trackPlay$default.setLooped(!Intrinsics.areEqual(name, "jump"));
-                }
-                break;
-            case 3273774:
-                if (name.equals("jump")) {
-                    trackPlay$default.setLooped(!Intrinsics.areEqual(name, "jump"));
-                }
-                break;
+            }
+        } else if ("fall".equals(name) || "sit".equals(name)) {
+            track.setLooped(true);
         }
-        arrayList.add(trackPlay$default);
+        this.currentTracks.add(track);
     }
 
-    /* JADX WARN: Can't fix incorrect switch cases order, some code will duplicate */
-    /* JADX WARN: Code duplicated, block: B:132:0x014b A[SYNTHETIC] */
-    /* JADX WARN: Code duplicated, block: B:40:0x00b1  */
-    /* JADX WARN: Code duplicated, block: B:69:0x0136  */
-    /* JADX WARN: Code duplicated, block: B:75:0x015d  */
-    /* JADX WARN: Code duplicated, block: B:76:0x0160  */
-    /* JADX WARN: Code duplicated, block: B:78:0x0164  */
-    /* JADX WARN: Code duplicated, block: B:79:0x016b  */
-    /* JADX WARN: Code duplicated, block: B:81:0x016f  */
-    /* JADX WARN: Code duplicated, block: B:83:0x017b  */
-    /*  JADX ERROR: JadxRuntimeException in pass: IfRegionVisitor
-        jadx.core.utils.exceptions.JadxRuntimeException: Can't remove SSA var: r10v15 java.lang.Object, still in use, count: 2, list:
-          (r10v15 java.lang.Object) from 0x0124: PHI (r10 I:??) = (r10v4 java.lang.Object), (r10v15 java.lang.Object) binds: [B:65:0x0123, B:130:0x0124] A[DONT_GENERATE, DONT_INLINE]
-          (r10v15 java.lang.Object A[D('element\1' java.lang.Object)]) from 0x0115: CHECK_CAST (com.goydevv.studrblx.engine.AnimPlayer$Track) (r10v15 java.lang.Object A[D('element\1' java.lang.Object)])
-        	at jadx.core.utils.InsnRemover.removeSsaVar(InsnRemover.java:164)
-        	at jadx.core.utils.InsnRemover.unbindResult(InsnRemover.java:129)
-        	at jadx.core.utils.InsnRemover.unbindInsn(InsnRemover.java:93)
-        	at jadx.core.dex.visitors.regions.TernaryMod.makeTernaryInsn(TernaryMod.java:132)
-        	at jadx.core.dex.visitors.regions.TernaryMod.processRegion(TernaryMod.java:67)
-        	at jadx.core.dex.visitors.regions.TernaryMod.enterRegion(TernaryMod.java:50)
-        	at jadx.core.dex.visitors.regions.DepthRegionTraversal.traverseInternal(DepthRegionTraversal.java:96)
-        	at jadx.core.dex.visitors.regions.DepthRegionTraversal.traverse(DepthRegionTraversal.java:27)
-        	at jadx.core.dex.visitors.regions.TernaryMod.process(TernaryMod.java:36)
-        	at jadx.core.dex.visitors.regions.IfRegionVisitor.process(IfRegionVisitor.java:44)
-        	at jadx.core.dex.visitors.regions.IfRegionVisitor.visit(IfRegionVisitor.java:30)
-        */
     public final void step(float dt, java.lang.String state, float speed, boolean toolEquipped, java.lang.String emote, float jumpAnimTime) {
         if (!getReady()) {
             return;
@@ -289,6 +196,7 @@ public final class DefaultAnimate {
 
         // Core locomotion state machine matching official Roblox Animate LocalScript
         if ("Dead".equals(state)) {
+            this.pendingJump = false;
             if (!"".equals(this.current)) {
                 for (AnimPlayer.Track t : this.currentTracks) {
                     this.player.stop(t, 0.1f);
@@ -296,13 +204,14 @@ public final class DefaultAnimate {
                 this.currentTracks.clear();
                 this.current = "";
             }
-        } else if ("Jumping".equals(state) || jumpAnimTime > 0.0f) {
-            if (jumpAnimTime > 0.26f && "jump".equals(this.current)) {
+        } else if (this.pendingJump || "Jumping".equals(state) || jumpAnimTime > 0.0f) {
+            if (this.pendingJump) {
+                this.pendingJump = false;
                 this.current = "";
             }
             playCore("jump", 0.0f);
         } else if ("FreeFall".equals(state) || "Freefall".equals(state)) {
-            playCore("fall", 0.08f);
+            playCore("fall", 0.04f);
         } else if ("Climbing".equals(state)) {
             playCore("climb", 0.06f);
             float cSpd = speed < 0.1f ? 0.0f : (speed / 5.0f);
@@ -312,10 +221,9 @@ public final class DefaultAnimate {
         } else if ("Seated".equals(state)) {
             playCore("sit", 0.08f);
         } else if ("Running".equals(state) && speed > 0.20f) {
-            playCore("walk", 0.06f);
+            playCore("walk", 0.05f);
             float scale = Math.max(0.15f, speed / 14.5f);
             if (this.r15) {
-                // Official Roblox R15 walk/run blend formula
                 float runW = Math.max(0.0001f, Math.min(1.0f, (speed - 6.0f) / 10.0f));
                 float walkW = Math.max(0.0001f, 1.0f - runW);
                 for (AnimPlayer.Track t : this.currentTracks) {
@@ -340,6 +248,11 @@ public final class DefaultAnimate {
     public final CFrame transform(String part1Name) {
         Intrinsics.checkNotNullParameter(part1Name, "part1Name");
         if (!getReady()) {
+            return null;
+        }
+        // If current state has no loaded track yet (e.g. jump clip still downloading),
+        // return null so PlaySession's instant procedural R6/R15 pose takes over with zero delay.
+        if (this.currentTracks.isEmpty() && !"Dead".equals(this.current)) {
             return null;
         }
         CFrame cFrameTransform = this.player.transform(part1Name);

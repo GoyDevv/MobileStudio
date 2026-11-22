@@ -335,6 +335,9 @@ String str;
         @Override // android.widget.TextView
         protected void onSelectionChanged(int selStart, int selEnd) {
             super.onSelectionChanged(selStart, selEnd);
+            if (this.this$0 == null) {
+                return;
+            }
             Autocomplete.Result r = this.this$0.completion;
             if (r != null) {
                 if (selStart != selEnd || selStart < r.getStart() || selStart > r.getEnd() + 1) {
@@ -346,6 +349,9 @@ String str;
         @Override // android.widget.TextView, android.view.View, android.view.KeyEvent.Callback
         public boolean onKeyDown(int keyCode, KeyEvent event) {
             Intrinsics.checkNotNullParameter(event, "event");
+            if (this.this$0 == null) {
+                return super.onKeyDown(keyCode, event);
+            }
             PopupWindow popupWindow = this.this$0.popup;
             boolean z = false;
             if (popupWindow != null && popupWindow.isShowing()) {

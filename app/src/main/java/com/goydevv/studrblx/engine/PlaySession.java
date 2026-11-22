@@ -1932,7 +1932,7 @@ public final class PlaySession implements TreeListener {
         if (this.climbing) {
             return "Climbing";
         }
-        if (!this.grounded && ((this.jumpAnimTime > 0.0f || this.vel.getY() > 0.5f) && this.airTime < 0.4f)) {
+        if (this.jumpAnimTime > 0.0f || (!this.grounded && this.vel.getY() > 0.5f && this.airTime < 0.4f)) {
             return "Jumping";
         }
         if (this.grounded || this.airTime <= 0.1f) {
@@ -3751,6 +3751,9 @@ public final class PlaySession implements TreeListener {
                 this.vel = new Vector3(this.vel.getX(), f4, this.vel.getZ());
                 this.grounded = false;
                 this.jumpAnimTime = 0.3f;
+                if (this.animator != null) {
+                    this.animator.triggerJump();
+                }
                 this.emote = null;
                 setState("Jumping", 3);
                 LuaRuntime luaRuntime3 = this.rt;

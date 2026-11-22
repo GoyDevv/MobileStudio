@@ -363,192 +363,90 @@ public final class RbxMesh {
     /* JADX WARN: Code duplicated, block: B:89:0x01dc  */
     /* JADX WARN: Code duplicated, block: B:92:0x01e5  */
     private final MeshData parseChunked(byte[] b, int at) throws UnsupportedMesh {
-        int[] f;
-        int nf;
-        int[] l;
-        int end;
-        int iCoerceIn;
-        ByteBuffer bb;
-        float[] pos;
-        Draco.Attribute uvAtt;
-        Draco.Mesh m;
-        float[] uv = null;
-        int i;
-        float[] fArr;
-        int i2 = 0;
-        ByteBuffer bb2 = buf(b, at);
+        ByteBuffer bb = buf(b, at);
         Verts core = null;
         int[] faces = null;
         int[] lods = null;
-        while (bb2.remaining() >= 16) {
+
+        while (bb.remaining() >= 16) {
             byte[] nameBytes = new byte[8];
-            bb2.get(nameBytes);
+            bb.get(nameBytes);
             String name = StringsKt.trimEnd(new String(nameBytes, Charsets.ISO_8859_1), (char) 0);
-            int cver = bb2.getInt();
-            int size = bb2.getInt();
-            int start = bb2.position();
-            if (size >= 0 && start + size <= b.length) {
-                if (Intrinsics.areEqual(name, "COREMESH")) {
-                    switch (cver) {
-                        case 1:
-                            int nv = bb2.getInt();
-                            Intrinsics.checkNotNull(bb2);
-                            Verts core2 = readVerts(bb2, nv, 40);
-                            bb = bb2;
-                            faces = readFaces$default(this, bb2, bb2.getInt(), 0, 4, null);
-                            core = core2;
-                            break;
-                        case 2:
-                            int len = bb2.getInt();
-                            try {
-                                Draco.Mesh m2 = Draco.INSTANCE.decode(b, bb2.position(), Math.min(len, size - 4));
-                                int n = m2.getNumPoints();
-                                Draco.Attribute attribute = m2.attribute(0);
-                                if (attribute != null) {
-                                    if (!(attribute.getComponents() == 3)) {
-                                        attribute = null;
-                                    }
-                                    if (attribute != null && (pos = attribute.getValues()) != null) {
-                                        float[] nrm = null;
-                                        Draco.Attribute attribute2 = m2.attribute(1);
-                                        if (attribute2 != null) {
-                                            int len2 = attribute2.getComponents();
-                                            Draco.Attribute attribute3 = len2 == 3 ? attribute2 : null;
-                                            if (attribute3 == null || (nrm = attribute3.getValues()) == null) {
-                                            }
-                                            uvAtt = m2.attribute(3);
-                                            if (uvAtt != null) {
-                                                m = m2;
-                                            } else {
-                                                m = m2;
-                                                if (uvAtt.getComponents() < 2) {
-                                                    if (uvAtt.getComponents() == 2) {
-                                                        uv = uvAtt.getValues();
-                                                    } else {
-                                                        i = n * 2;
-                                                        fArr = new float[i];
-                                                        for (i2 = 0; i2 < i; i2++) {
-                                                            fArr[i2] = uvAtt.getValues()[((i2 / 2) * uvAtt.getComponents()) + (i2 % 2)];
-                                                        }
-                                                        uv = fArr;
-                                                    }
-                                                }
-                                                Verts core3 = new Verts(pos, nrm, uv);
-                                                faces = m.getFaces();
-                                                bb = bb2;
-                                                core = core3;
-                                            }
-                                            uv = new float[n * 2];
-                                            Verts core4 = new Verts(pos, nrm, uv);
-                                            faces = m.getFaces();
-                                            bb = bb2;
-                                            core = core4;
-                                            break;
-                                        }
-                                        nrm = smoothNormals(pos, m2.getFaces());
-                                        uvAtt = m2.attribute(3);
-                                        if (uvAtt != null) {
-                                            m = m2;
-                                        } else {
-                                            m = m2;
-                                            if (uvAtt.getComponents() < 2) {
-                                                if (uvAtt.getComponents() == 2) {
-                                                    uv = uvAtt.getValues();
-                                                } else {
-                                                    i = n * 2;
-                                                    fArr = new float[i];
-                                                    while (i2 < i) {
-                                                        fArr[i2] = uvAtt.getValues()[((i2 / 2) * uvAtt.getComponents()) + (i2 % 2)];
-                                                    }
-                                                    uv = fArr;
-                                                }
-                                            }
-                                            Verts core5 = new Verts(pos, nrm, uv);
-                                            faces = m.getFaces();
-                                            bb = bb2;
-                                            core = core5;
-                                        }
-                                        uv = new float[n * 2];
-                                        Verts core6 = new Verts(pos, nrm, uv);
-                                        faces = m.getFaces();
-                                        bb = bb2;
-                                        core = core6;
-                                        break;
-                                    }
+            int cver = bb.getInt();
+            int size = bb.getInt();
+            int start = bb.position();
+            if (size < 0 || start + size > b.length) {
+                break;
+            }
+            if ("COREMESH".equals(name)) {
+                if (cver == 1) {
+                    int nv = bb.getInt();
+                    core = readVerts(bb, nv, 40);
+                    int nfChunk = bb.getInt();
+                    faces = readFaces$default(this, bb, nfChunk, 0, 4, null);
+                } else if (cver == 2) {
+                    int len = bb.getInt();
+                    try {
+                        Draco.Mesh m = Draco.INSTANCE.decode(b, bb.position(), Math.min(len, size - 4));
+                        int n = m.getNumPoints();
+                        Draco.Attribute posAtt = m.attribute(0);
+                        if (posAtt == null || posAtt.getComponents() != 3 || posAtt.getValues() == null || posAtt.getValues().length < n * 3) {
+                            throw new UnsupportedMesh("Draco mesh without positions");
+                        }
+                        float[] pos = posAtt.getValues();
+                        float[] nrm = null;
+                        Draco.Attribute nrmAtt = m.attribute(1);
+                        if (nrmAtt != null && nrmAtt.getComponents() == 3 && nrmAtt.getValues() != null && nrmAtt.getValues().length >= n * 3) {
+                            nrm = nrmAtt.getValues();
+                        }
+                        if (nrm == null) {
+                            nrm = smoothNormals(pos, m.getFaces());
+                        }
+                        float[] uv;
+                        Draco.Attribute uvAtt = m.attribute(3);
+                        if (uvAtt != null && uvAtt.getComponents() >= 2 && uvAtt.getValues() != null && uvAtt.getValues().length >= n * uvAtt.getComponents()) {
+                            if (uvAtt.getComponents() == 2) {
+                                uv = uvAtt.getValues();
+                            } else {
+                                int c = uvAtt.getComponents();
+                                float[] srcUv = uvAtt.getValues();
+                                uv = new float[n * 2];
+                                for (int i = 0; i < n; i++) {
+                                    uv[i * 2] = srcUv[i * c];
+                                    uv[(i * 2) + 1] = srcUv[(i * c) + 1];
                                 }
-                                throw new UnsupportedMesh("Draco mesh without positions");
-                            } catch (Draco.DracoException e) {
-                                throw new UnsupportedMesh("Draco: " + e.getMessage());
                             }
-                        default:
-                            throw new UnsupportedMesh("mesh chunk version " + cver);
+                        } else {
+                            uv = new float[n * 2];
+                        }
+                        core = new Verts(pos, nrm, uv);
+                        faces = m.getFaces();
+                    } catch (Draco.DracoException e) {
+                        throw new UnsupportedMesh("Draco: " + e.getMessage());
                     }
                 } else {
-                    bb = bb2;
-                    if (Intrinsics.areEqual(name, "LODS")) {
-                        bb.getShort();
-                        bb.get();
-                        int n2 = bb.getInt();
-                        int[] iArr = new int[n2];
-                        for (int i3 = 0; i3 < n2; i3++) {
-                            iArr[i3] = bb.getInt();
-                        }
-                        lods = iArr;
-                    }
+                    throw new UnsupportedMesh("mesh chunk version " + cver);
                 }
-                bb.position(start + size);
-                bb2 = bb;
+            } else if ("LODS".equals(name)) {
+                bb.getShort();
+                bb.get();
+                int nLods = bb.getInt();
+                int[] arr = new int[nLods];
+                for (int i = 0; i < nLods; i++) {
+                    arr[i] = bb.getInt();
+                }
+                lods = arr;
             }
-            if (core != null) {
-                throw new UnsupportedMesh("mesh without geometry");
-            }
-            Verts v = core;
-            if (faces == null) {
-                f = new int[0];
-            } else {
-                f = faces;
-            }
-            nf = f.length / 3;
-            l = lods;
-            if (l == null || l.length < 2) {
-                end = nf;
-            } else {
-                end = RangesKt.coerceIn(l[1], 1, nf);
-            }
-            float[] pos2 = v.getPos();
-            float[] nrm2 = v.getNrm();
-            float[] uv2 = v.getUv();
-            if (l == null || l.length < 2) {
-                iCoerceIn = 0;
-            } else {
-                iCoerceIn = RangesKt.coerceIn(l[0], 0, end);
-            }
-            return build(pos2, nrm2, uv2, f, iCoerceIn, end);
+            bb.position(start + size);
         }
+
         if (core == null) {
             throw new UnsupportedMesh("mesh without geometry");
         }
-        Verts v2 = core;
-        if (faces == null) {
-            f = new int[0];
-        } else {
-            f = faces;
-        }
-        nf = f.length / 3;
-        l = lods;
-        if (l != null) {
-            end = nf;
-        } else {
-            end = nf;
-        }
-        float[] pos3 = v2.getPos();
-        float[] nrm3 = v2.getNrm();
-        float[] uv3 = v2.getUv();
-        if (l != null) {
-            iCoerceIn = 0;
-        } else {
-            iCoerceIn = 0;
-        }
-        return build(pos3, nrm3, uv3, f, iCoerceIn, end);
+        int[] f = faces != null ? faces : new int[0];
+        int nf = f.length / 3;
+        int end = (lods != null && lods.length >= 2) ? RangesKt.coerceIn(lods[1], 1, nf) : nf;
+        int startFace = (lods != null && lods.length >= 2) ? RangesKt.coerceIn(lods[0], 0, end) : 0;
+        return build(core.getPos(), core.getNrm(), core.getUv(), f, startFace, end);
     }
 }

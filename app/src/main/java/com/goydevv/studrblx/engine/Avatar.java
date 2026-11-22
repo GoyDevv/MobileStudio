@@ -616,6 +616,8 @@ public final class Avatar {
                     case 45:
                     case 46:
                     case 47:
+                    case 76:
+                    case 77:
                         assets2 = assets;
                         bodyParts = bodyParts2;
                         try {
@@ -731,7 +733,6 @@ public final class Avatar {
                 }
                 Instance instance = (Instance) it.next();
                 CollectionsKt.addAll(arrayList, CollectionsKt.plus((Collection) CollectionsKt.listOf(instance), (Iterable) Instance.descendants$default(instance, null, 1, null)));
-                return content;
             }
             for (Instance instance2 : (List<Instance>) arrayList) {
                 try {

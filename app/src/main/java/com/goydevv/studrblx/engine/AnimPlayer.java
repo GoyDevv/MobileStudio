@@ -197,7 +197,12 @@ public final class AnimPlayer {
         Intrinsics.checkNotNullParameter(t, "t");
         t.setStopping(true);
         t.setTargetWeight(0.0f);
-        t.setFadeRate(fade <= 0.001f ? 1000.0f : 1.0f / fade);
+        if (fade <= 0.001f) {
+            t.setWeight(0.0f);
+            t.setFadeRate(1000.0f);
+        } else {
+            t.setFadeRate(1.0f / fade);
+        }
     }
 
     public final void stopTag(String tag, float fade) {

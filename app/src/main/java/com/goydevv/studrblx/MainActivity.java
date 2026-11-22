@@ -288,12 +288,13 @@ public final class MainActivity extends AppCompatActivity implements MainActions
         Studio studio;
         super.onCreate(savedInstanceState);
         try {
-            File pendingCrash = new File(getFilesDir(), StudioApp.LAST_CRASH_FILE);
-            if (pendingCrash.isFile() && pendingCrash.length() > 0) {
-                String savedReport = new String(kotlin.io.FilesKt.readBytes(pendingCrash), java.nio.charset.StandardCharsets.UTF_8);
-                pendingCrash.delete();
+            String[] prevCrash = StudioApp.checkPreviousCrashReport(this);
+            if (prevCrash != null && prevCrash.length > 0 && prevCrash[0] != null && prevCrash[0].length() > 0) {
                 android.content.Intent ci = new android.content.Intent(this, CrashActivity.class);
-                ci.putExtra(CrashActivity.EXTRA_TRACE, savedReport);
+                ci.putExtra(CrashActivity.EXTRA_TRACE, prevCrash[0]);
+                if (prevCrash.length > 1 && prevCrash[1] != null) {
+                    ci.putExtra(CrashActivity.EXTRA_SAVED_PATH, prevCrash[1]);
+                }
                 ci.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK | android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK);
                 startActivity(ci);
                 finish();
@@ -301,6 +302,7 @@ public final class MainActivity extends AppCompatActivity implements MainActions
             }
         } catch (Throwable ignored) {
         }
+        StudioApp.logBreadcrumb("MainActivity.onCreate started");
         try {
             com.goydevv.studrblx.net.AssetFetcher.INSTANCE.init(getApplicationContext());
             long[] warmAnims = new long[]{507766666L, 507766951L, 913402848L, 913376220L, 507765000L, 507767968L, 507765644L, 180435571L, 180435792L, 180426354L, 125750702L, 180436148L, 180436334L};

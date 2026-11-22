@@ -786,12 +786,149 @@ public final class Draco {
         Code decompiled incorrectly, please refer to instructions dump.
         To view partially-correct add '--show-bad-code' argument
     */
-    private final void decodePortable(com.goydevv.studrblx.render.Draco.AttDecoder r27, int r28, com.goydevv.studrblx.render.Draco.Reader r29) throws com.goydevv.studrblx.render.Draco.DracoException {
-        /*
-            Method dump skipped, instruction units count: 649
-            To view this dump add '--comments-level debug' option
-        */
-        return;
+    private final void decodePortable(AttDecoder d, int n, Reader r) throws DracoException {
+        Attribute att = d.getAtt();
+        int kind = d.getKind();
+        if (kind == KIND_GENERIC) {
+            int comps = att.getComponents();
+            int dt = att.getDataType();
+            float[] out = new float[n * comps];
+            for (int i = 0; i < out.length; i++) {
+                out[i] = readTyped(r, dt);
+            }
+            att.setValues(out);
+            return;
+        }
+
+        int comps = (kind == KIND_NORMALS) ? 2 : att.getComponents();
+        int total = n * comps;
+        if (total <= 0) {
+            d.setPortable(new int[0]);
+            return;
+        }
+
+        int predScheme = r.i8();
+        int transformType = 0;
+        if (predScheme != -2) {
+            if (predScheme != 0) {
+                throw new DracoException("unsupported prediction scheme " + predScheme);
+            }
+            transformType = r.i8();
+        }
+
+        int compressed = r.u8();
+        int[] values = new int[total];
+        if (compressed != 0) {
+            int[] syms = decodeSymbols(total, comps, r);
+            boolean signed;
+            if (predScheme != -2) {
+                signed = true;
+            } else if (kind == KIND_INTEGER) {
+                int dt = att.getDataType();
+                signed = (dt == 1 || dt == 3 || dt == 5 || dt == 7);
+            } else {
+                signed = false;
+            }
+            if (signed) {
+                for (int i = 0; i < total; i++) {
+                    int s = syms[i];
+                    values[i] = (s >>> 1) ^ -(s & 1);
+                }
+            } else {
+                System.arraycopy(syms, 0, values, 0, total);
+            }
+        } else {
+            int byteSize = r.u8();
+            if (byteSize == 1) {
+                for (int i = 0; i < total; i++) {
+                    values[i] = r.i8();
+                }
+            } else if (byteSize == 2) {
+                for (int i = 0; i < total; i++) {
+                    values[i] = (short) r.u16();
+                }
+            } else if (byteSize == 4) {
+                for (int i = 0; i < total; i++) {
+                    values[i] = r.i32();
+                }
+            } else {
+                throw new DracoException("bad uncompressed int size " + byteSize);
+            }
+        }
+
+        if (predScheme == 0) {
+            if (transformType == 0) {
+                // PREDICTION_TRANSFORM_DELTA
+                for (int i = comps; i < total; i++) {
+                    values[i] = values[i] + values[i - comps];
+                }
+            } else if (transformType == 1) {
+                // PREDICTION_TRANSFORM_WRAP
+                int minVal = r.i32();
+                int maxVal = r.i32();
+                long maxDif = 1L + ((long) maxVal) - ((long) minVal);
+                for (int i = 0; i < total; i++) {
+                    int pred = (i < comps) ? 0 : values[i - comps];
+                    if (pred > maxVal) pred = maxVal;
+                    else if (pred < minVal) pred = minVal;
+                    long v = ((long) pred) + ((long) values[i]);
+                    if (v > maxVal) v -= maxDif;
+                    else if (v < minVal) v += maxDif;
+                    values[i] = (int) v;
+                }
+            } else if (transformType == 2 || transformType == 3) {
+                // PREDICTION_TRANSFORM_NORMAL_OCTAHEDRON (2) / CANONICALIZED (3)
+                int maxQuantizedValue = r.i32();
+                r.i32(); // center_value (stored in bitstream)
+                int bits = 32 - Integer.numberOfLeadingZeros(Math.max(maxQuantizedValue, 3));
+                Octa oct = new Octa(bits);
+                int center = oct.getCenter();
+                int[] predPt = new int[2];
+                int[] origPt = new int[2];
+                for (int i = 0; i < total; i += 2) {
+                    int p0 = (i == 0) ? 0 : values[i - 2];
+                    int p1 = (i == 0) ? 0 : values[i - 1];
+                    int c0 = values[i];
+                    int c1 = values[i + 1];
+                    if (transformType == 3) {
+                        predPt[0] = p0 - center;
+                        predPt[1] = p1 - center;
+                        boolean inDiamond = oct.isInDiamond(predPt[0], predPt[1]);
+                        if (!inDiamond) {
+                            oct.invertDiamond(predPt);
+                        }
+                        int rot = rotationCount(predPt[0], predPt[1]);
+                        rotate(predPt, rot);
+                        origPt[0] = oct.modMax(predPt[0] + c0);
+                        origPt[1] = oct.modMax(predPt[1] + c1);
+                        rotate(origPt, (4 - rot) & 3);
+                        if (!inDiamond) {
+                            oct.invertDiamond(origPt);
+                        }
+                        values[i] = origPt[0] + center;
+                        values[i + 1] = origPt[1] + center;
+                    } else {
+                        predPt[0] = p0 - center;
+                        predPt[1] = p1 - center;
+                        boolean inDiamond = oct.isInDiamond(predPt[0], predPt[1]);
+                        if (!inDiamond) {
+                            oct.invertDiamond(predPt);
+                        }
+                        origPt[0] = oct.modMax(predPt[0] + c0);
+                        origPt[1] = oct.modMax(predPt[1] + c1);
+                        if (!inDiamond) {
+                            oct.invertDiamond(origPt);
+                        }
+                        values[i] = origPt[0] + center;
+                        values[i + 1] = origPt[1] + center;
+                    }
+                }
+            } else {
+                throw new DracoException("unsupported prediction transform " + transformType);
+            }
+        }
+
+        d.setPortable(values);
     }
 
     private final void decodeTransformData(AttDecoder d, Reader r) throws DracoException {
@@ -985,14 +1122,11 @@ public final class Draco {
                 int dt = r.u8();
                 int comps = r.u8();
                 int norm = r.u8();
-                if (dt != 0) {
-                    int numFaces2 = numFaces;
-                    if (dt <= 11 && comps != 0) {
-                        long uid = version < 259 ? r.u16() : r.varint();
-                        atts.add(new Attribute(type, dt, comps, norm > 0, uid));
-                        k = k2 + 1;
-                        numFaces = numFaces2;
-                    }
+                if (dt != 0 && dt <= 11 && comps != 0) {
+                    long uid = version < 259 ? r.u16() : r.varint();
+                    atts.add(new Attribute(type, dt, comps, norm > 0, uid));
+                    k = k2 + 1;
+                    continue;
                 }
                 throw new DracoException("bad attribute");
             }

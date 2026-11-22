@@ -21,7 +21,7 @@ public final class AnimLibrary {
     private static final ConcurrentHashMap<Long, AnimClip> clips = new ConcurrentHashMap<>();
     private static final ConcurrentHashMap.KeySetView<Long, Boolean> failed = ConcurrentHashMap.newKeySet();
     private static final ConcurrentHashMap.KeySetView<Long, Boolean> pending = ConcurrentHashMap.newKeySet();
-    private static final ExecutorService pool = Executors.newSingleThreadExecutor();
+    private static final ExecutorService pool = Executors.newFixedThreadPool(4);
 
     private AnimLibrary() {
     }
