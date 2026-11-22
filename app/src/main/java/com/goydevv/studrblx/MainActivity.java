@@ -294,13 +294,16 @@ public final class MainActivity extends AppCompatActivity implements MainActions
                 pendingCrash.delete();
                 android.content.Intent ci = new android.content.Intent(this, CrashActivity.class);
                 ci.putExtra(CrashActivity.EXTRA_TRACE, savedReport);
+                ci.addFlags(android.content.Intent.FLAG_ACTIVITY_NEW_TASK | android.content.Intent.FLAG_ACTIVITY_CLEAR_TASK);
                 startActivity(ci);
+                finish();
+                return;
             }
         } catch (Throwable ignored) {
         }
         try {
             com.goydevv.studrblx.net.AssetFetcher.INSTANCE.init(getApplicationContext());
-            long[] warmAnims = new long[]{507766666L, 507766951L, 913402848L, 913376220L, 507765000L, 507767968L, 507765644L};
+            long[] warmAnims = new long[]{507766666L, 507766951L, 913402848L, 913376220L, 507765000L, 507767968L, 507765644L, 180435571L, 180435792L, 180426354L, 125750702L, 180436148L, 180436334L};
             for (long aid : warmAnims) {
                 com.goydevv.studrblx.engine.AnimLibrary.INSTANCE.get(aid);
             }
@@ -5406,10 +5409,28 @@ public final class MainActivity extends AppCompatActivity implements MainActions
                 return MainActivity.showFileMenu$lambda$292(MainActivity.this);
             }
         });
-        pairArr[17] = TuplesKt.to("About Mobile Studio (v" + ((Object) AboutDialog.INSTANCE.version(this).getFirst()) + ")", new Function0() { // from class: com.goydevv.studrblx.MainActivity$$ExternalSyntheticLambda34
-            @Override // kotlin.jvm.functions.Function0
+        pairArr[17] = TuplesKt.to("Crash / Debug Logs (.txt)", new Function0() {
+            @Override
             public final Object invoke() {
-                return MainActivity.showFileMenu$lambda$293(MainActivity.this);
+                StringBuilder sb = new StringBuilder();
+                sb.append("=== StudioRblx Debug & Crash Log ===\n");
+                try {
+                    for (com.goydevv.studrblx.core.OutputLog.Entry en : com.goydevv.studrblx.core.OutputLog.INSTANCE.snapshot()) {
+                        sb.append('[').append(en.getLevel()).append("] ").append(en.getText()).append('\n');
+                    }
+                } catch (Throwable ignoredLog) {}
+                try {
+                    java.lang.Process pLog = Runtime.getRuntime().exec(new String[]{"logcat", "-d", "-t", "200", "*:W"});
+                    java.io.BufferedReader br = new java.io.BufferedReader(new java.io.InputStreamReader(pLog.getInputStream()));
+                    sb.append("\n--- Logcat ---\n");
+                    String ln;
+                    while ((ln = br.readLine()) != null) sb.append(ln).append('\n');
+                    br.close();
+                } catch (Throwable ignoredLog2) {}
+                android.content.Intent ci = new android.content.Intent(MainActivity.this, CrashActivity.class);
+                ci.putExtra(CrashActivity.EXTRA_TRACE, sb.toString());
+                MainActivity.this.startActivity(ci);
+                return Unit.INSTANCE;
             }
         });
         final List items = CollectionsKt.listOfNotNull(pairArr);
@@ -5629,7 +5650,26 @@ public final class MainActivity extends AppCompatActivity implements MainActions
     }
 
     private final void about() {
-        AboutDialog.INSTANCE.show(this);
+        {
+                    StringBuilder sb = new StringBuilder();
+                    sb.append("=== StudioRblx Debug & Crash Log ===\n");
+                    try {
+                        for (com.goydevv.studrblx.core.OutputLog.Entry en : com.goydevv.studrblx.core.OutputLog.INSTANCE.snapshot()) {
+                            sb.append('[').append(en.getLevel()).append("] ").append(en.getText()).append('\n');
+                        }
+                    } catch (Throwable ignoredLog) {}
+                    try {
+                        java.lang.Process pLog = Runtime.getRuntime().exec(new String[]{"logcat", "-d", "-t", "200", "*:W"});
+                        java.io.BufferedReader br = new java.io.BufferedReader(new java.io.InputStreamReader(pLog.getInputStream()));
+                        sb.append("\n--- Logcat ---\n");
+                        String ln;
+                        while ((ln = br.readLine()) != null) sb.append(ln).append('\n');
+                        br.close();
+                    } catch (Throwable ignoredLog2) {}
+                    android.content.Intent ci = new android.content.Intent(this, CrashActivity.class);
+                    ci.putExtra(CrashActivity.EXTRA_TRACE, sb.toString());
+                    startActivity(ci);
+                }
     }
 
     /* JADX INFO: Access modifiers changed from: private */

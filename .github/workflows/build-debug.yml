@@ -21,8 +21,12 @@ jobs:
           distribution: 'temurin'
           cache: 'gradle'
 
-      - name: Set up Android SDK
-        uses: android-actions/setup-android@v3
+      - name: Accept Android SDK licenses (preinstalled SDK)
+        run: |
+          SDK_DIR="${ANDROID_HOME:-/usr/local/lib/android/sdk}"
+          echo "ANDROID_HOME=$SDK_DIR" >> "$GITHUB_ENV"
+          mkdir -p "$SDK_DIR/licenses"
+          yes | "$SDK_DIR/cmdline-tools/latest/bin/sdkmanager" --licenses > /dev/null 2>&1 || true
 
       - name: Ensure gradlew is executable
         run: chmod +x ./gradlew
@@ -43,7 +47,13 @@ jobs:
             echo "$KEYSTORE_BASE64" | base64 --decode > /tmp/release.keystore
             BUILD_TOOLS=$(ls -d "$ANDROID_HOME"/build-tools/* | sort -V | tail -n 1)
             "$BUILD_TOOLS/zipalign" -f -p 4 "$APK_IN" /tmp/aligned.apk
-            "$BUILD_TOOLS/apksigner" sign               --ks /tmp/release.keystore               --ks-pass "pass:$KEYSTORE_PASSWORD"               --ks-key-alias "$KEY_ALIAS"               --key-pass "pass:${KEY_PASSWORD:-$KEYSTORE_PASSWORD}"               --out "$APK_OUT"               /tmp/aligned.apk
+            "$BUILD_TOOLS/apksigner" sign \
+              --ks /tmp/release.keystore \
+              --ks-pass "pass:$KEYSTORE_PASSWORD" \
+              --ks-key-alias "$KEY_ALIAS" \
+              --key-pass "pass:${KEY_PASSWORD:-$KEYSTORE_PASSWORD}" \
+              --out "$APK_OUT" \
+              /tmp/aligned.apk
             "$BUILD_TOOLS/apksigner" verify --verbose "$APK_OUT"
             rm -f /tmp/release.keystore /tmp/aligned.apk
           else

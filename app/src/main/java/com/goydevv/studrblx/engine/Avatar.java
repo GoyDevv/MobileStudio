@@ -974,6 +974,14 @@ public final class Avatar {
                         }
                     }
                     Instance instanceFindFirstChild$default = Instance.findFirstChild$default(instance, "Handle", false, 2, null);
+                    if (instanceFindFirstChild$default == null) {
+                        for (Instance chPart : instance.getChildren()) {
+                            if (chPart.isA("BasePart")) {
+                                instanceFindFirstChild$default = chPart;
+                                break;
+                            }
+                        }
+                    }
                     if (instanceFindFirstChild$default != null) {
                         boolean zIsA = instanceFindFirstChild$default.isA("BasePart");
                         Instance r7 = instanceFindFirstChild$default;
@@ -1073,6 +1081,7 @@ public final class Avatar {
                     }
                 }
             } catch (Exception e) {
+                OutputLog.INSTANCE.warn("Accessory attach: " + e.getMessage());
             }
         }
         return arrayList;

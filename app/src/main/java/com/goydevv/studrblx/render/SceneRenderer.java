@@ -2146,7 +2146,7 @@ public final class SceneRenderer implements GLSurfaceView.Renderer {
         } else {
             focus = cam.getPos().plus(cam.getForward().times(45.0f));
         }
-        float radius = play != null ? 110.0f : RangesKt.coerceIn((RangesKt.coerceAtLeast(cam.getPos().getY(), 0.0f) * 0.8f) + 40.0f, 80.0f, 260.0f);
+        float radius = play != null ? 42.0f : RangesKt.coerceIn((RangesKt.coerceAtLeast(cam.getPos().getY(), 0.0f) * 0.55f) + 32.0f, 48.0f, 160.0f);
         return TuplesKt.to(focus, Float.valueOf(radius));
     }
 
@@ -5420,7 +5420,7 @@ public final class SceneRenderer implements GLSurfaceView.Renderer {
                                 iAssetTexture = this.faceTex;
                             } else {
                                 Long lIdOf = AssetFetcher.INSTANCE.idOf(strContent);
-                                iAssetTexture = (lIdOf == null || lIdOf.longValue() != BASEPLATE_GRID_ID) ? assetTexture(strContent, zAreEqual) : gridTexture();
+                                iAssetTexture = assetTexture(strContent, zAreEqual); if (iAssetTexture == 0 && lIdOf != null && lIdOf.longValue() == BASEPLATE_GRID_ID) { iAssetTexture = gridTexture(); }
                             }
                             if (iAssetTexture != 0) {
                                 GLES20.glBindTexture(3553, iAssetTexture);

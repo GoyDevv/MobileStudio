@@ -316,7 +316,7 @@ public final class StartScreen extends LinearLayout {
 
     static final Unit _init_$lambda$15(StartScreen this$0, View it) {
         Intrinsics.checkNotNullParameter(it, "it");
-        AboutDialog.INSTANCE.show(this$0.act);
+        
         return Unit.INSTANCE;
     }
 
@@ -386,12 +386,7 @@ public final class StartScreen extends LinearLayout {
         if (!this.phone) {
             this.nav.addView(new View(this.act), Ui.INSTANCE.lp(-1, 0, 1.0f));
         }
-        buildNav$item(this, this.phone ? "About" : "About  ·  v" + ((Object) AboutDialog.INSTANCE.version(this.act).getFirst()), "Info", false, new Function0() { // from class: com.goydevv.studrblx.ui.StartScreen$$ExternalSyntheticLambda25
-            @Override // kotlin.jvm.functions.Function0
-            public final Object invoke() {
-                return StartScreen.buildNav$lambda$36(StartScreen.this);
-            }
-        });
+        /* About removed */
     }
 
     private static final void buildNav$item(StartScreen this$0, String label, String icon, boolean selected, final Function0<Unit> function0) {
@@ -475,7 +470,7 @@ public final class StartScreen extends LinearLayout {
     }
 
     static final Unit buildNav$lambda$36(StartScreen this$0) {
-        AboutDialog.INSTANCE.show(this$0.act);
+        
         return Unit.INSTANCE;
     }
 
