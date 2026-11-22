@@ -2908,6 +2908,8 @@ public final class GuiOverlay extends View {
         ArrayList<Instance> kids = new ArrayList<>();
         Instance listLayout = null;
         Instance gridLayout = null;
+        Instance pageLayout = null;
+        Instance tableLayout = null;
         float childScale = scale;
         for (Instance ch : parent.getChildren()) {
             String cn = ch.getClassName();
@@ -2920,6 +2922,10 @@ public final class GuiOverlay extends View {
                 listLayout = ch;
             } else if ("UIGridLayout".equals(cn)) {
                 gridLayout = ch;
+            } else if ("UIPageLayout".equals(cn)) {
+                pageLayout = ch;
+            } else if ("UITableLayout".equals(cn)) {
+                tableLayout = ch;
             } else if (ch.isA("GuiObject") && !Intrinsics.areEqual(ch.get("Visible"), Boolean.FALSE)) {
                 kids.add(ch);
             }
@@ -2927,7 +2933,7 @@ public final class GuiOverlay extends View {
         if (kids.isEmpty()) {
             return java.util.Collections.emptyList();
         }
-        final Instance activeLayout = listLayout != null ? listLayout : gridLayout;
+        final Instance activeLayout = listLayout != null ? listLayout : (gridLayout != null ? gridLayout : (pageLayout != null ? pageLayout : tableLayout));
         if (activeLayout != null) {
             final int sortOrder = enumOf(activeLayout, "SortOrder", 2);
             java.util.Collections.sort(kids, new Comparator<Instance>() {
@@ -2983,6 +2989,9 @@ public final class GuiOverlay extends View {
                 else if (vAlign == 2) cursor = area.bottom - totalPrimary;
                 else cursor = area.top;
             }
+            boolean wraps = Intrinsics.areEqual(listLayout.get("Wraps"), Boolean.TRUE);
+            float lineOffset = 0.0f;
+            float lineMaxCross = 0.0f;
             for (int i = 0; i < kids.size(); i++) {
                 Instance c = kids.get(i);
                 float cw = sizes[i][0];
@@ -2990,13 +2999,29 @@ public final class GuiOverlay extends View {
                 float x;
                 float y;
                 if (horiz) {
+                    if (wraps && i > 0 && (cursor + cw) > area.right + 0.5f) {
+                        cursor = area.left;
+                        lineOffset += lineMaxCross + padPx;
+                        lineMaxCross = 0.0f;
+                    }
                     x = cursor;
-                    if (vAlign == 0) y = area.top + ((ah - chh) * 0.5f);
+                    if (wraps) {
+                        y = area.top + lineOffset;
+                        if (chh > lineMaxCross) lineMaxCross = chh;
+                    } else if (vAlign == 0) y = area.top + ((ah - chh) * 0.5f);
                     else if (vAlign == 2) y = area.bottom - chh;
                     else y = area.top;
                     cursor += cw + padPx;
                 } else {
-                    if (hAlign == 0) x = area.left + ((aw - cw) * 0.5f);
+                    if (wraps && i > 0 && (cursor + chh) > area.bottom + 0.5f) {
+                        cursor = area.top;
+                        lineOffset += lineMaxCross + padPx;
+                        lineMaxCross = 0.0f;
+                    }
+                    if (wraps) {
+                        x = area.left + lineOffset;
+                        if (cw > lineMaxCross) lineMaxCross = cw;
+                    } else if (hAlign == 0) x = area.left + ((aw - cw) * 0.5f);
                     else if (hAlign == 2) x = area.right - cw;
                     else x = area.left;
                     y = cursor;
@@ -3021,6 +3046,45 @@ public final class GuiOverlay extends View {
                 float x = area.left + (col * (cw + px));
                 float y = area.top + (row * (chh + py));
                 out.add(new Node(kids.get(i), new RectF(x, y, x + cw, y + chh), childScale, area, true));
+            }
+            return out;
+        }
+
+        if (pageLayout != null) {
+            boolean horiz = enumOf(pageLayout, "FillDirection", 0) == 0;
+            Object padObj = pageLayout.get("Padding");
+            float padPx = 0.0f;
+            if (padObj instanceof UDim) {
+                UDim pu = (UDim) padObj;
+                padPx = (pu.getScale() * (horiz ? aw : ah)) + (pu.getOffset() * this.d * childScale);
+            }
+            Object curPageObj = pageLayout.get("CurrentPage");
+            int curIdx = 0;
+            if (curPageObj instanceof Instance) {
+                int found = kids.indexOf(curPageObj);
+                if (found >= 0) curIdx = found;
+            }
+            for (int i = 0; i < kids.size(); i++) {
+                int rel = i - curIdx;
+                float x = horiz ? (area.left + rel * (aw + padPx)) : area.left;
+                float y = horiz ? area.top : (area.top + rel * (ah + padPx));
+                out.add(new Node(kids.get(i), new RectF(x, y, x + aw, y + ah), childScale, area, true));
+            }
+            return out;
+        }
+
+        if (tableLayout != null) {
+            boolean horiz = enumOf(tableLayout, "FillDirection", 1) == 0;
+            UDim2 pad = udim(tableLayout.get("Padding"));
+            float px = (pad.getXs() * aw) + (pad.getXo() * this.d * childScale);
+            float py = (pad.getYs() * ah) + (pad.getYo() * this.d * childScale);
+            int nKids = kids.size();
+            float cellW = horiz ? Math.max(1.0f, (aw - px * Math.max(0, nKids - 1)) / Math.max(1, nKids)) : aw;
+            float cellH = horiz ? ah : Math.max(1.0f, (ah - py * Math.max(0, nKids - 1)) / Math.max(1, nKids));
+            for (int i = 0; i < nKids; i++) {
+                float x = horiz ? (area.left + i * (cellW + px)) : area.left;
+                float y = horiz ? area.top : (area.top + i * (cellH + py));
+                out.add(new Node(kids.get(i), new RectF(x, y, x + cellW, y + cellH), childScale, area, true));
             }
             return out;
         }
@@ -3064,8 +3128,19 @@ public final class GuiOverlay extends View {
         if (!(rot == 0.0f)) {
             canvas.rotate(rot, r.centerX(), r.centerY());
         }
-        if (groupT > 0.001f) {
-            canvas.saveLayerAlpha(r, (int) ((1.0f - groupT) * 255.0f));
+        if (Intrinsics.areEqual(c.getClassName(), "CanvasGroup")) {
+            Object gcObj = c.get("GroupColor3");
+            Color3 gc = gcObj instanceof Color3 ? (Color3) gcObj : null;
+            boolean hasTint = gc != null && (gc.getR() < 0.995f || gc.getG() < 0.995f || gc.getB() < 0.995f);
+            if (groupT > 0.001f || hasTint) {
+                android.graphics.Paint lp = new android.graphics.Paint();
+                lp.setAlpha((int) ((1.0f - groupT) * 255.0f));
+                if (hasTint) {
+                    lp.setColorFilter(new android.graphics.PorterDuffColorFilter(gc.toArgb(), android.graphics.PorterDuff.Mode.MULTIPLY));
+                }
+                canvas.saveLayer(r, lp);
+            }
+            canvas.clipRect(r);
         }
         drawObject(canvas, c, r, n.getScale());
         RectF visible = new RectF(r);

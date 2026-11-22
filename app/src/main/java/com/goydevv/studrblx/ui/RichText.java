@@ -89,6 +89,12 @@ public final class RichText {
         MatchResult matchResultFind$default;
         Integer color;
         IntRange range;
+        src = src.replaceAll("(?s)<!--.*?-->", "");
+        java.util.regex.Matcher ucM = java.util.regex.Pattern.compile("(?is)<(?:uppercase|uc)>(.*?)</(?:uppercase|uc)>").matcher(src);
+        StringBuffer ucSb = new StringBuffer();
+        while (ucM.find()) { ucM.appendReplacement(ucSb, java.util.regex.Matcher.quoteReplacement(ucM.group(1).toUpperCase(Locale.ROOT))); }
+        ucM.appendTail(ucSb);
+        src = ucSb.toString();
         SpannableStringBuilder out = new SpannableStringBuilder();
         ArrayList stack = new ArrayList();
         int i = 0;

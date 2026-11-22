@@ -3554,6 +3554,7 @@ public final class PlaySession implements TreeListener {
         LinkedHashMap<String, Integer> linkedHashMap = Enums.INSTANCE.getTypes().get("HumanoidStateType");
         int old = (linkedHashMap == null || (num = linkedHashMap.get(this.lastState)) == null) ? 8 : num.intValue();
         this.rt.fire(hum, "StateChanged", LuaTypes.INSTANCE.wrap(new EnumItemV("HumanoidStateType", this.lastState, old)), LuaTypes.INSTANCE.wrap(new EnumItemV("HumanoidStateType", name, value)));
+        hum.getAttributes().put("__state", name);
         this.lastState = name;
     }
 
@@ -3568,6 +3569,7 @@ public final class PlaySession implements TreeListener {
         Instance instance = this.humanoid;
         if (instance != null) {
             Instance.set$default(instance, "Sit", false, false, 4, null);
+            Instance.set$default(instance, "SeatPart", null, false, 4, null);
             LuaRuntime luaRuntime = this.rt;
             LuaBoolean FALSE = LuaValue.FALSE;
             Intrinsics.checkNotNullExpressionValue(FALSE, "FALSE");
@@ -3606,6 +3608,7 @@ public final class PlaySession implements TreeListener {
                         Instance instance = this.humanoid;
                         if (instance != null) {
                             Instance.set$default(instance, "Sit", true, false, 4, null);
+                            Instance.set$default(instance, "SeatPart", p, false, 4, null);
                             LuaRuntime luaRuntime = this.rt;
                             LuaBoolean TRUE = LuaValue.TRUE;
                             Intrinsics.checkNotNullExpressionValue(TRUE, "TRUE");
