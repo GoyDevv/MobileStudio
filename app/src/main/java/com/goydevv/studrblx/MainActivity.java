@@ -5858,6 +5858,31 @@ public final class MainActivity extends AppCompatActivity implements MainActions
                                     });
                                     return;
                                 case 4:
+                                    String lowName = str != null ? str.toLowerCase(java.util.Locale.ROOT) : "";
+                                    if (lowName.endsWith(".md") || lowName.endsWith(".txt") || lowName.endsWith(".json") || lowName.endsWith(".lua") || lowName.endsWith(".luau")) {
+                                        final String textBody = new String(bytes, java.nio.charset.StandardCharsets.UTF_8);
+                                        mainActivity.runOnUiThread(new Runnable() {
+                                            @Override
+                                            public void run() {
+                                                android.widget.ScrollView sv = new android.widget.ScrollView(mainActivity);
+                                                android.widget.TextView tv = new android.widget.TextView(mainActivity);
+                                                tv.setText(textBody);
+                                                tv.setTextColor(Ui.INSTANCE.getTEXT());
+                                                tv.setTextSize(12.5f);
+                                                tv.setTypeface(android.graphics.Typeface.MONOSPACE);
+                                                tv.setTextIsSelectable(true);
+                                                int pad = Ui.INSTANCE.dp(mainActivity, 14.0f);
+                                                tv.setPadding(pad, pad, pad, pad);
+                                                sv.addView(tv);
+                                                Dialogs.INSTANCE.themed(mainActivity)
+                                                    .setTitle(str)
+                                                    .setView(sv)
+                                                    .setPositiveButton("Close", (DialogInterface.OnClickListener) null)
+                                                    .show();
+                                            }
+                                        });
+                                        return;
+                                    }
                                     final RbxDocument rbxDocument2 = RbxFile.INSTANCE.read(bytes);
                                     final boolean z = !RbxFile.INSTANCE.isBinary(RbxFile.INSTANCE.unwrap(bytes));
                                     Iterator it = CollectionsKt.take(rbxDocument2.getWarnings(), 20).iterator();

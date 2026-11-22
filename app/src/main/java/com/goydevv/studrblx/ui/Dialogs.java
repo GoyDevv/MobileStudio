@@ -60,8 +60,36 @@ public final class Dialogs {
     private Dialogs() {
     }
 
-    private final AlertDialog.Builder theme(Context ctx) {
-        return new AlertDialog.Builder(ctx, Ui.INSTANCE.getDialogTheme());
+    private final AlertDialog.Builder theme(final Context ctx) {
+        return new AlertDialog.Builder(ctx, Ui.INSTANCE.getDialogTheme()) {
+            @Override
+            public AlertDialog create() {
+                AlertDialog d = super.create();
+                d.setOnShowListener(new DialogInterface.OnShowListener() {
+                    @Override
+                    public void onShow(DialogInterface di) {
+                        try {
+                            android.view.Window w = d.getWindow();
+                            if (w != null) {
+                                GradientDrawable bg = new GradientDrawable();
+                                bg.setColor(0xFF1E2128);
+                                bg.setCornerRadius(Ui.INSTANCE.dp(ctx, 16.0f));
+                                bg.setStroke(Ui.INSTANCE.dp(ctx, 1.0f), 0xFF333844);
+                                w.setBackgroundDrawable(bg);
+                            }
+                            android.widget.Button pos = d.getButton(DialogInterface.BUTTON_POSITIVE);
+                            if (pos != null) pos.setTextColor(0xFF00A2FF);
+                            android.widget.Button neg = d.getButton(DialogInterface.BUTTON_NEGATIVE);
+                            if (neg != null) neg.setTextColor(0xFF9AA3B2);
+                            android.widget.Button neu = d.getButton(DialogInterface.BUTTON_NEUTRAL);
+                            if (neu != null) neu.setTextColor(0xFF00A2FF);
+                        } catch (Throwable ignored) {
+                        }
+                    }
+                });
+                return d;
+            }
+        };
     }
 
     /* JADX WARN: Type inference failed for: r5v3, types: [com.goydevv.studrblx.ui.Dialogs$pickClass$adapter$1] */

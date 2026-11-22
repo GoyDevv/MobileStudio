@@ -618,12 +618,10 @@ public final class Avatar {
                     case 47:
                         assets2 = assets;
                         bodyParts = bodyParts2;
-                        if (signedIn) {
-                            try {
-                                acc.add(AssetFetcher.INSTANCE.load(id));
-                            } catch (Exception e2) {
-                                OutputLog.INSTANCE.warn("Avatar accessory " + id + ": " + e2.getMessage());
-                            }
+                        try {
+                            acc.add(AssetFetcher.INSTANCE.load(id));
+                        } catch (Exception e2) {
+                            OutputLog.INSTANCE.warn("Avatar accessory " + id + ": " + e2.getMessage());
                         }
                         break;
                     case 11:
@@ -971,7 +969,8 @@ public final class Avatar {
                             next2 = it5.next();
                         } while (!((Instance) next2).isA("Accoutrement"));
                         instance = (Instance) next2;
-                        if (instance != null) {
+                        if (instance == null) {
+                            continue;
                         }
                     }
                     Instance instanceFindFirstChild$default = Instance.findFirstChild$default(instance, "Handle", false, 2, null);

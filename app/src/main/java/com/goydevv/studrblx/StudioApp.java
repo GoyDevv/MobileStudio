@@ -108,7 +108,7 @@ public final class StudioApp extends Application {
         try {
             File internal = new File(getFilesDir(), LAST_CRASH_FILE);
             try (FileOutputStream fos = new FileOutputStream(internal)) {
-                fos.write(bytes);
+                fos.write(bytes); fos.flush(); try { fos.getFD().sync(); } catch (Throwable ignoredSync) {}
             }
             savedPath = internal.getAbsolutePath();
         } catch (Throwable ignored) {
@@ -121,7 +121,7 @@ public final class StudioApp extends Application {
                 String stamp = new SimpleDateFormat("yyyyMMdd_HHmmss", Locale.US).format(new Date());
                 File out = new File(dir, "StudioRblx_crash_" + stamp + ".txt");
                 try (FileOutputStream fos = new FileOutputStream(out)) {
-                    fos.write(bytes);
+                    fos.write(bytes); fos.flush(); try { fos.getFD().sync(); } catch (Throwable ignoredSync) {}
                 }
                 savedPath = out.getAbsolutePath();
             }
@@ -130,16 +130,39 @@ public final class StudioApp extends Application {
         return savedPath;
     }
 
+    private boolean isCrashProcess() {
+        try {
+            if (Build.VERSION.SDK_INT >= 28) {
+                String pn = Application.getProcessName();
+                return pn != null && pn.endsWith(":crash");
+            }
+        } catch (Throwable ignored) {
+        }
+        return false;
+    }
+
     @Override
     public void onCreate() {
         super.onCreate();
+        if (isCrashProcess()) {
+            return;
+        }
         final Thread.UncaughtExceptionHandler prev = Thread.getDefaultUncaughtExceptionHandler();
         Thread.setDefaultUncaughtExceptionHandler(new Thread.UncaughtExceptionHandler() {
             @Override
             public void uncaughtException(Thread t, Throwable e) {
                 try {
-                    String report = buildFullCrashReport(t, e);
-                    String savedPath = saveCrashToFiles(report);
+                    // Save raw stack trace FIRST so even if logcat/OutputLog fails or OS kills process, reopen ALWAYS shows crash screen
+                    StringWriter sw0 = new StringWriter();
+                    e.printStackTrace(new PrintWriter(sw0));
+                    String quickReport = "=== StudioRblx Crash ===\nThread: " + (t != null ? t.getName() : "unknown") + "\n\n" + sw0.toString();
+                    String savedPath = saveCrashToFiles(quickReport);
+                    String report = quickReport;
+                    try {
+                        report = buildFullCrashReport(t, e);
+                        savedPath = saveCrashToFiles(report);
+                    } catch (Throwable ignored2) {
+                    }
                     Intent i = new Intent(StudioApp.this, CrashActivity.class);
                     i.putExtra(CrashActivity.EXTRA_TRACE, report);
                     i.putExtra(CrashActivity.EXTRA_SAVED_PATH, savedPath);

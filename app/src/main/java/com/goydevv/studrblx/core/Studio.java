@@ -1387,55 +1387,39 @@ public final class Studio {
                 }
                 Instance next = it.next();
                 if (parent == null) {
-                    if (!Intrinsics.areEqual(next.getClassName(), "MaterialVariant")) {
-                        if (Intrinsics.areEqual(next.getClassName(), "Folder") && !next.getChildren().isEmpty()) {
-                            Iterable iterableDescendants$default = Instance.descendants$default(next, null, 1, null);
-                            if (!(iterableDescendants$default instanceof Collection) || !((Collection) iterableDescendants$default).isEmpty()) {
-                                Iterator it2 = iterableDescendants$default.iterator();
-                                while (true) {
-                                    if (!it2.hasNext()) {
-                                        z = true;
-                                        break;
-                                    }
-                                    Instance instance = (Instance) it2.next();
-                                    if (!(Intrinsics.areEqual(instance.getClassName(), "MaterialVariant") || Intrinsics.areEqual(instance.getClassName(), "Folder"))) {
-                                        z = false;
-                                        break;
-                                    }
-                                }
+                    boolean isMatOnly = Intrinsics.areEqual(next.getClassName(), "MaterialVariant");
+                    if (!isMatOnly && Intrinsics.areEqual(next.getClassName(), "Folder") && !next.getChildren().isEmpty()) {
+                        isMatOnly = true;
+                        for (Instance instDesc : Instance.descendants$default(next, null, 1, null)) {
+                            if (!(Intrinsics.areEqual(instDesc.getClassName(), "MaterialVariant") || Intrinsics.areEqual(instDesc.getClassName(), "Folder"))) {
+                                isMatOnly = false;
+                                break;
                             }
-                            if (z) {
-                            }
-                        }
-                        if (next.isA("LayerCollector") && !Intrinsics.areEqual(next.getClassName(), "BillboardGui") && !Intrinsics.areEqual(next.getClassName(), "SurfaceGui")) {
-                            service = getModel().getService("StarterGui");
-                        } else if (next.isA("GuiObject")) {
-                            Instance service2 = getModel().getService("StarterGui");
-                            Iterator it3 = service2.getChildren().iterator();
-                            while (true) {
-                                if (!it3.hasNext()) {
-                                    obj = null;
-                                    break;
-                                }
-                                Object next2 = it3.next();
-                                if (Intrinsics.areEqual(((Instance) next2).getClassName(), "ScreenGui")) {
-                                    obj = next2;
-                                    break;
-                                }
-                            }
-                            Instance instance2 = (Instance) obj;
-                            if (instance2 == null) {
-                                instanceCreate = InstanceFactory.INSTANCE.create("ScreenGui");
-                                reparent(instanceCreate, service2);
-                            } else {
-                                instanceCreate = instance2;
-                            }
-                            service = instanceCreate;
-                        } else {
-                            service = getModel().getWorkspace();
                         }
                     }
-                    service = getModel().getService("MaterialService");
+                    if (isMatOnly) {
+                        service = getModel().getService("MaterialService");
+                    } else if (next.isA("LayerCollector") && !Intrinsics.areEqual(next.getClassName(), "BillboardGui") && !Intrinsics.areEqual(next.getClassName(), "SurfaceGui")) {
+                        service = getModel().getService("StarterGui");
+                    } else if (next.isA("GuiObject")) {
+                        Instance service2 = getModel().getService("StarterGui");
+                        Instance instance2 = null;
+                        for (Instance ch : service2.getChildren()) {
+                            if (Intrinsics.areEqual(ch.getClassName(), "ScreenGui")) {
+                                instance2 = ch;
+                                break;
+                            }
+                        }
+                        if (instance2 == null) {
+                            instanceCreate = InstanceFactory.INSTANCE.create("ScreenGui");
+                            reparent(instanceCreate, service2);
+                        } else {
+                            instanceCreate = instance2;
+                        }
+                        service = instanceCreate;
+                    } else {
+                        service = getModel().getWorkspace();
+                    }
                 } else {
                     service = parent;
                 }

@@ -2851,7 +2851,8 @@ public final class PlaySession implements TreeListener {
             } else {
                 instanceFindFirstChild$default = null;
             }
-            if (instanceFindFirstChild$default != null || !set.contains(instanceFindFirstChild$default)) {
+            if (instanceFindFirstChild$default == null || !set.contains(instanceFindFirstChild$default)) {
+                instanceFindFirstChild$default = null;
             }
             if (instanceFindFirstChild$default == null) {
                 ArrayList arrayList5 = arrayList4;

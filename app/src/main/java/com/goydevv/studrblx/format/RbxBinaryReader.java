@@ -307,6 +307,9 @@ public final class RbxBinaryReader {
         ByteReader r = new ByteReader(d, 0, 0, 6, null);
         int classId = r.i32();
         String name = r.string();
+        if (r.remaining() == 0) {
+            return;
+        }
         int type = r.u8();
         ClassInfo ci = rbxBinaryReader.classes.get(Integer.valueOf(classId));
         if (ci == null) {

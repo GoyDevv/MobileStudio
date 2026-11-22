@@ -297,7 +297,10 @@ public final class DefaultAnimate {
                 this.current = "";
             }
         } else if ("Jumping".equals(state) || jumpAnimTime > 0.0f) {
-            playCore("jump", 0.03f);
+            if (jumpAnimTime > 0.26f && "jump".equals(this.current)) {
+                this.current = "";
+            }
+            playCore("jump", 0.0f);
         } else if ("FreeFall".equals(state) || "Freefall".equals(state)) {
             playCore("fall", 0.08f);
         } else if ("Climbing".equals(state)) {
