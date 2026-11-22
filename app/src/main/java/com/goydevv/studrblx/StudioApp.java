@@ -197,8 +197,8 @@ public final class StudioApp extends Application {
                                 continue;
                             }
                             sp.edit().putLong(KEY_LAST_EXIT_TS, ts).apply();
-                            // Skip if this exact Java crash was already shown immediately by CrashActivity
-                            if (reason == ApplicationExitInfo.REASON_CRASH && Math.abs(ts - lastJavaTs) < 5000L) {
+                            // Skip if this exact Java crash (or our own Process.killProcess SIGKILL) was already shown immediately by CrashActivity
+                            if ((reason == ApplicationExitInfo.REASON_CRASH || reason == ApplicationExitInfo.REASON_SIGNALED) && Math.abs(ts - lastJavaTs) < 10000L) {
                                 continue;
                             }
                             String report = buildHistoricalExitReport(ctx, info);

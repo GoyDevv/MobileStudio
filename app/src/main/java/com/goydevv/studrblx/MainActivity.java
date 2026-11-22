@@ -924,8 +924,7 @@ public final class MainActivity extends AppCompatActivity implements MainActions
         super.onResume();
         ViewportView viewportView = this.viewport;
         if (viewportView == null) {
-            Intrinsics.throwUninitializedPropertyAccessException("viewport");
-            viewportView = null;
+            return;
         }
         viewportView.onResume();
     }
@@ -935,8 +934,7 @@ public final class MainActivity extends AppCompatActivity implements MainActions
         super.onPause();
         ViewportView viewportView = this.viewport;
         if (viewportView == null) {
-            Intrinsics.throwUninitializedPropertyAccessException("viewport");
-            viewportView = null;
+            return;
         }
         viewportView.onPause();
         Iterable iterableValues = this.openEditors.values();
@@ -966,9 +964,9 @@ public final class MainActivity extends AppCompatActivity implements MainActions
             WebPermissions.INSTANCE.setAsker(null);
         }
         Studio studio = this.studio;
-        if (studio == null) {
-            Intrinsics.throwUninitializedPropertyAccessException("studio");
-            studio = null;
+        if (studio == null || this.explorer == null || this.properties == null) {
+            super.onDestroy();
+            return;
         }
         studio.getListeners().remove(this);
         Studio studio2 = this.studio;
