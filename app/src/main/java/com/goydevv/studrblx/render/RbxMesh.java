@@ -510,7 +510,7 @@ public final class RbxMesh {
             }
             nf = f.length / 3;
             l = lods;
-            if (l != null || l.length < 2) {
+            if (l == null || l.length < 2) {
                 end = nf;
             } else {
                 end = RangesKt.coerceIn(l[1], 1, nf);
@@ -518,14 +518,14 @@ public final class RbxMesh {
             float[] pos2 = v.getPos();
             float[] nrm2 = v.getNrm();
             float[] uv2 = v.getUv();
-            if (l != null || l.length < 2) {
+            if (l == null || l.length < 2) {
                 iCoerceIn = 0;
             } else {
                 iCoerceIn = RangesKt.coerceIn(l[0], 0, end);
             }
             return build(pos2, nrm2, uv2, f, iCoerceIn, end);
         }
-        if (core != null) {
+        if (core == null) {
             throw new UnsupportedMesh("mesh without geometry");
         }
         Verts v2 = core;

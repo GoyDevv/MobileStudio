@@ -248,8 +248,35 @@ public final class AssetFetcher {
         }
     }
 
+    private final Bitmap fetchRobloxThumbnail(long id) {
+        try {
+            org.json.JSONObject j = Http.INSTANCE.json("https://thumbnails.roblox.com/v1/assets?assetIds=" + id + "&returnPolicy=PlaceHolder&size=420x420&format=Png&isCircular=false", null);
+            org.json.JSONArray arr = j.optJSONArray("data");
+            if (arr != null && arr.length() > 0) {
+                org.json.JSONObject item = arr.optJSONObject(0);
+                String url = item != null ? item.optString("imageUrl") : null;
+                if (url != null && url.length() > 0) {
+                    byte[] imgBytes = Http.get$default(Http.INSTANCE, url, null, 0, 6, null);
+                    return BitmapFactory.decodeByteArray(imgBytes, 0, imgBytes.length);
+                }
+            }
+        } catch (Exception ignored) {
+        }
+        return null;
+    }
+
     private final Bitmap loadImage(long id, int depth) {
-        byte[] bytes = load(id);
+        byte[] bytes = null;
+        try {
+            bytes = load(id);
+        } catch (Exception e) {
+            Bitmap thumb = fetchRobloxThumbnail(id);
+            if (thumb != null) return thumb;
+            return null;
+        }
+        if (bytes == null || bytes.length == 0) {
+            return fetchRobloxThumbnail(id);
+        }
         Bitmap bitmapDecodeByteArray = BitmapFactory.decodeByteArray(bytes, 0, bytes.length);
         if (bitmapDecodeByteArray == null) {
             if (depth > 1) {
@@ -272,9 +299,9 @@ public final class AssetFetcher {
                         }
                     }
                 }
-                return null;
+                return fetchRobloxThumbnail(id);
             } catch (Exception e) {
-                return null;
+                return fetchRobloxThumbnail(id);
             }
         }
         return bitmapDecodeByteArray;

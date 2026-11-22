@@ -105,6 +105,17 @@ public final class DefaultAnimate {
     }
 
     public final boolean getReady() {
+        for (String key : new String[]{"idle", "walk"}) {
+            List<Entry> list = this.sets.get(key);
+            if (list != null) {
+                for (Entry e : list) {
+                    if (AnimLibrary.INSTANCE.get(e.getId()) != null) {
+                        return true;
+                    }
+                }
+            }
+        }
+        if (false) {
         boolean z = true;
         Iterable iterableListOf = CollectionsKt.listOf(new String[]{"idle", "walk", "jump", "fall"});
         if ((iterableListOf instanceof Collection) && ((Collection) iterableListOf).isEmpty()) {
@@ -134,6 +145,8 @@ public final class DefaultAnimate {
             z = true;
         }
         return true;
+        }
+        return false;
     }
 
     private final AnimClip pick(String name) {
@@ -236,9 +249,87 @@ public final class DefaultAnimate {
         	at jadx.core.dex.visitors.regions.IfRegionVisitor.process(IfRegionVisitor.java:44)
         	at jadx.core.dex.visitors.regions.IfRegionVisitor.visit(IfRegionVisitor.java:30)
         */
-    public final void step(float dt, java.lang.String state, float speed, boolean seated, java.lang.String emote, float climbSpeed) {
+    public final void step(float dt, java.lang.String state, float speed, boolean toolEquipped, java.lang.String emote, float jumpAnimTime) {
         if (!getReady()) {
             return;
+        }
+        // Emote overlay handling
+        if (emote != null && emote.length() > 0) {
+            if (!Intrinsics.areEqual(emote, this.emoteName)) {
+                if (this.emoteTrack != null) {
+                    this.player.stop(this.emoteTrack, 0.15f);
+                    this.emoteTrack = null;
+                }
+                AnimClip ec = pick(emote);
+                if (ec != null) {
+                    this.emoteTrack = this.player.play(ec, "emote", 0.15f, 1.0f, 1.0f, 1);
+                    this.emoteTrack.setLooped(emote.startsWith("dance"));
+                }
+                this.emoteName = emote;
+            }
+        } else if (this.emoteTrack != null) {
+            this.player.stop(this.emoteTrack, 0.15f);
+            this.emoteTrack = null;
+            this.emoteName = null;
+        }
+
+        // Tool equipped overlay (official Roblox toolnone animation)
+        if (toolEquipped) {
+            if (this.toolTrack == null || this.toolTrack.getStopping()) {
+                AnimClip tc = pick("toolnone");
+                if (tc != null) {
+                    this.toolTrack = this.player.play(tc, "tool", 0.1f, 1.0f, 1.0f, 2);
+                    this.toolTrack.setLooped(true);
+                }
+            }
+        } else if (this.toolTrack != null) {
+            this.player.stop(this.toolTrack, 0.1f);
+            this.toolTrack = null;
+        }
+
+        // Core locomotion state machine matching official Roblox Animate LocalScript
+        if ("Dead".equals(state)) {
+            if (!"".equals(this.current)) {
+                for (AnimPlayer.Track t : this.currentTracks) {
+                    this.player.stop(t, 0.1f);
+                }
+                this.currentTracks.clear();
+                this.current = "";
+            }
+        } else if ("Jumping".equals(state) || jumpAnimTime > 0.0f) {
+            playCore("jump", 0.1f);
+        } else if ("FreeFall".equals(state) || "Freefall".equals(state)) {
+            playCore("fall", 0.2f);
+        } else if ("Climbing".equals(state)) {
+            playCore("climb", 0.1f);
+            float cSpd = speed < 0.1f ? 0.0f : (speed / 5.0f);
+            for (AnimPlayer.Track t : this.currentTracks) {
+                t.setSpeed(cSpd);
+            }
+        } else if ("Seated".equals(state)) {
+            playCore("sit", 0.2f);
+        } else if ("Running".equals(state) && speed > 0.75f) {
+            playCore("walk", 0.2f);
+            float scale = Math.max(0.15f, speed / 14.5f);
+            if (this.r15) {
+                // Official Roblox R15 walk/run blend formula
+                float runW = Math.max(0.0001f, Math.min(1.0f, (speed - 6.0f) / 10.0f));
+                float walkW = Math.max(0.0001f, 1.0f - runW);
+                for (AnimPlayer.Track t : this.currentTracks) {
+                    t.setSpeed(scale);
+                    if ("run".equals(t.getTag())) {
+                        t.setTargetWeight(runW);
+                    } else if ("walk".equals(t.getTag())) {
+                        t.setTargetWeight(walkW);
+                    }
+                }
+            } else {
+                for (AnimPlayer.Track t : this.currentTracks) {
+                    t.setSpeed(scale);
+                }
+            }
+        } else {
+            playCore("idle", 0.2f);
         }
         this.player.step(dt);
     }

@@ -1278,32 +1278,20 @@ public final class RobloxApi {
     /* JADX WARN: Code duplicated, block: B:60:0x0182 A[Catch: Exception -> 0x01ac, TRY_LEAVE, TryCatch #1 {Exception -> 0x01ac, blocks: (B:46:0x014d, B:48:0x0153, B:51:0x015a, B:53:0x0162, B:58:0x016d, B:60:0x0182), top: B:109:0x014d }] */
     /* JADX WARN: Code duplicated, block: B:7:0x003b  */
     public final byte[] downloadAsset(Context ctx, long id, Integer version) throws Exception {
-        String str;
-        String key;
-        boolean z;
-        String str2;
-        boolean z2;
         Intrinsics.checkNotNullParameter(ctx, "ctx");
-        String key2 = apiKey(ctx);
+        String key = apiKey(ctx);
         String cookie = cookie(ctx);
-        String str3 = "";
-        if (version != null) {
-            str = "&version=" + version.intValue();
-            if (str == null) {
-                str = "";
-            }
-        } else {
-            str = "";
-        }
-        String v = str;
+        String vQuery = version != null ? ("&version=" + version.intValue()) : "";
+        String vPath = version != null ? ("/version/" + version.intValue()) : "";
         Exception lastError = null;
-        if (key2.length() > 0) {
+
+        // 1. Open Cloud Asset Delivery API (if API key configured)
+        if (key.length() > 0) {
             try {
-                String path = (version != null ? new StringBuilder().append("assetId/").append(id).append("/version/").append(version) : new StringBuilder().append("assetId/").append(id)).toString();
-                JSONObject j = Http.INSTANCE.json("https://apis.roblox.com/asset-delivery-api/v1/" + path, MapsKt.mapOf(TuplesKt.to("x-api-key", key2)));
+                String path = "assetId/" + id + vPath;
+                JSONObject j = Http.INSTANCE.json("https://apis.roblox.com/asset-delivery-api/v1/" + path, MapsKt.mapOf(TuplesKt.to("x-api-key", key)));
                 String loc = j.optString("location");
-                Intrinsics.checkNotNull(loc);
-                if (loc.length() > 0) {
+                if (loc != null && loc.length() > 0) {
                     return ungzip(Http.get$default(Http.INSTANCE, loc, null, 0, 6, null));
                 }
                 lastError = new IOException("No download location returned");
@@ -1311,88 +1299,65 @@ public final class RobloxApi {
                 lastError = e;
             }
         }
-        if (!(cookie.length() > 0)) {
-            key = key2;
-            z = false;
-        } else {
+
+        // 2. Authenticated Roblox AssetDelivery v2 -> CDN location -> v1 fallback
+        if (cookie.length() > 0) {
+            Map<String, String> headers = new java.util.LinkedHashMap<>();
+            headers.put("Cookie", ".ROBLOSECURITY=" + cookie);
+            headers.put("Roblox-Browser-Asset-Request", "true");
             try {
-                Map<String, String> mapMapOf = MapsKt.mapOf(TuplesKt.to("Cookie", ".ROBLOSECURITY=" + cookie));
-                Http http = Http.INSTANCE;
-                if (version != null) {
-                    key = key2;
-                    try {
-                        String str4 = "/version/" + version.intValue();
-                        if (str4 != null) {
-                            str3 = str4;
-                        }
-                    } catch (Exception e2) {
-                        z = false;
-                        lastError = e2;
-                        try {
-                            return ungzip(Http.get$default(Http.INSTANCE, "https://assetdelivery.roblox.com/v1/asset/?id=" + id + v, MapsKt.mapOf(TuplesKt.to("Cookie", ".ROBLOSECURITY=" + cookie)), 0, 4, null));
-                        } catch (Exception e3) {
-                        }
-                    }
-                } else {
-                    key = key2;
-                }
-                JSONObject j2 = http.json("https://assetdelivery.roblox.com/v2/assetId/" + id + str3, mapMapOf);
+                JSONObject j2 = Http.INSTANCE.json("https://assetdelivery.roblox.com/v2/assetId/" + id + vPath, headers);
                 JSONArray locs = j2.optJSONArray("locations");
-                if (locs != null) {
-                    z = false;
-                    try {
-                        JSONObject jSONObjectOptJSONObject = locs.optJSONObject(0);
-                        String strOptString = jSONObjectOptJSONObject != null ? jSONObjectOptJSONObject.optString("location") : null;
-                        String loc2 = strOptString;
-                        str2 = loc2;
-                        if (str2 != null || str2.length() == 0) {
-                            z2 = true;
-                        } else {
-                            z2 = z;
-                        }
-                        return !z2 ? ungzip(Http.get$default(Http.INSTANCE, loc2, null, 0, 6, null)) : ungzip(Http.get$default(Http.INSTANCE, "https://assetdelivery.roblox.com/v1/asset/?id=" + id + v, mapMapOf, 0, 4, null));
-                    } catch (Exception e4) {
-                        Exception e = e4;
-                        lastError = e;
-                        return ungzip(Http.get$default(Http.INSTANCE, "https://assetdelivery.roblox.com/v1/asset/?id=" + id + v, MapsKt.mapOf(TuplesKt.to("Cookie", ".ROBLOSECURITY=" + cookie)), 0, 4, null));
+                if (locs != null && locs.length() > 0) {
+                    JSONObject first = locs.optJSONObject(0);
+                    String loc2 = first != null ? first.optString("location") : null;
+                    if (loc2 != null && loc2.length() > 0) {
+                        return ungzip(Http.get$default(Http.INSTANCE, loc2, null, 0, 6, null));
                     }
                 }
-                z = false;
-                String loc3 = null;
-                str2 = loc3;
-                if (str2 != null) {
-                    z2 = true;
-                } else {
-                    z2 = true;
-                }
-                if (!z2) {
-                }
-            } catch (Exception e5) {
-                Exception e = e5;
-                key = key2;
-                z = false;
+            } catch (Exception e) {
+                lastError = e;
+            }
+            try {
+                return ungzip(Http.get$default(Http.INSTANCE, "https://assetdelivery.roblox.com/v1/asset/?id=" + id + vQuery, headers, 0, 4, null));
+            } catch (Exception e) {
+                lastError = e;
             }
         }
-        if (key.length() == 0 ? true : z) {
-            if (cookie.length() == 0 ? true : z) {
-                try {
-                    return ungzip(Http.get$default(Http.INSTANCE, "https://assetdelivery.roblox.com/v1/asset/?id=" + id + v, null, 0, 6, null));
-                } catch (HttpException e6) {
-                    if (e6.getCode() == 401 || e6.getCode() == 403) {
-                        throw new AuthRequiredException("Roblox requires sign-in to download assets.");
-                    }
-                    throw e6;
+
+        // 3. Public / unauthenticated Roblox AssetDelivery v2 -> v1 fallback (for public textures, baseplate, animations, meshes)
+        try {
+            Map<String, String> pubHeaders = MapsKt.mapOf(TuplesKt.to("Roblox-Browser-Asset-Request", "true"));
+            JSONObject jPub = Http.INSTANCE.json("https://assetdelivery.roblox.com/v2/assetId/" + id + vPath, pubHeaders);
+            JSONArray locsPub = jPub.optJSONArray("locations");
+            if (locsPub != null && locsPub.length() > 0) {
+                JSONObject first = locsPub.optJSONObject(0);
+                String locPub = first != null ? first.optString("location") : null;
+                if (locPub != null && locPub.length() > 0) {
+                    return ungzip(Http.get$default(Http.INSTANCE, locPub, null, 0, 6, null));
                 }
             }
+        } catch (Exception e) {
+            if (lastError == null) lastError = e;
         }
-        Exception e7 = lastError;
-        if ((e7 instanceof HttpException) && (((HttpException) e7).getCode() == 401 || ((HttpException) e7).getCode() == 403)) {
-            throw new AuthRequiredException("Roblox rejected the saved credentials (HTTP " + ((HttpException) e7).getCode() + "). Try signing in again.");
+        try {
+            return ungzip(Http.get$default(Http.INSTANCE, "https://assetdelivery.roblox.com/v1/asset/?id=" + id + vQuery, null, 0, 6, null));
+        } catch (HttpException e6) {
+            if (cookie.length() == 0 && key.length() == 0 && (e6.getCode() == 401 || e6.getCode() == 403)) {
+                throw new AuthRequiredException("Roblox requires sign-in to download this asset.");
+            }
+            lastError = e6;
+        } catch (Exception e7) {
+            lastError = e7;
         }
-        if (e7 != null) {
-            throw e7;
+
+        if ((lastError instanceof HttpException) && (((HttpException) lastError).getCode() == 401 || ((HttpException) lastError).getCode() == 403)) {
+            throw new AuthRequiredException("Roblox rejected credentials (HTTP " + ((HttpException) lastError).getCode() + "). Try signing in again.");
         }
-        throw new IOException("Download failed");
+        if (lastError != null) {
+            throw lastError;
+        }
+        throw new IOException("Download failed for asset " + id);
     }
 
     public final byte[] ungzip(byte[] b) throws IOException {

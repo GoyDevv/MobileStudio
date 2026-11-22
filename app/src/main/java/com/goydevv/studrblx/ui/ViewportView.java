@@ -801,16 +801,37 @@ public final class ViewportView extends FrameLayout {
 
         private final void drawThumbstick(Canvas canvas) {
             boolean active = getActiveJoy();
+            float r = getJoyR();
+            float kx = this.joyCx + (this.joyX * r);
+            float ky = this.joyCy + (this.joyY * r);
+            // Roblox PlayerModule DynamicThumbstick outer ring
             this.paint.setStyle(Paint.Style.FILL);
-            this.paint.setColor(active ? 0x44000000 : 0x2E000000);
-            canvas.drawCircle(this.joyCx, this.joyCy, getJoyR(), this.paint);
+            this.paint.setColor(active ? 0x36000000 : 0x24000000);
+            canvas.drawCircle(this.joyCx, this.joyCy, r, this.paint);
             this.paint.setStyle(Paint.Style.STROKE);
-            this.paint.setStrokeWidth(this.d * 1.5f);
-            this.paint.setColor(active ? 0x66FFFFFF : 0x3DFFFFFF);
-            canvas.drawCircle(this.joyCx, this.joyCy, getJoyR(), this.paint);
+            this.paint.setStrokeWidth(this.d * 1.75f);
+            this.paint.setColor(active ? 0x6EFFFFFF : 0x42FFFFFF);
+            canvas.drawCircle(this.joyCx, this.joyCy, r, this.paint);
+            // Roblox DynamicThumbstick middle directional trail dots when dragged
+            float mag = (float) Math.hypot(this.joyX, this.joyY);
+            if (active && mag > 0.18f) {
+                this.paint.setStyle(Paint.Style.FILL);
+                for (int di = 1; di <= 3; di++) {
+                    float frac = di * 0.24f;
+                    float dotR = this.d * (2.6f + di * 0.7f);
+                    this.paint.setColor(0x58FFFFFF);
+                    canvas.drawCircle(this.joyCx + (this.joyX * r * frac), this.joyCy + (this.joyY * r * frac), dotR, this.paint);
+                }
+            }
+            // Inner thumbstick knob (Roblox mobile translucent disc + crisp subtle rim)
+            float kr = r * 0.36f;
             this.paint.setStyle(Paint.Style.FILL);
-            this.paint.setColor(active ? 0xB8FFFFFF : 0x78FFFFFF);
-            canvas.drawCircle(this.joyCx + (this.joyX * getJoyR()), this.joyCy + (this.joyY * getJoyR()), getJoyR() * 0.38f, this.paint);
+            this.paint.setColor(active ? 0xC8FFFFFF : 0x78FFFFFF);
+            canvas.drawCircle(kx, ky, kr, this.paint);
+            this.paint.setStyle(Paint.Style.STROKE);
+            this.paint.setStrokeWidth(this.d * 1.2f);
+            this.paint.setColor(active ? 0xE8FFFFFF : 0x88FFFFFF);
+            canvas.drawCircle(kx, ky, kr, this.paint);
         }
 
         /* JADX WARN: Code duplicated, block: B:41:0x0280  */
@@ -819,9 +840,9 @@ public final class ViewportView extends FrameLayout {
             String str;
             Canvas canvas2 = canvas;
             drawThumbstick(canvas);
-            float jr = this.d * 34.0f;
-            float jx = (getWidth() - (this.d * 28.0f)) - jr;
-            float jy = (getHeight() - (this.d * 28.0f)) - jr;
+            float jr = this.d * 35.0f;
+            float jx = (getWidth() - (this.d * 24.0f)) - jr;
+            float jy = (getHeight() - (this.d * 24.0f)) - jr;
             this.paint.setStyle(Paint.Style.FILL);
             this.paint.setColor(this.jumpDown ? 0x88FFFFFF : 0x48000000);
             canvas2.drawCircle(jx, jy, jr, this.paint);

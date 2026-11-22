@@ -40,7 +40,7 @@ public final /* data */ class Theme {
 
     /* JADX INFO: renamed from: Companion, reason: from kotlin metadata */
     public static final Companion INSTANCE = new Companion(null);
-    private static final Theme DARK = new Theme("Dark", false, -13750738, -13750738, -13290187, -14342875, -13290187, -15066598, -3355444, -7434610, -16033105, -16033105, -12434878, -14342875, -13421773, -14803426, -14342874, -2039584, -496260, -5377643, -14848, -8750470, -8071433);
+    private static final Theme DARK = new Theme("Dark", false, 0xFF1E2025, 0xFF21242A, 0xFF282C34, 0xFF17191E, 0xFF23262D, 0xFF333844, 0xFFECEFF4, 0xFF9AA3B2, 0xFF00A2FF, 0xFF0E5DA8, 0xFF2E333E, 0xFF16181D, 0xFF252931, 0xFF181A20, 0xFF1E2128, 0xFFE6EAF2, -496260, -5377643, -14848, -8750470, -8071433);
     private static final Theme LIGHT = new Theme("Light", true, -855310, -1, -1184275, -1842205, -526345, -3158065, -15000805, -9737365, -16033105, -4466185, -1907998, -1, -526345, -1, -789517, -15000805, -16776961, -5415680, -16086422, -16744448, -15044683);
     private static final Theme MIDNIGHT = copy$default(DARK, "Midnight", false, -14999766, -14802384, -14275781, -15394523, -14275781, -15855334, -2762008, -7892824, -10781446, -12890212, -13617590, -15328731, -14538954, -15328731, -14999765, 0, 0, 0, 0, 0, 0, 8257538, null);
     private static final Theme HIGH_CONTRAST = copy$default(DARK, "High Contrast", false, ViewCompat.MEASURED_STATE_MASK, ViewCompat.MEASURED_STATE_MASK, -15066598, ViewCompat.MEASURED_STATE_MASK, -15658735, -9803158, -1, -3618616, -14774017, -16756536, -13421773, ViewCompat.MEASURED_STATE_MASK, -15921907, ViewCompat.MEASURED_STATE_MASK, -15921907, -1, 0, 0, 0, 0, 0, 8126466, null);

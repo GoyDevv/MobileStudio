@@ -91,6 +91,13 @@ public final class ImageLoader {
         if (str == null || StringsKt.isBlank(str)) {
             return null;
         }
+        String low = str.trim().toLowerCase(Locale.ROOT);
+        if (low.contains("spawnlocation.png")) {
+            return Long.valueOf(12224170L);
+        }
+        if (low.endsWith("/face.png") || low.equals("rbxasset://textures/face.png")) {
+            return Long.valueOf(7075502L);
+        }
         Long l = idMemo.get(content);
         if (l != null) {
             long jLongValue = l.longValue();

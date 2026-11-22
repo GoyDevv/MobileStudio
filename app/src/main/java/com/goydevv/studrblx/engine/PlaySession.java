@@ -4747,7 +4747,7 @@ public final class PlaySession implements TreeListener {
                     case -1894814529:
                         if (className2.equals("BodyVelocity")) {
                             parent = next.getParent();
-                            if (parent != null || !parent.isA("BasePart")) {
+                            if (parent == null || !parent.isA("BasePart")) {
                                 parent = null;
                             }
                             end = new End(parent);
@@ -6010,7 +6010,7 @@ public final class PlaySession implements TreeListener {
         playSession.writing = true;
         boolean z4 = false;
         try {
-            applyMovers(dt);
+            try { applyMovers(dt); } catch (Exception _amEx) { OutputLog.INSTANCE.warn("Physics mover skipped: " + _amEx.getMessage()); }
             for (Body body : CollectionsKt.toList(playSession.bodies)) {
                 if (body.getSleeping()) {
                     f4 = dt;

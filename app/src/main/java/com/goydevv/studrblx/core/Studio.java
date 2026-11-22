@@ -1179,17 +1179,59 @@ public final class Studio {
     }
 
     private final void resetCameraFromModel() {
-        Object obj = this.editModel.getWorkspace().get("CurrentCamera");
+        Instance ws = this.editModel.getWorkspace();
+        Object obj = ws.get("CurrentCamera");
         Instance cam = obj instanceof Instance ? (Instance) obj : null;
         Object obj2 = cam != null ? cam.get("CFrame") : null;
         CFrame cf = obj2 instanceof CFrame ? (CFrame) obj2 : null;
-        if (cf == null || cf.getPosition().getMagnitude() <= 0.01f) {
-            this.camera.setPos(new Vector3(0.0f, 20.0f, 40.0f));
-            this.camera.setYaw(0.0f);
-            this.camera.setPitch(-0.4f);
+        if (cf != null && cf.getPosition().getMagnitude() > 0.01f) {
+            this.camera.setFromCFrame(cf);
             return;
         }
-        this.camera.setFromCFrame(cf);
+        // Auto-frame SpawnLocation or Workspace BaseParts so imported maps never open looking at empty void
+        Instance spawn = null;
+        float minX = Float.POSITIVE_INFINITY, minY = Float.POSITIVE_INFINITY, minZ = Float.POSITIVE_INFINITY;
+        float maxX = Float.NEGATIVE_INFINITY, maxY = Float.NEGATIVE_INFINITY, maxZ = Float.NEGATIVE_INFINITY;
+        int partCount = 0;
+        for (Instance inst : Instance.descendants$default(ws, null, 1, null)) {
+            if ("SpawnLocation".equals(inst.getClassName()) && spawn == null) {
+                spawn = inst;
+            }
+            if (inst.isA("BasePart") && !"Terrain".equals(inst.getClassName())) {
+                Vector3 pos = PartData.INSTANCE.cframe(inst).getPosition();
+                Vector3 sz = PartData.INSTANCE.size(inst);
+                // Skip huge baseplates from skewing center if other parts exist, unless it's the only part
+                if (sz.getX() < 500.0f && sz.getZ() < 500.0f) {
+                    minX = Math.min(minX, pos.getX());
+                    minY = Math.min(minY, pos.getY());
+                    minZ = Math.min(minZ, pos.getZ());
+                    maxX = Math.max(maxX, pos.getX());
+                    maxY = Math.max(maxY, pos.getY());
+                    maxZ = Math.max(maxZ, pos.getZ());
+                    partCount++;
+                }
+            }
+        }
+        if (spawn != null) {
+            Vector3 sp = PartData.INSTANCE.cframe(spawn).getPosition();
+            this.camera.setPos(new Vector3(sp.getX(), sp.getY() + 18.0f, sp.getZ() + 34.0f));
+            this.camera.setYaw(0.0f);
+            this.camera.setPitch(-0.42f);
+            return;
+        }
+        if (partCount > 0) {
+            float cx = (minX + maxX) * 0.5f;
+            float cy = (minY + maxY) * 0.5f;
+            float cz = (minZ + maxZ) * 0.5f;
+            float span = Math.max(24.0f, Math.min(220.0f, Math.max(maxX - minX, maxZ - minZ) * 0.75f));
+            this.camera.setPos(new Vector3(cx, cy + span * 0.55f, cz + span));
+            this.camera.setYaw(0.0f);
+            this.camera.setPitch(-0.45f);
+            return;
+        }
+        this.camera.setPos(new Vector3(0.0f, 20.0f, 40.0f));
+        this.camera.setYaw(0.0f);
+        this.camera.setPitch(-0.4f);
     }
 
     public final byte[] serializePlace() {
