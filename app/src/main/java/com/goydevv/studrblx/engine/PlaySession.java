@@ -6572,19 +6572,14 @@ public final class PlaySession implements TreeListener {
             } else {
                 camInst = camInst3;
             }
-            boolean smooth = Settings.INSTANCE.getCameraSmoothing();
-            float k = smooth ? 1.0f - ((float) Math.exp((-22.0f) * dt)) : 1.0f;
-            this.camYaw += (this.yawTarget - this.camYaw) * k;
-            this.camPitch += (this.pitchTarget - this.camPitch) * k;
+            // Official Roblox ClassicCamera: direct 1:1 yaw/pitch & subject tracking (zero floaty lag)
+            this.camYaw = this.yawTarget;
+            this.camPitch = this.pitchTarget;
+            f = 1.0f;
             float f2 = this.camDist;
             float f3 = this.distTarget - this.camDist;
-            if (smooth) {
-                f = 1.0f;
-                fExp = 1.0f - ((float) Math.exp((-14.0f) * dt));
-            } else {
-                f = 1.0f;
-            }
-            this.camDist = f2 + (f3 * fExp);
+            fExp = 1.0f - ((float) Math.exp((-28.0f) * dt));
+            this.camDist = Math.abs(f3) < 0.02f ? this.distTarget : (f2 + (f3 * fExp));
             if (!lockFirst && this.camDist >= f) {
                 z2 = false;
             }
@@ -6596,7 +6591,7 @@ public final class PlaySession implements TreeListener {
             Vector3 root = position;
             boolean z3 = this.isR15;
             Vector3 target2 = root.plus(new Vector3(0.0f, 1.5f, 0.0f));
-            this.subjectY = (Float.isNaN(this.subjectY) || Math.abs(this.subjectY - target2.getY()) > 6.0f || this.dead) ? target2.getY() : approach(this.subjectY, target2.getY(), 18.0f, dt);
+            this.subjectY = target2.getY();
             cam.setYaw(this.camYaw);
             cam.setPitch(this.camPitch);
             Vector3 focus2 = new Vector3(target2.getX(), this.subjectY, target2.getZ()).plus((!this.shiftLock || this.firstPerson) ? Vector3.INSTANCE.getZERO() : cam.getRight().times(1.75f));
@@ -6615,7 +6610,7 @@ public final class PlaySession implements TreeListener {
                 });
                 focus = focus2;
                 float allowed = hit != null ? RangesKt.coerceAtLeast(hit.getT() - 0.4f, 0.5f) : dist;
-                this.occluded = allowed < this.occluded ? allowed : approach(this.occluded, allowed, 6.0f, dt);
+                this.occluded = allowed < this.occluded ? allowed : approach(this.occluded, allowed, 20.0f, dt);
                 dist = Math.min(dist, this.occluded);
             } else {
                 focus = focus2;

@@ -143,13 +143,7 @@ public final class DefaultAnimate {
         AnimPlayer.Track track = AnimPlayer.play$default(this.player, clip, name, fade, 0.0f, 0.0f, 0, 24, null);
         if ("jump".equals(name)) {
             track.setLooped(false);
-            if (!this.r15) {
-                // R6 jump clip (125750702) starts at a neutral pose at t=0; skip the dead lead-in so arms raise on frame 1
-                track.setSpeed(1.35f);
-                if (clip.getLength() > 0.08f) {
-                    track.setTime(0.05f);
-                }
-            }
+            track.setSpeed(1.0f);
         } else if ("fall".equals(name) || "sit".equals(name)) {
             track.setLooped(true);
         }
@@ -209,9 +203,9 @@ public final class DefaultAnimate {
                 this.pendingJump = false;
                 this.current = "";
             }
-            playCore("jump", 0.0f);
+            playCore("jump", 0.1f);
         } else if ("FreeFall".equals(state) || "Freefall".equals(state)) {
-            playCore("fall", 0.04f);
+            playCore("fall", 0.1f);
         } else if ("Climbing".equals(state)) {
             playCore("climb", 0.06f);
             float cSpd = speed < 0.1f ? 0.0f : (speed / 5.0f);

@@ -2299,21 +2299,19 @@ public final class BuiltinIcons {
         Intrinsics.checkNotNullParameter(cls, "cls");
         String c = cls;
         int guard = 0;
-        while (c != null) {
-            int guard2 = guard + 1;
-            if (guard < 12) {
-                Function1<IconPainter, Unit> function1 = instanceIcons.get(c);
-                if (function1 != null) {
-                    return new VectorIcon(function1);
-                }
-                if (!Intrinsics.areEqual(c, "Instance")) {
-                    if (StringsKt.endsWith(c, "Constraint", false) && ClassDb.INSTANCE.isA(c, "Constraint")) {
-                        return new VectorIcon(constraint);
-                    }
-                    c = ClassDb.INSTANCE.superclass(c);
-                    guard = guard2;
-                }
+        while (c != null && guard < 12) {
+            guard++;
+            Function1<IconPainter, Unit> function1 = instanceIcons.get(c);
+            if (function1 != null) {
+                return new VectorIcon(function1);
             }
+            if (Intrinsics.areEqual(c, "Instance")) {
+                break;
+            }
+            if (StringsKt.endsWith(c, "Constraint", false) && ClassDb.INSTANCE.isA(c, "Constraint")) {
+                return new VectorIcon(constraint);
+            }
+            c = ClassDb.INSTANCE.superclass(c);
         }
         return null;
     }

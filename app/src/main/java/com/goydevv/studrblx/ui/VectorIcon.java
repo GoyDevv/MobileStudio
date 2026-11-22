@@ -15,7 +15,7 @@ import kotlin.jvm.internal.Intrinsics;
 /* JADX INFO: compiled from: BuiltinIcons.kt */
 /* JADX INFO: loaded from: classes5.dex */
 public final class VectorIcon extends Drawable {
-    private static final LruCache<String, Bitmap> cache = new LruCache<String, Bitmap>(8 * 1024 * 1024) { // from class: com.goydevv.studrblx.ui.VectorIcon$Companion$cache$1
+    private static final LruCache<String, Bitmap> cache = new LruCache<String, Bitmap>(16 * 1024 * 1024) { // from class: com.goydevv.studrblx.ui.VectorIcon$Companion$cache$1
         /* JADX INFO: Access modifiers changed from: protected */
         @Override // android.util.LruCache
         public int sizeOf(String key, Bitmap value) {
@@ -33,7 +33,7 @@ public final class VectorIcon extends Drawable {
         Intrinsics.checkNotNullParameter(painter, "painter");
         this.painter = (Function1<IconPainter, Unit>) painter;
         this.alphaV = 255;
-        this.bmpPaint = new Paint(2);
+        this.bmpPaint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.FILTER_BITMAP_FLAG | Paint.DITHER_FLAG);
     }
 
     @Override // android.graphics.drawable.Drawable
@@ -47,16 +47,19 @@ public final class VectorIcon extends Drawable {
         if (w <= 0 || h <= 0) {
             return;
         }
-        String key = System.identityHashCode(this.painter) + ":" + w + ":" + h + ":" + Ui.INSTANCE.getTEXT() + ":" + Ui.INSTANCE.getPANEL() + ":" + Ui.INSTANCE.getDIM();
+        // 2x supersampling (capped at 256px) for razor-sharp high-DPI icons
+        int sw = Math.min(w * 2, 256);
+        int sh = Math.min(h * 2, 256);
+        String key = System.identityHashCode(this.painter) + ":" + sw + ":" + sh + ":" + Ui.INSTANCE.getTEXT() + ":" + Ui.INSTANCE.getPANEL() + ":" + Ui.INSTANCE.getDIM();
         synchronized (cache) {
             bmp = cache.get(key);
         }
         if (bmp == null) {
-            bmp = Bitmap.createBitmap(w, h, Bitmap.Config.ARGB_8888);
+            bmp = Bitmap.createBitmap(sw, sh, Bitmap.Config.ARGB_8888);
             Intrinsics.checkNotNullExpressionValue(bmp, "createBitmap(...)");
             Canvas canvas = new Canvas(bmp);
-            float fMin = Math.min(w, h) / 24.0f;
-            canvas.translate((w - (fMin * 24.0f)) / 2.0f, (h - (24.0f * fMin)) / 2.0f);
+            float fMin = Math.min(sw, sh) / 24.0f;
+            canvas.translate((sw - (fMin * 24.0f)) / 2.0f, (sh - (24.0f * fMin)) / 2.0f);
             canvas.scale(fMin, fMin);
             this.painter.invoke(new IconPainter(canvas));
             synchronized (cache) {
@@ -64,7 +67,7 @@ public final class VectorIcon extends Drawable {
             }
         }
         this.bmpPaint.setAlpha(this.alphaV);
-        c.drawBitmap(bmp, b.left, b.top, this.bmpPaint);
+        c.drawBitmap(bmp, (Rect) null, b, this.bmpPaint);
     }
 
     @Override // android.graphics.drawable.Drawable
@@ -74,6 +77,7 @@ public final class VectorIcon extends Drawable {
 
     @Override // android.graphics.drawable.Drawable
     public void setColorFilter(ColorFilter cf) {
+        this.bmpPaint.setColorFilter(cf);
     }
 
     @Override // android.graphics.drawable.Drawable
@@ -84,11 +88,11 @@ public final class VectorIcon extends Drawable {
 
     @Override // android.graphics.drawable.Drawable
     public int getIntrinsicWidth() {
-        return 48;
+        return 64;
     }
 
     @Override // android.graphics.drawable.Drawable
     public int getIntrinsicHeight() {
-        return 48;
+        return 64;
     }
 }

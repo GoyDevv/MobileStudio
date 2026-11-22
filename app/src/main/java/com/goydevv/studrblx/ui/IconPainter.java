@@ -35,7 +35,7 @@ public final class IconPainter {
     public IconPainter(Canvas c) {
         Intrinsics.checkNotNullParameter(c, "c");
         this.c = c;
-        Paint paint = new Paint(1);
+        Paint paint = new Paint(Paint.ANTI_ALIAS_FLAG | Paint.DITHER_FLAG | Paint.SUBPIXEL_TEXT_FLAG);
         paint.setStrokeCap(Paint.Cap.ROUND);
         paint.setStrokeJoin(Paint.Join.ROUND);
         this.p = paint;

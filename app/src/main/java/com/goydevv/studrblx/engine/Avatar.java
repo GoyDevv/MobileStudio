@@ -70,6 +70,17 @@ public final class Avatar {
     private static volatile int version;
     public static final Avatar INSTANCE = new Avatar();
     private static final ConcurrentHashMap<String, Bitmap> generated = new ConcurrentHashMap<>();
+    private static final Map<byte[], float[]> accMetaMap = Collections.synchronizedMap(new IdentityHashMap<byte[], float[]>());
+
+    private static void putAccMeta(byte[] key, float[] adj) {
+        if (key != null && adj != null) {
+            accMetaMap.put(key, adj);
+        }
+    }
+
+    private static float[] getAccMeta(byte[] key) {
+        return key != null ? accMetaMap.get(key) : null;
+    }
     private static final ExecutorService pool = Executors.newSingleThreadExecutor();
     private static final CopyOnWriteArrayList<Function0<Unit>> listeners = new CopyOnWriteArrayList<>();
     private static final List<String> PARTS = CollectionsKt.listOf(new String[]{"Head", "Torso", "Left Arm", "Right Arm", "Left Leg", "Right Leg"});
@@ -621,7 +632,27 @@ public final class Avatar {
                         assets2 = assets;
                         bodyParts = bodyParts2;
                         try {
-                            acc.add(AssetFetcher.INSTANCE.load(id));
+                            byte[] accBytes = AssetFetcher.INSTANCE.load(id);
+                            acc.add(accBytes);
+                            JSONObject meta = a.optJSONObject("meta");
+                            if (meta != null) {
+                                JSONObject mPos = meta.optJSONObject("position");
+                                JSONObject mRot = meta.optJSONObject("rotation");
+                                JSONObject mScl = meta.optJSONObject("scale");
+                                if (mPos != null || mRot != null || mScl != null) {
+                                    putAccMeta(accBytes, new float[]{
+                                        mPos != null ? (float) mPos.optDouble("X", mPos.optDouble("x", 0.0d)) : 0.0f,
+                                        mPos != null ? (float) mPos.optDouble("Y", mPos.optDouble("y", 0.0d)) : 0.0f,
+                                        mPos != null ? (float) mPos.optDouble("Z", mPos.optDouble("z", 0.0d)) : 0.0f,
+                                        mRot != null ? (float) mRot.optDouble("X", mRot.optDouble("x", 0.0d)) : 0.0f,
+                                        mRot != null ? (float) mRot.optDouble("Y", mRot.optDouble("y", 0.0d)) : 0.0f,
+                                        mRot != null ? (float) mRot.optDouble("Z", mRot.optDouble("z", 0.0d)) : 0.0f,
+                                        mScl != null ? (float) mScl.optDouble("X", mScl.optDouble("x", 1.0d)) : 1.0f,
+                                        mScl != null ? (float) mScl.optDouble("Y", mScl.optDouble("y", 1.0d)) : 1.0f,
+                                        mScl != null ? (float) mScl.optDouble("Z", mScl.optDouble("z", 1.0d)) : 1.0f
+                                    });
+                                }
+                            }
                         } catch (Exception e2) {
                             OutputLog.INSTANCE.warn("Avatar accessory " + id + ": " + e2.getMessage());
                         }
@@ -1029,6 +1060,34 @@ public final class Avatar {
                                     identity2 = CFrame.INSTANCE.getIDENTITY();
                                 }
                                 r6 = 0;
+                                float[] adj = getAccMeta(bArr);
+                                if (adj != null) {
+                                    float sx = RangesKt.coerceIn(adj[6], 0.5f, 2.0f);
+                                    float sy = RangesKt.coerceIn(adj[7], 0.5f, 2.0f);
+                                    float sz = RangesKt.coerceIn(adj[8], 0.5f, 2.0f);
+                                    if (Math.abs(sx - 1.0f) > 0.001f || Math.abs(sy - 1.0f) > 0.001f || Math.abs(sz - 1.0f) > 0.001f) {
+                                        Vector3 curSz = PartData.INSTANCE.size(r7);
+                                        r7.set("Size", new Vector3(curSz.getX() * sx, curSz.getY() * sy, curSz.getZ() * sz), false);
+                                        for (Instance sm : r7.getChildren()) {
+                                            if ("SpecialMesh".equals(sm.getClassName()) || "FileMesh".equals(sm.getClassName())) {
+                                                Object scObj = sm.get("Scale");
+                                                Vector3 curSc = scObj instanceof Vector3 ? (Vector3) scObj : new Vector3(1.0f, 1.0f, 1.0f);
+                                                sm.set("Scale", new Vector3(curSc.getX() * sx, curSc.getY() * sy, curSc.getZ() * sz), false);
+                                            }
+                                        }
+                                        Vector3 c1p = identity2.getPosition();
+                                        identity2 = new CFrame(c1p.getX() * sx, c1p.getY() * sy, c1p.getZ() * sz,
+                                                identity2.getR00(), identity2.getR01(), identity2.getR02(),
+                                                identity2.getR10(), identity2.getR11(), identity2.getR12(),
+                                                identity2.getR20(), identity2.getR21(), identity2.getR22());
+                                    }
+                                    if (Math.abs(adj[0]) > 1.0E-4f || Math.abs(adj[1]) > 1.0E-4f || Math.abs(adj[2]) > 1.0E-4f) {
+                                        identity = identity.times(CFrame.INSTANCE.at(new Vector3(adj[0], adj[1], adj[2])));
+                                    }
+                                    if (Math.abs(adj[3]) > 1.0E-3f) identity = identity.times(CFrame.INSTANCE.rx((float) Math.toRadians(adj[3])));
+                                    if (Math.abs(adj[4]) > 1.0E-3f) identity = identity.times(CFrame.INSTANCE.ry((float) Math.toRadians(adj[4])));
+                                    if (Math.abs(adj[5]) > 1.0E-3f) identity = identity.times(CFrame.INSTANCE.rz((float) Math.toRadians(adj[5])));
+                                }
                                 Create.set("Part0", parent, false);
                                 Create.set("Part1", r7, false);
                                 Create.set("C0", identity, false);

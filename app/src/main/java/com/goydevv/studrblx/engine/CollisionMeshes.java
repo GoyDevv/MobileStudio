@@ -76,7 +76,7 @@ public final class CollisionMeshes {
             this.max = max;
             this.stamp = new int[this.count];
             Vector3 ext = this.max.minus(this.min);
-            this.cell = RangesKt.coerceAtLeast(Math.max(ext.getX(), Math.max(ext.getY(), ext.getZ())) / 24.0f, 1.0f);
+            this.cell = RangesKt.coerceAtLeast(Math.max(ext.getX(), Math.max(ext.getY(), ext.getZ())) / 14.0f, 1.0f);
             this.nx = ((int) (ext.getX() / this.cell)) + 1;
             this.ny = ((int) (ext.getY() / this.cell)) + 1;
             this.nz = ((int) (ext.getZ() / this.cell)) + 1;
@@ -92,6 +92,14 @@ public final class CollisionMeshes {
                 float z3 = Math.max(this.pos[o + 2], Math.max(this.pos[o + 5], this.pos[o + 8]));
                 int i2 = ci(x0, 0);
                 int iCi = ci(x1, 0);
+                int spanX = (iCi - i2) + 1;
+                int spanY = (ci(y2, 1) - ci(y0, 1)) + 1;
+                int spanZ = (ci(z3, 2) - ci(z2, 2)) + 1;
+                if (((long) spanX) * ((long) spanY) * ((long) spanZ) > 64L) {
+                    iCi = i2;
+                    y2 = y0;
+                    z3 = z2;
+                }
                 if (i2 <= iCi) {
                     while (true) {
                         float x2 = x1;
@@ -436,8 +444,10 @@ public final class CollisionMeshes {
         while (it.hasNext()) {
             n += ((float[]) it.next()).length / 24;
         }
-        float[] pos = new float[n * 9];
-        float[] nrm = new float[n * 3];
+        int strideTris = n > 3000 ? ((n + 2999) / 3000) : 1;
+        int capTris = (n + strideTris - 1) / strideTris;
+        float[] pos = new float[capTris * 9];
+        float[] nrm = new float[capTris * 3];
         Vector3 mn = new Vector3(Float.MAX_VALUE, Float.MAX_VALUE, Float.MAX_VALUE);
         Vector3 mx = mn.unaryMinus();
         int t = 0;
@@ -459,7 +469,7 @@ public final class CollisionMeshes {
                     fn = fn.unaryMinus();
                 }
                 float len = fn.getMagnitude();
-                o += 24;
+                o += 24 * strideTris;
                 if (len < 1.0E-9f) {
                     mn = mn2;
                 } else {
