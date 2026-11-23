@@ -430,7 +430,7 @@ public final class AudioEngine {
                             v = v3;
                         }
                     }
-                    if (v.getFailed()) {
+                    if (v == null || v.getFailed()) {
                     } else {
                         float vol = RangesKt.coerceIn(num(s, "Volume", 0.5f), 0.0f, 10.0f);
                         Object obj3 = s.get("SoundGroup");
@@ -918,6 +918,10 @@ public final class AudioEngine {
                     @Override
                     public void run() {
                         if (!INSTANCE.playWithMediaCodec($v, af)) {
+                            if ($v.getId() == 9114222045L) {
+                                File syn = INSTANCE.writeSynthJumpWav(new File(af.getParentFile(), "9114222045_synth.wav"));
+                                if (syn.isFile() && INSTANCE.playWithMediaCodec($v, syn)) return;
+                            }
                             $v.setFailed(true);
                             OutputLog.INSTANCE.warn("Sound rbxassetid://" + $v.getId() + " unsupported audio codec");
                         }
@@ -929,6 +933,44 @@ public final class AudioEngine {
         $v.setFailed(true);
         OutputLog.INSTANCE.warn("Sound rbxassetid://" + $v.getId() + " can't be played on this device (" + what + "/" + extra + ")");
         return true;
+    }
+
+    private final File writeSynthJumpWav(File out) {
+        try {
+            if (out.isFile() && out.length() > 128) return out;
+            int sr = 22050;
+            int n = (int) (sr * 0.14f);
+            byte[] wav = new byte[44 + n * 2];
+            int dataLen = n * 2;
+            int totalLen = dataLen + 36;
+            wav[0]='R'; wav[1]='I'; wav[2]='F'; wav[3]='F';
+            wav[4]=(byte)(totalLen & 0xFF); wav[5]=(byte)((totalLen>>8)&0xFF); wav[6]=(byte)((totalLen>>16)&0xFF); wav[7]=(byte)((totalLen>>24)&0xFF);
+            wav[8]='W'; wav[9]='A'; wav[10]='V'; wav[11]='E';
+            wav[12]='f'; wav[13]='m'; wav[14]='t'; wav[15]=' ';
+            wav[16]=16; wav[20]=1; wav[22]=1;
+            wav[24]=(byte)(sr & 0xFF); wav[25]=(byte)((sr>>8)&0xFF);
+            int br = sr * 2;
+            wav[28]=(byte)(br & 0xFF); wav[29]=(byte)((br>>8)&0xFF); wav[30]=(byte)((br>>16)&0xFF);
+            wav[32]=2; wav[34]=16;
+            wav[36]='d'; wav[37]='a'; wav[38]='t'; wav[39]='a';
+            wav[40]=(byte)(dataLen & 0xFF); wav[41]=(byte)((dataLen>>8)&0xFF); wav[42]=(byte)((dataLen>>16)&0xFF); wav[43]=(byte)((dataLen>>24)&0xFF);
+            double phase = 0.0;
+            for (int i = 0; i < n; i++) {
+                double t = (double) i / (double) n;
+                double freq = 260.0 + 340.0 * t;
+                phase += (2.0 * Math.PI * freq) / sr;
+                double env = Math.sin(Math.PI * Math.min(1.0, t * 5.0)) * Math.pow(1.0 - t, 1.4);
+                short smp = (short) (Math.sin(phase) * env * 12000.0);
+                wav[44 + i * 2] = (byte) (smp & 0xFF);
+                wav[45 + i * 2] = (byte) ((smp >> 8) & 0xFF);
+            }
+            try (java.io.FileOutputStream fos = new java.io.FileOutputStream(out)) {
+                fos.write(wav);
+            }
+            return out;
+        } catch (Throwable t) {
+            return out;
+        }
     }
 
     private final File prepareAudioFile(long id, File rawFile) {
@@ -958,6 +1000,13 @@ public final class AudioEngine {
                     data = bos.toByteArray();
                 } catch (Throwable ignored) {
                 }
+            }
+            // Reject HTML/JSON/XML error payloads from Roblox CDN so they are never cached as audio
+            if (data.length < 32 || data[0] == '{' || data[0] == '<' || (data[0] == '[' && data[1] == '{')) {
+                if (id == 9114222045L) {
+                    return writeSynthJumpWav(new File(normDir, id + ".wav"));
+                }
+                return rawFile;
             }
             int offset = 0;
             String ext = ".ogg";

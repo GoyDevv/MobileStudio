@@ -15,6 +15,7 @@ import kotlin.collections.CollectionsKt;
 import kotlin.collections.SetsKt;
 import kotlin.jvm.functions.Function0;
 import kotlin.jvm.functions.Function1;
+import kotlin.jvm.functions.Function2;
 import kotlin.jvm.internal.Intrinsics;
 import kotlin.ranges.RangesKt;
 import kotlin.text.Charsets;
@@ -1453,7 +1454,28 @@ public final class RobloxGlobals {
         Instance inst = (Instance) obj;
         if (inst == null) {
             if (m.isnumber()) {
-                throw new LuaError("require(assetId) is not supported offline");
+                OutputLog.INSTANCE.warn("require(" + m.tolong() + "): external asset modules are stubbed offline");
+                LuaTable stub = new LuaTable();
+                LuaTable smt = new LuaTable();
+                smt.set(LuaValue.CALL, LuaTypesKt.fnv(new Function1() {
+                    @Override
+                    public final Object invoke(Object a) {
+                        return LuaValue.NIL;
+                    }
+                }));
+                smt.set(LuaValue.INDEX, LuaTypesKt.fn2(new Function2() {
+                    @Override
+                    public final Object invoke(Object t, Object k) {
+                        return LuaTypesKt.fnv(new Function1() {
+                            @Override
+                            public final Object invoke(Object a) {
+                                return LuaValue.NIL;
+                            }
+                        });
+                    }
+                }));
+                stub.setmetatable(smt);
+                return stub;
             }
             if (m.isstring()) {
                 UpValue upValueInstall$envSlot = install$envSlot(install$funcAt($rt, 1));
