@@ -139,7 +139,7 @@ public final class PlaySession implements TreeListener {
     private float occluded;
     private final IdentityHashMap<Instance, CFrame> offsets;
     private boolean physicsDirty;
-    private float pitchTarget;
+    private volatile float pitchTarget;
     private Instance playAsTemplate;
     private Float playAsYaw;
     private Instance player;
@@ -169,7 +169,7 @@ public final class PlaySession implements TreeListener {
     private Vector3 vel;
     private float walkT;
     private boolean writing;
-    private float yawTarget;
+    private volatile float yawTarget;
 
     public PlaySession(Studio studio, DataModel dm) {
         Intrinsics.checkNotNullParameter(studio, "studio");
@@ -6625,7 +6625,7 @@ public final class PlaySession implements TreeListener {
         Intrinsics.checkNotNullExpressionValue(luaNumberValueOf7, "valueOf(...)");
         luaRuntime6.fire(rs, "Heartbeat", luaNumberValueOf7);
         long t6 = System.nanoTime();
-        this.rt.step(dt);
+        this.rt.step(RangesKt.coerceIn(dt0, 0.0f, 0.25f));
         long t7 = System.nanoTime();
         updateCamera(dt);
         long t8 = System.nanoTime();

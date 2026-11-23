@@ -84,7 +84,7 @@ import org.luaj.vm2.lib.jse.JsePlatform;
 /* JADX INFO: compiled from: LuaRuntime.kt */
 /* JADX INFO: loaded from: classes4.dex */
 public final class LuaRuntime {
-    private static final long WAIT_BUDGET_NS = 12000000;
+    private static final long WAIT_BUDGET_NS = 30000000L;
     private static volatile File luacDir;
     private static volatile String stamp;
     private final InstanceApi api;
@@ -1198,7 +1198,7 @@ public final class LuaRuntime {
                 }
             }
         }
-        if (!this.deferred.isEmpty()) {
+        for (int pass = 0; pass < 2 && !this.deferred.isEmpty(); pass++) {
             List<? extends Pair<?, ?>> d = CollectionsKt.toList(this.deferred);
             this.deferred.clear();
             for (Pair<?, ?> pair : d) {
