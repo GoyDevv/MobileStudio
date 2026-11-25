@@ -2,6 +2,8 @@
 
 # StudioRblx
 
+> THIS WILL BE ARCHIVED, FULL ROBLOX STUDIO FOR ANDROID: https://GitHub.com/GoyDevv/Rustudio-Android
+
 **A native Android 3D Roblox-compatible Studio editor & playtest engine.**
 
 Build, inspect, script, import `.rbxl` / `.rbxlx` / `.rbxm` worlds, and playtest with official Roblox R15/R6 animations, avatar accessories, and materials — directly on Android.
